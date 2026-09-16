@@ -1,0 +1,24 @@
+name: 发布 Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 打包游戏（zip）
+        run: zip -r "iron-europe-1939-${GITHUB_REF_NAME}.zip" . -x '.git/*' '.github/*'
+      - name: 创建 Release 并附上游戏包
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "iron-europe-1939-${GITHUB_REF_NAME}.zip" \
+            --title "钢铁欧陆 1939 ${GITHUB_REF_NAME}" \
+            --notes "解压后双击 index.html 即可离线游玩；在线试玩：https://saoker-liu.github.io/iron-europe-1939/" \
+            --generate-notes
