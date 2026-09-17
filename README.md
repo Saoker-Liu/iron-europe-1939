@@ -6,6 +6,8 @@
 
 ![类型](https://img.shields.io/badge/%E7%B1%BB%E5%9E%8B-%E5%85%AD%E8%BE%B9%E5%BD%A2%E5%9B%9E%E5%90%88%E6%88%98%E6%A0%8E-gold) ![技术](https://img.shields.io/badge/%E6%8A%80%E6%9C%AF-%E5%8E%9F%E7%94%9FCanvas-blue)
 
+> 🛠️ 想参与开发？请先阅读 [DEVELOPMENT.md](DEVELOPMENT.md) —— 架构说明、核心机制、踩坑记录与路线图。
+
 ## 在线试玩
 
 **https://saoker-liu.github.io/iron-europe-1939/** （GitHub Pages，推送 main 分支自动部署）
