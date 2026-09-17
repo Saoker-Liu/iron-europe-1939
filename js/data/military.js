@@ -7,7 +7,8 @@
   root.GameData = root.GameData || { modules: {} };
 
   root.GameData.modules.military = {
-    /* 兵种：glyph 地图字样；ranged+baseRange 远程（无反击）；fly 空军（无视地形/ZOC） */
+    /* 兵种：glyph 为纯文本标签（地图上已改用矢量侧影图标，图形见 js/ui/unit-icons.js）；
+       ranged+baseRange 远程（无反击）；fly 空军（无视地形/ZOC） */
     CLASSES: {
       inf:  { name: '步兵', glyph: '步' },
       art:  { name: '炮兵', glyph: '炮', ranged: true, baseRange: 2, neverCounters: true },

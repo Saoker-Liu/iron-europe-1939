@@ -317,13 +317,11 @@ function render(now) {
     cx.fillStyle = cc; cx.fill();
     cx.lineWidth = 2.5; cx.strokeStyle = FACTION_COLOR[f] || '#999'; cx.stroke();
     if (u.gen) { cx.lineWidth = 1.6; cx.strokeStyle = '#ffd75e'; cx.beginPath(); cx.arc(x, y, s * 0.62, 0, 7); cx.stroke(); }
+    // 兵种图标（矢量侧影，见 unit-icons.js）
+    // 低倍速也照画：图标比汉字耐缩，这正是替换汉字的主要收益。
+    // 细节层（负重轮/发动机短舱等）只在格宽足够大时叠加，否则糊成一团。
+    UnitIcons.draw(cx, u.eq.cls, x, y, s * UnitIcons.BOX_RATIO, { detail: s >= 18 });
     if (!simple) {
-      // 兵种字（显式居中：主画布不再有城市循环预设 textAlign）
-      cx.textAlign = 'center';
-      cx.font = `900 ${s * 0.44}px "Microsoft YaHei",sans-serif`;
-      cx.fillStyle = '#fff'; cx.strokeStyle = 'rgba(0,0,0,.6)'; cx.lineWidth = 3;
-      cx.strokeText(CLASSES[u.eq.cls].glyph, x, y + s * 0.16);
-      cx.fillText(CLASSES[u.eq.cls].glyph, x, y + s * 0.16);
       // 将领星
       if (u.gen) {
         cx.font = `900 ${s * 0.34}px sans-serif`; cx.fillStyle = '#ffd75e';
@@ -754,7 +752,7 @@ function showCityPanel(city) {
     <div class="p-sub">新部队组建后下回合方可行动</div>
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
-        <div><div class="s-name">${CLASSES[it.eq.cls].glyph}·${it.eq.n}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
+        <div><div class="s-name"><span class="ico">${UnitIcons.svg(it.eq.cls, 15)}</span>${it.eq.n}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
         <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;

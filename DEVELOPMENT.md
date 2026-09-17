@@ -46,8 +46,14 @@ iron-europe-1939/
 │   ├── engine/
 │   │   └── game.js         纯逻辑引擎（无 DOM）：移动/战斗/经济/AI/事件/胜负/存档
 │   └── ui/
+│       ├── unit-icons.js   兵种图标（矢量侧影，零外部资源）：步兵·炮兵·装甲·空军。
+│       │                   同一份 SVG path 同时供 Canvas(Path2D) 与 DOM(<svg>) 使用。
+│       │                   改图形前务必读该文件头部注释（环绕方向/描边方式两个坑）
 │       └── ui.js           渲染与交互（地形缓存层/动态层/输入/面板/音效），
 │                           导出 window.BootUI()，由 loader 在就绪后调用
+├── tools/
+│   └── icon-preview.html   兵种图标预览页（改完 unit-icons.js 双击自检：尺寸梯度/
+│                           国家色对比度/放大破形）
 ├── build_map.js        地图生成器：`node build_map.js` 输出 MAP_ROWS（旧用途）；
 │                       `node build_map.js --write` 直接更新 js/data/map.js + terrain.js 细节
 ├── test_logic.js       无头测试（经 js/data/load-node.js 装配数据）
@@ -176,7 +182,7 @@ Node 侧通过 `require('js/data/load-node.js')` 得到同样的装配结果—�
 优化前单帧 29.7ms（4FPS），优化后 **0.65ms**。三条铁律：
 
 1. **禁止每帧重建地形几何**——曾每帧为可见格重建 Path2D（全图构建 332ms），是 4FPS 卡顿的根源。任何新增的"画地图上的东西"都应进 `rebuildTerrain` 的缓存层，而不是 render 主循环
-2. **主画布文本是贵操作**——CJK `strokeText/fillText` 很贵；低倍速（`simple = s < 11`）已自动省略单位小字，新增文字标记请放进同一分支
+2. **主画布文本是贵操作**——CJK `strokeText/fillText` 很贵；低倍速（`simple = s < 11`）已自动省略单位小字，新增文字标记请放进同一分支。单位兵种现已改为**矢量图标**（`js/ui/unit-icons.js`），不再逐帧绘制中文，所以图标在低倍速下照常绘制（这正是替换的收益）。但图标描边必须用「`stroke` → `fill` 共用同一 transform」：**禁止把同一个 `Path2D` 换个 transform 再填一遍**来描边——实测会让 Chrome 无法复用光栅化缓存，从 6.6µs 暴涨到 62µs/单位。另：`lineJoin='round'` 下先 stroke 后 fill，线宽内半会被白色主体盖住，接缝也一并盖住，因此不会出现脏线。
 3. **动态层做视口剔除**——单位/文字循环必须有 `hexToPix` 后的屏内判断
 
 控制台 `window.__fps` 可看实时帧率。
@@ -204,6 +210,8 @@ Node 侧通过 `require('js/data/load-node.js')` 得到同样的装配结果—�
 | 6 | AI 第二回合起全体挂机 | 回合切换未重置 `moved/attacked` 标记 | `startTurnFor` 里重置（第一版事故） |
 | 7 | 单位落海/叠格 | 手写初始部署坐标 | test_logic 断言：单位必须在陆上、同格唯一 |
 | 8 | 发布 401/Bad credentials | 机器里存的是他人/过期凭据 | 见 §9：本机 SSH 公钥已注册到 GitHub（Huan18-windows） |
+| 9 | 步兵躯干上出现一条透明裂口（图标"破形"） | 非零填充规则下，手写子路径的顺逆时针方向不一致，重叠处互相抵消（挖洞） | `unit-icons.js` 的 `normalizeWinding()` 统一方向；`tools/icon-preview.html` 的「纯色填充」视图专门用于自查破形 |
+| 10 | 图标描边导致帧耗时暴涨（实测 62µs/单位） | 同一个 `Path2D` 先用 scale(1.12) 填一层做描边 → 换了 transform，光栅化缓存失效 | 改为 `stroke` + `fill` 共用同一 transform（6.6µs/单位），见 §6.3 铁律 2 |
 
 ---
 
@@ -241,6 +249,8 @@ Pages 的一次性启用（Source = GitHub Actions）**已由人工完成**；�
 - 控制台：`window.__fps` 帧率；`UI.game` 引擎实例可完全操控；`UI.cam` 相机；`render(performance.now())` 手动渲染一帧
 - 画布像素回读（`getImageData`）是对齐/渲染问题的最终裁判——本项目的错位与字形偏移都是靠它定位的
 - 测量帧耗时请用同步循环调用 `render()`（IAB/后台页 rAF 会被节流，rAF 计数不可信）
+- **改兵种图标**：双击 `tools/icon-preview.html` 自检——①尺寸梯度看是否耐缩 ②最亮国家色上看对比度 ③「纯色填充」视图看是否破形
+- **微基准的坑**：把多个绘制变体塞进同一页顺序跑，测出来的数会被"实现切换导致的光栅化缓存失效"污染（同一份代码同页测到 111µs、单独进程测到 7.7µs）。比较两种实现时要**每个变体跑一个全新的浏览器进程**，并在同一进程内取多轮最优值——同一进程内的"旧 vs 新"比值才可信
 - 本地联调服务器：后台进程可能随会话结束被回收，端口 8631 探活失败就重启（脚本见 §9.1）
 
 ---
