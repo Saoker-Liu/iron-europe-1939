@@ -1,0 +1,17 @@
+====================================================
+MUSIC CREDITS / 音乐版权信息  — Iron Europe 1939
+====================================================
+All background music by Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+
+File            Track               Author          License   Source
+menu.mp3        "Five Armies"       Kevin MacLeod   CC-BY 4.0 https://incompetech.com/music/royalty-free/index.html?collection=011
+lobby.mp3       "Air Prelude"       Kevin MacLeod   CC-BY 4.0 (same site)
+battle.mp3      "Impact Moderato"   Kevin MacLeod   CC-BY 4.0 (same site)
+victory.mp3     "Fanfare for Space" Kevin MacLeod   CC-BY 4.0 (same site)
+defeat.mp3      "Wounded"           Kevin MacLeod   CC-BY 4.0 (same site)
+
+REQUIRED ATTRIBUTION (must appear in the in-game credits / about screen):
+"Music: Five Armies, Air Prelude, Impact Moderato, Fanfare for Space, Wounded
+ by Kevin MacLeod (incompetech.com) — Licensed under CC-BY 4.0"
