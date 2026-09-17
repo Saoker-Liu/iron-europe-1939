@@ -872,6 +872,53 @@ function skillText(s) {
   let cls = s.cls ? CLASSES[s.cls].name : '';
   return `${cls ? cls + '·' : ''}${(M[s.k] || (() => s.k))(s.m !== undefined ? s.m : s.n, s)}`;
 }
+/* 将领头像：国别底色之上叠一层深色剪影半身像（军帽区分风格），中央单字快速辨认，
+   右下角徽记由技能自动推导——兵种限定技能→兵种字，防御系→盾，其余→★ */
+function genPortrait(gn) {
+  const HAT = 'rgba(13,18,26,.82)', RIM = 'rgba(255,255,255,.25)';
+  const f = gn.face || { hat: 'peak' };
+  const hats = {
+    peak: `<path d="M16.8 16.2 Q16.8 7.5 27 7.5 Q37.2 7.5 37.2 16.2 L37.2 18.4 L16.8 18.4 Z" fill="${HAT}" stroke="${RIM}" stroke-width=".7"/>
+           <rect x="16.8" y="15" width="20.4" height="2.6" fill="#0a0e14"/>
+           <path d="M15 18.4 Q27 24 39 18.4 L39 20.6 Q27 26.2 15 20.6 Z" fill="${HAT}" stroke="${RIM}" stroke-width=".6"/>`,
+    steel: `<path d="M16 15.5 Q16 6.5 27 6.5 Q38 6.5 38 15.5 Q38 19 27 19.6 Q16 19 16 15.5 Z" fill="${HAT}" stroke="${RIM}" stroke-width=".7"/>
+            <path d="M14 16.2 Q27 21.8 40 16.2" stroke="${RIM}" stroke-width="2.2" fill="none"/>`,
+    beret: `<ellipse cx="26.5" cy="12" rx="11" ry="5.6" transform="rotate(-9 26.5 12)" fill="${HAT}" stroke="${RIM}" stroke-width=".7"/>
+            <circle cx="33.5" cy="7.6" r="1.5" fill="${HAT}" stroke="${RIM}" stroke-width=".5"/>
+            <path d="M16.5 16.5 Q27 20.5 37.5 15.5" stroke="#0a0e14" stroke-width="2.4" fill="none"/>`,
+    pilot: `<path d="M17.5 17.5 Q17 8 27 8 Q37 8 36.5 17.5 Q31.5 20.8 27 20.8 Q22.5 20.8 17.5 17.5 Z" fill="${HAT}" stroke="${RIM}" stroke-width=".7"/>
+            <rect x="16.6" y="15" width="4.6" height="7.6" rx="2" fill="${HAT}" stroke="${RIM}" stroke-width=".5"/>
+            <rect x="32.8" y="15" width="4.6" height="7.6" rx="2" fill="${HAT}" stroke="${RIM}" stroke-width=".5"/>
+            <circle cx="23" cy="14" r="2.9" fill="rgba(160,200,235,.4)" stroke="${RIM}" stroke-width=".8"/>
+            <circle cx="31" cy="14" r="2.9" fill="rgba(160,200,235,.4)" stroke="${RIM}" stroke-width=".8"/>
+            <line x1="25.9" y1="14" x2="28.1" y2="14" stroke="${RIM}" stroke-width=".9"/>`,
+    ushanka: `<path d="M17 14.5 Q17 7 27 7 Q37 7 37 14.5 Z" fill="${HAT}" stroke="${RIM}" stroke-width=".8"/>
+            <rect x="15.8" y="13.2" width="5.4" height="9" rx="2.2" fill="${HAT}" stroke="${RIM}" stroke-width=".5"/>
+            <rect x="32.8" y="13.2" width="5.4" height="9" rx="2.2" fill="${HAT}" stroke="${RIM}" stroke-width=".5"/>
+            <path d="M17 14.5 Q27 18.6 37 14.5 L37 17 L17 17 Z" fill="${HAT}"/>`,
+    bush: `<path d="M16.8 17.2 Q27 8.6 37.2 17.2 L37.2 20 L16.8 20 Z" fill="${HAT}" stroke="${RIM}" stroke-width=".7"/>
+           <path d="M19.5 13.4 Q27 9 34.5 13.4" stroke="#0a0e14" stroke-width="1.6" fill="none"/>`,
+  };
+  let acc = '';
+  if (f.acc === 'goggles') acc = `<circle cx="22.8" cy="11.6" r="2.7" fill="rgba(160,200,235,.4)" stroke="${RIM}" stroke-width=".8"/>
+    <circle cx="31.2" cy="11.6" r="2.7" fill="rgba(160,200,235,.4)" stroke="${RIM}" stroke-width=".8"/>
+    <line x1="25.5" y1="11.6" x2="28.5" y2="11.6" stroke="${RIM}" stroke-width=".9"/>`;
+  if (f.acc === 'star') acc = `<path d="M27 8.2 l1.06 2.16 2.39.34-1.73 1.68.41 2.37-2.13-1.12-2.13 1.12.41-2.37-1.73-1.68 2.39-.34 Z"
+    fill="${gn.ct === 'su' ? '#ff6a52' : '#ffd24a'}" stroke="rgba(0,0,0,.4)" stroke-width=".4"/>`;
+  let badge = '★';
+  for (const s of gn.skills) if (s.cls) { badge = CLASSES[s.cls].glyph; break; }
+  if (badge === '★' && gn.skills.some(s => s.k === 'def' || s.k === 'counter' || s.k === 'citydef')) badge = '盾';
+  return `<svg viewBox="0 0 54 54" width="100%" height="100%" style="display:block">
+    <path d="M9 54 Q11 39 27 35.5 Q43 39 45 54 Z" fill="rgba(8,12,18,.55)"/>
+    <circle cx="27" cy="20.5" r="8.6" fill="rgba(8,12,18,.55)"/>
+    <rect x="24.4" y="27.5" width="5.2" height="4.5" fill="rgba(8,12,18,.55)"/>
+    ${hats[f.hat] || ''}${acc}
+    <text x="27" y="40" text-anchor="middle" font-size="16.5" font-weight="900" fill="#fff"
+      stroke="rgba(0,0,0,.6)" stroke-width="2.6" paint-order="stroke" font-family="inherit">${gn.name[0]}</text>
+    <circle cx="44.5" cy="44.5" r="7.6" fill="#10141a" stroke="#d8b24a99" stroke-width="1"/>
+    <text x="44.5" y="47.8" text-anchor="middle" font-size="8.5" font-weight="700" fill="#d8b24a" font-family="inherit">${badge}</text>
+  </svg>`;
+}
 function showGenerals(targetUnit) {
   const g = UI.game;
   const pool = GENERALS.filter(x => g.cf[x.ct] === g.playerFaction);
@@ -884,7 +931,7 @@ function showGenerals(targetUnit) {
         const unit = uid ? g.units.find(u => u.id === uid) : null;
         const rank = Math.min(5, 1 + Math.floor((g.genKills[gn.id] || 0) / 3));
         return `<div class="gen-row">
-          <div class="gen-portrait" style="background:${COUNTRIES[gn.ct].color}">${gn.name[0]}</div>
+          <div class="gen-portrait" style="background:${COUNTRIES[gn.ct].color}">${genPortrait(gn)}</div>
           <div class="gen-info">
             <span class="gtitle">${gn.name}</span> <span style="color:#9aa4b0">${gn.title} · ${COUNTRIES[gn.ct].name}</span>
             ${'★'.repeat(rank)}<span style="color:#666">${'★'.repeat(5 - rank)}</span>

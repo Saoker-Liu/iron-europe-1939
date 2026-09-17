@@ -58,11 +58,16 @@
 
 ```js
 { id: 'rommel', name: '隆美尔', ct: 'de', title: '沙漠之狐',
+  face: { hat: 'peak', acc: 'goggles' },   // 头像形象：大檐帽+风镜
   skills: [{ k: 'atk', cls: 'tank', m: 0.20 }, { k: 'vs', tgt: 'art', m: 0.40 }, { k: 'rage' }],
   bio: '一句到两句的史实小传，面板里直接展示。' },
 ```
 
 - `ct` 国家代号见 `js/data/nations.js`（`de`德 `su`苏 `uk`英 `us`美 `fr`法 `it`意…）
+- `face` 头像形象（`ui.js genPortrait` 渲染）：`hat` 六选一
+  （peak大檐帽 / steel钢盔 / beret贝雷帽 / pilot飞行皮帽 / ushanka苏军棉帽 / bush船形帽），
+  可选 `acc`（goggles风镜 / star将星，将星苏军红他国金）；按史实形象选择，
+  右下角技能徽记（兵种字/盾/★）由 skills 自动推导，改技能自动同步
 - 每人 `skills` 建议 1–3 条，贴合史实"看家本领"，避免堆数值
 - 将领名册按 `cf[ct]` 归入轴心/同盟/苏联三阵营招募池
 
