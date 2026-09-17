@@ -25,7 +25,9 @@
     if (fill) fill.style.width = Math.round((done / TOTAL) * 100) + '%';
     if (label) label.textContent = stageLabel + (ratio !== undefined ? ' … ' + Math.round(ratio * 100) + '%' : ' …');
   }
-  const nextFrame = () => new Promise(res => requestAnimationFrame(() => res()));
+  // 阶段间节奏停顿：必须用 setTimeout——后台标签页的 rAF 会被浏览器暂停，
+  // 用 rAF 会卡死加载流程（真实事故：切走标签页后加载永远停在第一阶段）
+  const nextFrame = () => new Promise(res => setTimeout(res, 90));
 
   function loadScript(src) {
     return new Promise((resolve, reject) => {
