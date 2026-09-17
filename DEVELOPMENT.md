@@ -21,26 +21,49 @@
 
 ---
 
-## 2. 文件结构与职责
+## 2. 文件结构与职责（解耦架构 v2）
+
+入口 `index.html` **只含页面骨架 + 启动进度层 + 一个 script 标签**（js/loader.js）。
+数据按阶段解耦为独立文件，由 loader 顺序注入并驱动进度条：
 
 ```
 iron-europe-1939/
-├── index.html      页面骨架 + 全部 CSS（无框架）。Canvas 全屏，UI 面板均为 DOM
-├── data.js         全部静态数据（详见 §4）：地形/地图/77城/装备/16将领/事件/初始部署
-├── build_map.js    地图生成器：按经纬度锚点栅格化海岸线 → 生成 MAP_ROWS 字符串数组
-├── game.js         纯逻辑引擎，无 DOM 依赖（可在 Node 下运行）：
-│                   六边形数学、移动(Dijkstra+ZOC)、战斗、经济、AI、事件、胜负、JSON 存档
-├── ui.js           渲染与交互：地形离屏缓存层、动态层、输入、面板/模态、音效、自动存档
-├── test_logic.js   无头测试：数据校验 / 机制单测 / 3阵营×80回合 AI 模拟不变量
-├── debug_ai.js     AI 行为观察脚本（node debug_ai.js）
-├── .github/workflows/
-│   ├── deploy-pages.yml  推送 main → 自动部署 GitHub Pages（含首次 enablement）
-│   └── release.yml       推送 v* 标签 → 自动打 zip 并创建 GitHub Release
-└── DEVELOPMENT.md  本文档
+├── index.html          入口骨架 + CSS + 启动进度条（不引用任何游戏逻辑）
+├── js/
+│   ├── loader.js       分阶段加载器：按序注入脚本并更新进度条，装配后调 window.BootUI()
+│   ├── core/
+│   │   ├── hex.js          六边形数学（环境无关）：HexMath.{SQ3,key,cubeOf,hexDist}
+│   │   └── assemble.js     装配器：GameData.modules.* → 引擎所需扁平全局
+│   ├── data/               ⑥ 个数据模块，各自独立、可单独替换/扩展：
+│   │   ├── map.js          ① 陆海骨架 + 浅滩（**由 build_map.js --write 生成，勿手改**）
+│   │   ├── terrain.js      ② 地形类型定义 + 主要河流 + 地形细节（GENERATED 区段自动更新）
+│   │   ├── nations.js      ③ 26 国 + 77 城（坐标=真实经纬度）
+│   │   ├── economy.js      ④a 城市收入表 + 开局资金 + 事件收入修正
+│   │   ├── military.js     ④b 兵种/克制表/装备树/125 单位初始部署
+│   │   ├── generals.js     ⑤ 16 将领（技能+生平）
+│   │   ├── events.js       ⑥ 10 个历史事件脚本
+│   │   └── load-node.js    Node 侧一次性装配（require 全部模块后调用 assemble）
+│   ├── engine/
+│   │   └── game.js         纯逻辑引擎（无 DOM）：移动/战斗/经济/AI/事件/胜负/存档
+│   └── ui/
+│       └── ui.js           渲染与交互（地形缓存层/动态层/输入/面板/音效），
+│                           导出 window.BootUI()，由 loader 在就绪后调用
+├── build_map.js        地图生成器：`node build_map.js` 输出 MAP_ROWS（旧用途）；
+│                       `node build_map.js --write` 直接更新 js/data/map.js + terrain.js 细节
+├── test_logic.js       无头测试（经 js/data/load-node.js 装配数据）
+└── .github/workflows/  Pages 自动部署 + Release 自动打包
 ```
 
-**加载顺序**：`data.js` → `game.js` → `ui.js`（均为经典 script 标签，顶层 const/函数互相可见）。
-**逻辑与表现严格分离**：`game.js` 不引用任何 DOM，这是 `test_logic.js` 能在 Node 下跑完整战役的前提。改代码时请保持这一边界。
+**加载流水线**（loader.js 的 STAGES，也是进度条的阶段）：
+六边形地图 → 地形与河流 → 国家与城市 → 经济与军事部署 → 将领与历史事件 → 装配 → 引擎 → 界面。
+
+**数据注册约定**：每个 `js/data/*.js` 都以 IIFE 向 `GameData.modules.<名>` 挂载，
+自身不依赖其它数据文件；跨模块引用（如城市收入合并）统一在 `core/assemble.js` 完成。
+Node 侧通过 `require('js/data/load-node.js')` 得到同样的装配结果——**浏览器与 Node 走同一套 assemble**，
+引擎代码零分支。改数据 = 改对应模块文件；改地图 = `node build_map.js --write`；
+新增数据类别 = 新建 js/data/*.js + 在 loader STAGES 与 load-node.js 各加一行 + 在 assemble.js 定义如何合并。
+
+**逻辑与表现严格分离**：`engine/game.js` 不引用任何 DOM，这是 `test_logic.js` 能在 Node 下跑完整战役的前提。改代码时请保持这一边界。
 
 ---
 
@@ -78,14 +101,14 @@ iron-europe-1939/
 
 | 表 | 内容 | 备注 |
 |---|---|---|
-| `TERRAIN` | 地形：通行花费（按兵种）+ 防御加成 | `'c'` 城市格由 CITIES 自动覆盖 |
+| `TERRAIN`（terrain.js） | 地形：通行花费（按兵种）+ 防御加成 | `'c'` 城市格由 CITIES 自动覆盖 |
 | `ATK_MOD` | 兵种克制表 `ATK_MOD[攻][守]` | 步 0.65×坦、坦 1.4×炮、炮/空打人无反击… |
-| `COUNTRIES` | 26 国：颜色 + 阵营（axis/west/sov/neutral，其中中立国 19 个） | 匈牙利/罗马尼亚/意大利开局 neutral，由事件翻转 |
-| `CITIES` | 77 城：坐标=真实经纬度，`cap` 首都，`inc` 收入 | **占领首都→全国易手**是核心战略机制 |
-| `EQUIP[国家]` | 装备树，`yr` 字段控制解锁年份 | `us:` 美国装备 1942 起仅在伦敦可招 |
-| `GENERALS` | 16 将领：`skills[]` + 生平 | 技能类型见 `ui.js skillText` 的映射表 |
-| `EVENTS` | 历史事件：`t=触发回合` + `kind`（log/italy/axismin/barbarossa/usa/dday） | `turnOf(年,月)` 换算回合 |
-| `INITIAL_UNITS` | 初始部署 125 单位 | **勿占己方招募城市的格**（占格会锁招募） |
+| `COUNTRIES`（nations.js） | 26 国：颜色 + 阵营（axis/west/sov/neutral，其中中立国 19 个） | 匈牙利/罗马尼亚/意大利开局 neutral，由事件翻转 |
+| `CITIES`（nations.js） | 77 城：坐标=真实经纬度，`cap` 首都；收入在 economy.js 按 key 合并 | **占领首都→全国易手**是核心战略机制 |
+| `EQUIP`（military.js） | 装备树，`yr` 字段控制解锁年份 | `us:` 美国装备 1942 起仅在伦敦可招 |
+| `GENERALS`（generals.js） | 16 将领：`skills[]` + 生平 | 技能类型见 `ui.js skillText` 的映射表 |
+| `EVENTS`（events.js） | 历史事件：`t=触发回合` + `kind`（log/italy/axismin/barbarossa/usa/dday） | `turnOf(年,月)` 换算回合 |
+| `INITIAL_UNITS`（military.js） | 初始部署 125 单位 | **勿占己方招募城市的格**（占格会锁招募） |
 
 加新国家/城市/装备的惯例：`COUNTRIES` 加色 → `CITIES` 加城（坐标换算）→ 如需初始驻军加 `INITIAL_UNITS`。
 
