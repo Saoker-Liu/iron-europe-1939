@@ -102,6 +102,62 @@ for (let r = 0; r < H; r++) {
   if (row[0] !== '~' || row[1] !== '~') throw new Error(`row ${r} land in open Atlantic (col 0-1)`);
   out.push(str);
 }
+
+/* --write 模式：输出解耦后的 js/data/map.js（陆海骨架+浅滩）并更新 js/data/terrain.js 的地形细节 */
+if (process.argv.includes('--write')) {
+  const fs = require('fs');
+  const path = require('path');
+  const land = [], shallows = [], detail = [];
+  out.forEach((row, r) => {
+    const segs = [];
+    let c = 0;
+    while (c < row.length) {
+      if (row[c] === '~') { c++; continue; }
+      let e = c;
+      while (e + 1 < row.length && row[e + 1] !== '~') e++;
+      segs.push([c, e]); c = e + 1;
+    }
+    land.push(segs);
+    const d = [];
+    c = 0;
+    while (c < row.length) {
+      if (!'fhm'.includes(row[c])) { c++; continue; }
+      let e = c;
+      while (e + 1 < row.length && row[e + 1] === row[c]) e++;
+      d.push([c, e, row[c]]); c = e + 1;
+    }
+    detail.push(d);
+    for (let cc = 0; cc < row.length; cc++) if (row[cc] === '=') shallows.push([cc, r]);
+  });
+  const mapJs = `/* =========================================================================
+ * ① 六边形地图骨架（由 build_map.js --write 生成，勿手改）
+ * land[r]: 第 r 行的陆地区段（列号闭区间）；未列出的格为海洋
+ * shallows: 可通行海峡浅滩格（多佛尔/博斯普鲁斯/墨西拿）
+ * 地形细节(f/h/m)与河流见 terrain.js
+ * ========================================================================= */
+(function () {
+  const root = typeof window !== 'undefined' ? window : globalThis;
+  root.GameData = root.GameData || { modules: {} };
+  const land = ${JSON.stringify(land)};
+  const shallows = ${JSON.stringify(shallows)};
+  const width = ${W}, height = ${H};
+  root.GameData.modules.map = { width, height, land, shallows };
+})();
+`;
+  fs.writeFileSync(path.join(__dirname, 'js', 'data', 'map.js'), mapJs);
+  const terPath = path.join(__dirname, 'js', 'data', 'terrain.js');
+  let ter = fs.readFileSync(terPath, 'utf8');
+  const BEGIN = '/* GENERATED-DETAIL-BEGIN */';
+  const END = '/* GENERATED-DETAIL-END */';
+  const bi = ter.indexOf(BEGIN), ei = ter.indexOf(END);
+  if (bi < 0 || ei < 0) throw new Error('terrain.js 缺少 GENERATED-DETAIL 标记');
+  const inner = detail.map(d => '    [' + d.map(x => `[${x[0]},${x[1]},'${x[2]}']`).join(', ') + '],').join('\n');
+  ter = ter.slice(0, bi + BEGIN.length) + '\n' + inner + '\n    ' + ter.slice(ei);
+  fs.writeFileSync(terPath, ter);
+  console.log(`--write 完成：map.js（${land.length} 行陆海骨架，浅滩 ${shallows.length} 处）+ terrain.js 细节`);
+  process.exit(0);
+}
+
 console.log('const MAP_ROWS = [');
 for (const s of out) console.log(`  '${s}',`);
 console.log('];');

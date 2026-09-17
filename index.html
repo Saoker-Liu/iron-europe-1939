@@ -9,6 +9,20 @@
     font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #e8e4d8; }
   #cv { position: absolute; inset: 0; cursor: default; display: block; }
 
+  /* ---- 启动加载层 ---- */
+  #boot { position: absolute; inset: 0; z-index: 100; background: #10141a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; transition: opacity .5s; }
+  #boot.hidden { opacity: 0; pointer-events: none; }
+  .boot-title { font-size: 40px; font-weight: 900; letter-spacing: 10px; color: #d8b24a;
+    text-shadow: 0 2px 12px #000; }
+  .boot-sub { font-size: 13px; letter-spacing: 4px; color: #5a6a7a; margin-bottom: 18px; }
+  .boot-bar { width: 420px; max-width: 80vw; height: 8px; background: #20262e;
+    border: 1px solid #3a4757; border-radius: 4px; overflow: hidden; }
+  #boot-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #8f6a1e, #d8b24a);
+    transition: width .2s; }
+  #boot-label { font-size: 12px; color: #9aa4b0; }
+
   /* ---- 顶栏 ---- */
   #topbar { position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
     display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
@@ -134,8 +148,13 @@
 <div id="banner"></div>
 <div id="modal-root"></div>
 
-<script src="data.js"></script>
-<script src="game.js"></script>
-<script src="ui.js"></script>
+<div id="boot">
+  <div class="boot-title">钢铁欧陆 1939</div>
+  <div class="boot-sub">IRON EUROPE 1939-1945</div>
+  <div class="boot-bar"><div id="boot-fill"></div></div>
+  <div id="boot-label">正在初始化…</div>
+</div>
+
+<script src="js/loader.js"></script>
 </body>
 </html>

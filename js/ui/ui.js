@@ -71,7 +71,7 @@ const UI = {
 };
 const cv = document.getElementById('cv');
 const cx = cv.getContext('2d');
-const SQ3 = Math.sqrt(3);
+const SQ3 = HexMath.SQ3;
 const BASE_S = 36;
 
 function S() { return BASE_S * UI.cam.z; }
@@ -175,6 +175,20 @@ function rebuildTerrain(g, z) {
     hexPathInto(tp, s2 * SQ3 * (c + 0.5 * (r & 1)), s2 * 1.5 * r, s2 * 0.985);
   }
   for (const [f, path] of terrPaths) { c2.fillStyle = FACTION_COLOR[f] + '2e'; c2.fill(path); }
+  // 河流（装饰层：蓝色折线，压在领土染色上、城市之下）
+  if ((RIVERS || []).length) {
+    c2.strokeStyle = 'rgba(70,120,200,.55)';
+    c2.lineWidth = Math.max(1, s2 * 0.10);
+    c2.lineJoin = 'round'; c2.lineCap = 'round';
+    for (const river of RIVERS) {
+      c2.beginPath();
+      river.path.forEach(([c, r], i) => {
+        const x = s2 * SQ3 * (c + 0.5 * (r & 1)), y = s2 * 1.5 * r;
+        i ? c2.lineTo(x, y) : c2.moveTo(x, y);
+      });
+      c2.stroke();
+    }
+  }
   c2.strokeStyle = 'rgba(255,255,255,.5)'; c2.lineWidth = 1.5;
   for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
     if (g.tile(c, r) !== '=') continue;
@@ -978,7 +992,9 @@ function autoSave() {
   try { localStorage.setItem(SAVE_KEY, UI.game.serialize()); return true; } catch (e) { return false; }
 }
 
-/* ---- 启动 ---- */
-hexDist; // 引用 game.js 的距离函数（同页面全局）
-requestAnimationFrame(render);
-showStart();
+/* ---- 启动（由 js/loader.js 在全部模块加载完成后调用）---- */
+window.BootUI = function () {
+  resize();
+  requestAnimationFrame(render);
+  showStart();
+};

@@ -1,27 +1,18 @@
 /* =========================================================================
- * 《钢铁欧陆 1939》 game.js —— 核心引擎（无 DOM 依赖，可在 Node 下无头测试）
+ * 《钢铁欧陆 1939》 js/engine/game.js —— 核心引擎（无 DOM 依赖，可在 Node 下无头测试）
  * 六边形移动(迪杰斯特拉+ZOC) / 战斗结算 / 城市经济 / AI / 历史事件 / 存档
+ * 依赖：js/core/hex.js 与 js/data/* 各数据模块（由 loader / js/data/load-node.js 预先装配）
  * ========================================================================= */
 'use strict';
 
-/* 由 data.js 提供: CLASSES TERRAIN ATK_MOD FACTION_NAME FACTION_COLOR
- * COUNTRIES MAP_ROWS CITIES EQUIP GENERALS EVENTS INITIAL_UNITS turnOf */
+/* Node 无头环境：按序加载全部数据模块并装配到 globalThis */
 if (typeof window === 'undefined' && typeof require === 'function') {
-  // Node 无头环境：装载 data.js 到全局
-  Object.assign(globalThis, require('./data.js'));
+  Object.assign(globalThis, require('../data/load-node.js'));
 }
 
-const MAP_W = 114, MAP_H = 65;
-const key = (c, r) => c + ',' + r;
+const { key, hexDist } = HexMath;
 const DIRS_EVEN = [[1, 0], [-1, 0], [0, -1], [-1, -1], [0, 1], [-1, 1]];
 const DIRS_ODD  = [[1, 0], [-1, 0], [1, -1], [0, -1], [1, 1], [0, 1]];
-
-/* 偏移坐标 -> 立方坐标，用于距离 */
-function cubeOf(c, r) { const q = c - ((r - (r & 1)) >> 1); return [q, r, -q - r]; }
-function hexDist(c1, r1, c2, r2) {
-  const a = cubeOf(c1, r1), b = cubeOf(c2, r2);
-  return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
-}
 
 class Game {
   constructor(playerFaction, difficulty) {
@@ -35,7 +26,7 @@ class Game {
     this.aiMult = DMULT[this.difficulty] || DMULT.normal;
     this.turn = 0;
     this.nextId = 1;
-    this.gold = { axis: 120, west: 120, sov: 120 };
+    this.gold = Object.assign({}, START_GOLD);
     this.westBonus = 0;          // 美国参战后同盟国收入加成
     this.usaIn = false;
     this.wars = new Set(['axis|west']);
@@ -54,7 +45,7 @@ class Game {
       const row = (MAP_ROWS[r] || '').padEnd(MAP_W, '~');
       for (let c = 0; c < MAP_W; c++) this.terr[key(c, r)] = row[c];
     }
-    this.cities = CITIES.map(ci => ({ ...ci, owner: this.cf[ci.ct] }));
+    this.cities = CITIES.map(ci => ({ ...ci, owner: this.cf[ci.ct], inc: (ECONOMY.income && ECONOMY.income[ci.k]) || 0 }));
     for (const ci of this.cities) this.terr[key(ci.x, ci.y)] = 'c';
     this.cityByKey = {}; for (const ci of this.cities) this.cityByKey[ci.k] = ci;
     this.terrDirty = true; this._terrCache = null;
@@ -360,7 +351,7 @@ class Game {
   }
   factionIncome(f) {
     let base = this.cities.filter(ci => ci.owner === f).reduce((s, ci) => s + ci.inc, 0);
-    if (f === 'west' && this.usaIn) base += 40;
+    if (f === 'west' && this.usaIn) base += ECONOMY.usaIncomeBonus;
     if (f !== this.playerFaction) base = Math.round(base * this.aiMult.inc);
     return base;
   }

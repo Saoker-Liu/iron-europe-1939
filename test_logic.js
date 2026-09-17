@@ -3,8 +3,8 @@
  * 2) 三种玩家阵营 × 80 回合 AI 模拟，断言不变量
  */
 'use strict';
-const D = require('./data.js');
-const { Game, hexDist, key, MAP_W, MAP_H } = require('./game.js');
+const D = require('./js/data/load-node.js');
+const { Game, hexDist, key, MAP_W, MAP_H } = require('./js/engine/game.js');
 
 let fails = 0;
 function assert(cond, msg) {
