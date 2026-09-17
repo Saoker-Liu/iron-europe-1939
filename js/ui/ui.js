@@ -720,10 +720,13 @@ function showUnitPanel(u) {
       <span>兵力 <b>${u.hp}/100</b></span><span>老练 <b>+${u.vet * 8}%</b></span>
     </div>
     ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">已驻防：防御+30%，移动/攻击后解除</div>' : ''}
-    ${gen ? `<div class="gen-chip">
-      <span class="gname">🎖 ${gen.name}</span> <span style="color:#9aa4b0">${gen.title} · ${'★'.repeat(rank)}级 · 击杀${g.genKills[gen.id] || 0}</span>
-      <div class="skill-list">${skills}</div>
-      <div class="gbio">${gen.bio}</div>
+    ${gen ? `<div class="gen-chip" style="display:flex;gap:8px;align-items:flex-start">
+      <div class="gen-portrait" style="background:${COUNTRIES[gen.ct].color};width:40px;height:40px;flex-shrink:0">${genPortrait(gen)}</div>
+      <div style="flex:1;min-width:0">
+        <span class="gname">🎖 ${gen.name}</span> <span style="color:#9aa4b0">${gen.title} · ${'★'.repeat(rank)}级 · 击杀${g.genKills[gen.id] || 0}</span>
+        <div class="skill-list">${skills}</div>
+        <div class="gbio">${gen.bio}</div>
+      </div>
     </div>` : ''}
     ${my ? `<div class="row-btns">
       ${idle && !u.attacked ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
@@ -925,7 +928,7 @@ function showGenerals(targetUnit) {
   openModal(`
     <div class="modal" style="max-width:720px">
       <h1><span class="zh">🎖 将领名册</span></h1>
-      <div class="sub">${FACTION_NAME[g.playerFaction]}阵营 · ${targetUnit ? `指派至：${targetUnit.eq.n}（${targetUnit.c},${targetUnit.r}）` : '在部队面板中点击"将领"可指派'} · 击杀3次晋升一阶（每阶攻防+4%）</div>
+      <div class="sub">${FACTION_NAME[g.playerFaction]}阵营 · ${targetUnit ? `指派至：${targetUnit.eq.n}（${targetUnit.c},${targetUnit.r}）` : '在部队面板中点击"将领"可指派'} · 击杀3次晋升一阶（每阶攻防+4%） · 头像右下徽记＝兵种亲和（步/炮/坦/轰 · 盾＝防御系 · ★＝指挥系）</div>
       ${pool.map(gn => {
         const uid = g.genUnit[gn.id];
         const unit = uid ? g.units.find(u => u.id === uid) : null;

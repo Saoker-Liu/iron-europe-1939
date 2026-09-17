@@ -53,7 +53,7 @@
         bio: '从战俘营走出的元帅，斯大林格勒合围战与"巴格拉季昂"行动的白俄罗斯方面军司令。' },
       { id: 'konev', name: '科涅夫', ct: 'su', title: '炮兵元帅',
         face: {'hat':'ushanka'},
-        skills: [{ k: 'atk', cls: 'art', m: 0.25 }],
+        skills: [{ k: 'atk', cls: 'art', m: 0.25 }, { k: 'vs', tgt: 'inf', m: 0.25 }],
         bio: '以炮兵火力运用著称的方面军司令，库尔斯克、维斯瓦-奥得河攻势与柏林战役的主力指挥官。' },
       { id: 'chuikov', name: '崔可夫', ct: 'su', title: '城市战之神',
         face: {'hat':'steel'},
@@ -113,7 +113,7 @@
       // ---- 波兰 ----
       { id: 'bor', name: '博尔-科莫罗夫斯基', ct: 'pl', title: '华沙起义领袖',
         face: {'hat':'bush'},
-        skills: [{ k: 'citydef', m: 0.50 }, { k: 'counter', m: 0.30 }],
+        skills: [{ k: 'citydef', m: 0.50 }, { k: 'def', cls: 'inf', m: 0.20 }],
         bio: '波兰家乡军总司令，1944 年 8 月率华沙军民举事抗德，坚守 63 天；虽败犹荣，家乡军的抵抗之火燃遍波兰全境。' },
     ],
   };
