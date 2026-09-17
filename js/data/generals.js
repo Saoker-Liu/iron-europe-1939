@@ -49,7 +49,7 @@
         bio: '1941 年姆岑斯克以第4坦克旅伏击古德里安的装甲集群，开创坦克伏击战法；后任近卫坦克第1集团军司令，转战库尔斯克直至柏林。' },
       // ---- 西方同盟国 ----
       { id: 'montgomery', name: '蒙哥马利', ct: 'uk', title: '谨慎的猎手',
-        skills: [{ k: 'def', m: 0.25 }, { k: 'counter', m: 0.30 }],
+        skills: [{ k: 'def', m: 0.25 }, { k: 'counter', m: 0.30 }, { k: 'vs', tgt: 'air', m: 0.30 }],
         bio: '阿拉曼战役的胜利者，第8集团军统帅；以周密准备和谨慎推进著称，"先胜后战"的信徒。' },
       { id: 'patton', name: '巴顿', ct: 'us', title: '血胆将军',
         skills: [{ k: 'atk', cls: 'tank', m: 0.30 }, { k: 'mov', cls: 'tank', n: 1 }],
@@ -71,10 +71,10 @@
         bio: '乍得纵队横穿撒哈拉会师突尼斯，率自由法国第2装甲师于 1944 年 8 月解放巴黎，随后一路直插贝希特斯加登。' },
       // ---- 意大利 ----
       { id: 'messe', name: '梅塞', ct: 'it', title: '远征军司令',
-        skills: [{ k: 'atk', cls: 'tank', m: 0.15 }],
+        skills: [{ k: 'atk', cls: 'tank', m: 0.15 }, { k: 'def', m: 0.10 }],
         bio: '意大利驻俄远征军(CSIR)与突尼斯第1集团军指挥官，意军中最清醒的职业军人。' },
       { id: 'balbo', name: '巴尔博', ct: 'it', title: '空军先驱',
-        skills: [{ k: 'atk', cls: 'air', m: 0.20 }],
+        skills: [{ k: 'atk', cls: 'air', m: 0.20 }, { k: 'mov', cls: 'air', n: 1 }],
         bio: '意大利空军元帅、跨大西洋编队飞行先驱，利比亚总督。' },
     ],
   };
