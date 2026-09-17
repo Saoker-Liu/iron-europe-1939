@@ -47,6 +47,9 @@
       { id: 'katukov', name: '卡图科夫', ct: 'su', title: '伏击大师',
         skills: [{ k: 'def', cls: 'tank', m: 0.20 }, { k: 'vs', tgt: 'tank', m: 0.30 }],
         bio: '1941 年姆岑斯克以第4坦克旅伏击古德里安的装甲集群，开创坦克伏击战法；后任近卫坦克第1集团军司令，转战库尔斯克直至柏林。' },
+      { id: 'govorov', name: '戈沃罗夫', ct: 'su', title: '炮兵学者',
+        skills: [{ k: 'citydef', m: 0.30 }, { k: 'atk', cls: 'art', m: 0.20 }],
+        bio: '炮兵教官出身的方面军司令，1943 年"火花"行动以炮火准备突破列宁格勒封锁，两年后率北方方面军收复波罗的海沿岸。' },
       // ---- 西方同盟国 ----
       { id: 'montgomery', name: '蒙哥马利', ct: 'uk', title: '谨慎的猎手',
         skills: [{ k: 'def', m: 0.25 }, { k: 'counter', m: 0.30 }, { k: 'vs', tgt: 'air', m: 0.30 }],
@@ -69,6 +72,10 @@
       { id: 'leclerc', name: '勒克莱尔', ct: 'fr', title: '自由法国铁骑',
         skills: [{ k: 'atk', cls: 'tank', m: 0.20 }, { k: 'mov', cls: 'tank', n: 1 }],
         bio: '乍得纵队横穿撒哈拉会师突尼斯，率自由法国第2装甲师于 1944 年 8 月解放巴黎，随后一路直插贝希特斯加登。' },
+      // aura 实际倍率由引擎写死 +10%，m:0.10 仅为让显示与实际一致（见 docs/skill-design.md 1.3 陷阱清单）
+      { id: 'tedder', name: '特德', ct: 'uk', title: '盟军副统帅',
+        skills: [{ k: 'atk', cls: 'air', m: 0.20 }, { k: 'aura', m: 0.10 }],
+        bio: '地中海盟军空军总司令，以"轰炸机战线"绞杀德军补给线；后任艾森豪威尔的副统帅，把空地协同做成了诺曼底的胜负手。' },
       // ---- 意大利 ----
       { id: 'messe', name: '梅塞', ct: 'it', title: '远征军司令',
         skills: [{ k: 'atk', cls: 'tank', m: 0.15 }, { k: 'def', m: 0.10 }],
@@ -76,6 +83,10 @@
       { id: 'balbo', name: '巴尔博', ct: 'it', title: '空军先驱',
         skills: [{ k: 'atk', cls: 'air', m: 0.20 }, { k: 'mov', cls: 'air', n: 1 }],
         bio: '意大利空军元帅、跨大西洋编队飞行先驱，利比亚总督。' },
+      // ---- 波兰 ----
+      { id: 'bor', name: '博尔-科莫罗夫斯基', ct: 'pl', title: '华沙起义领袖',
+        skills: [{ k: 'citydef', m: 0.50 }, { k: 'counter', m: 0.30 }],
+        bio: '波兰家乡军总司令，1944 年 8 月率华沙军民举事抗德，坚守 63 天；虽败犹荣，家乡军的抵抗之火燃遍波兰全境。' },
     ],
   };
 })();
