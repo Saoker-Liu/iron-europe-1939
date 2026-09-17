@@ -28,6 +28,9 @@
       { id: 'kesselring', name: '凯塞林', ct: 'de', title: '空军元帅',
         skills: [{ k: 'atk', cls: 'air', m: 0.25 }, { k: 'def', cls: 'air', m: 0.30 }],
         bio: '波兰与法兰西战役的空中支援组织者，后任地中海战区总司令，构筑了古斯塔夫防线。' },
+      { id: 'rundstedt', name: '龙德施泰特', ct: 'de', title: '西线老帅',
+        skills: [{ k: 'def', m: 0.20 }, { k: 'citydef', m: 0.25 }],
+        bio: '德军资历最深的陆军元帅，历任东线南方集团军群与西线总司令，1944 年坐镇阿登反攻幕后，两度被解职又两度起用。' },
       // ---- 苏联 ----
       { id: 'zhukov', name: '朱可夫', ct: 'su', title: '胜利元帅',
         skills: [{ k: 'atk', m: 0.20 }, { k: 'def', m: 0.20 }],
@@ -41,6 +44,9 @@
       { id: 'chuikov', name: '崔可夫', ct: 'su', title: '城市战之神',
         skills: [{ k: 'citydef', m: 0.50 }, { k: 'counter', m: 0.30 }, { k: 'def', cls: 'inf', m: 0.20 }],
         bio: '斯大林格勒第62集团军司令，"贴身紧逼"战术让德军炮火优势失效，后直捣柏林市中心。' },
+      { id: 'katukov', name: '卡图科夫', ct: 'su', title: '伏击大师',
+        skills: [{ k: 'def', cls: 'tank', m: 0.20 }, { k: 'vs', tgt: 'tank', m: 0.30 }],
+        bio: '1941 年姆岑斯克以第4坦克旅伏击古德里安的装甲集群，开创坦克伏击战法；后任近卫坦克第1集团军司令，转战库尔斯克直至柏林。' },
       // ---- 西方同盟国 ----
       { id: 'montgomery', name: '蒙哥马利', ct: 'uk', title: '谨慎的猎手',
         skills: [{ k: 'def', m: 0.25 }, { k: 'counter', m: 0.30 }],
@@ -57,6 +63,12 @@
       { id: 'alexander', name: '亚历山大', ct: 'uk', title: '地中海统帅',
         skills: [{ k: 'atk', cls: 'inf', m: 0.15 }, { k: 'def', m: 0.15 }],
         bio: '敦刻尔克断后军长、地中海战区英军总司令，突尼斯与意大利战役的收束者。' },
+      { id: 'bradley', name: '布莱德雷', ct: 'us', title: 'GI将军',
+        skills: [{ k: 'atk', cls: 'inf', m: 0.20 }, { k: 'mov', cls: 'inf', n: 1 }],
+        bio: '北非与西西里磨砺出的军长，诺曼底后率第12集团军群横扫法国，"眼镜蛇"行动撕开德军防线，被誉为"大兵的将军"。' },
+      { id: 'leclerc', name: '勒克莱尔', ct: 'fr', title: '自由法国铁骑',
+        skills: [{ k: 'atk', cls: 'tank', m: 0.20 }, { k: 'mov', cls: 'tank', n: 1 }],
+        bio: '乍得纵队横穿撒哈拉会师突尼斯，率自由法国第2装甲师于 1944 年 8 月解放巴黎，随后一路直插贝希特斯加登。' },
       // ---- 意大利 ----
       { id: 'messe', name: '梅塞', ct: 'it', title: '远征军司令',
         skills: [{ k: 'atk', cls: 'tank', m: 0.15 }],
