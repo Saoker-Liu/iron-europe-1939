@@ -62,7 +62,7 @@
       { k: 'lyon',     n: '里昂',     x: 34, y: 42, ct: 'fr' },
       { k: 'marseille',n: '马赛',     x: 35, y: 46, ct: 'fr' },
       // 德国（含 1937 年版图：奥地利/波希米亚/西里西亚/东普鲁士）
-      { k: 'berlin',   n: '柏林',     x: 27, y: 28, ct: 'de', cap: true },
+      { k: 'berlin',   n: '柏林',     x: 51, y: 28, ct: 'de', cap: true },
       { k: 'hamburg',  n: '汉堡',     x: 44, y: 26, ct: 'de' },
       { k: 'stettin',  n: '斯德丁',   x: 53, y: 26, ct: 'de' },
       { k: 'cologne',  n: '科隆',     x: 38, y: 31, ct: 'de' },
@@ -90,7 +90,7 @@
       { k: 'leningrad',n: '列宁格勒', x: 85, y: 13, ct: 'su' },
       { k: 'gorky',    n: '高尔基',   x: 112, y: 20, ct: 'su' },
       { k: 'minsk',    n: '明斯克',   x: 79, y: 25, ct: 'su' },
-      { k: 'smolensk', n: '斯摩棱斯克', x: 88, y: 25, ct: 'su' },
+      { k: 'smolensk', n: '斯摩棱斯克', x: 88, y: 23, ct: 'su' },
       { k: 'kiev',     n: '基辅',     x: 85, y: 32, ct: 'su' },
       { k: 'odessa',   n: '敖德萨',   x: 85, y: 40, ct: 'su' },
       { k: 'sevast',   n: '塞瓦斯托波尔', x: 91, y: 44, ct: 'su' },
