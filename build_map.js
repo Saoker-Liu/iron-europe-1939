@@ -147,7 +147,7 @@ if (process.argv.includes('--write')) {
   const root = typeof window !== 'undefined' ? window : globalThis;
   root.GameData = root.GameData || { modules: {} };
   const land = ${JSON.stringify(land)};
-  const shallows = ${JSON.stringify(shallows)};
+  const shallows = ${JSON.stringify([...shallows, [98, 44]])};
   const width = ${W}, height = ${H};
   root.GameData.modules.map = { width, height, land, shallows };
 })();
