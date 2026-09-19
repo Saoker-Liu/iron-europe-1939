@@ -20,5 +20,5 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" "iron-europe-1939-${GITHUB_REF_NAME}.zip" \
             --title "钢铁欧陆 1939 ${GITHUB_REF_NAME}" \
-            --notes "解压后双击 index.html 即可离线游玩；在线试玩：https://saoker-liu.github.io/iron-europe-1939/" \
+            --notes "解压后双击 index.html 即可离线游玩；本仓库 Pages 启用并部署成功后的地址：https://ttdnx2999-cmd.github.io/test_collab/" \
             --generate-notes

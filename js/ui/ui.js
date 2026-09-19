@@ -55,7 +55,7 @@ const SFX = (() => {
 })();
 
 /* ============================ 全局 UI 状态 ============================ */
-const SAVE_KEY = 'iron-europe-1939-save';
+const SAVE_KEY = 'iron-europe-1939-geographic-v4-save';
 const UI = {
   game: null,
   sel: null,            // 选中的己方单位
@@ -68,6 +68,8 @@ const UI = {
   moveAnim: null,       // {unit, path, t0}
   pendingAttack: null,
   nextIdx: 0,
+  political: true,
+  showUnits: true,
 };
 const cv = document.getElementById('cv');
 const cx = cv.getContext('2d');
@@ -127,13 +129,13 @@ function hexPathInto(path, x, y, s) {
 }
 
 /* ============================ 地形缓存层 ============================
- * 把地形/领土染色/浅滩/城市画进世界坐标离屏画布，每帧仅一次 drawImage。
+ * 把地形/领土染色/河流/城市画进世界坐标离屏画布，每帧仅一次 drawImage。
  * 失效条件：城市易手、季节切换（立即重建）；缩放变化（防抖重建）。
  * =================================================================== */
 const terrainCache = { cv: document.createElement('canvas'), scale: 0, wx: 0, wy: 0, key: '', pend: 0 };
 
 function terrainKey(g) {
-  let k = g.isWinter() ? 'w' : 's';
+  let k = (g.isWinter() ? 'w' : 's') + (UI.political ? 'p' : 't');
   for (const ci of g.cities) k += ci.owner[0];
   return k;
 }
@@ -167,15 +169,37 @@ function rebuildTerrain(g, z) {
   const terrPaths = new Map();
   for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
     const t = g.tile(c, r);
-    if (!t || t === '~' || t === '=') continue;
+    if (!t || !g.landPassable(c, r)) continue;
+    const ct = g.homeCountryOf(c, r);
     const owner = g.territoryOwner(c, r);
-    if (!owner || owner === 'neutral') continue;
-    let tp = terrPaths.get(owner);
-    if (!tp) { tp = new Path2D(); terrPaths.set(owner, tp); }
+    if (!owner || !ct) continue;
+    const col = UI.political ? COUNTRIES[ct].color : (FACTION_COLOR[owner] || '#888888');
+    let tp = terrPaths.get(col);
+    if (!tp) { tp = new Path2D(); terrPaths.set(col, tp); }
     hexPathInto(tp, s2 * SQ3 * (c + 0.5 * (r & 1)), s2 * 1.5 * r, s2 * 0.985);
   }
-  for (const [f, path] of terrPaths) { c2.fillStyle = FACTION_COLOR[f] + '2e'; c2.fill(path); }
-  // 河流（装饰层：蓝色折线，压在领土染色上、城市之下）
+  for (const [col, path] of terrPaths) { c2.fillStyle = col + (UI.political ? 'c9' : '25'); c2.fill(path); }
+  // Borders are fixed to the historical country layer; occupation is shown by flags.
+  const pix = (c, r) => [s2 * SQ3 * (c + .5 * (r & 1)), s2 * 1.5 * r];
+  function edge(a, b, color, width) {
+    const p = pix(...a), q = pix(...b), dx = q[0] - p[0], dy = q[1] - p[1], len = Math.hypot(dx, dy);
+    const x = (p[0] + q[0]) / 2, y = (p[1] + q[1]) / 2;
+    c2.strokeStyle = color; c2.lineWidth = width; c2.beginPath();
+    c2.moveTo(x - dy / len * s2 / 2, y + dx / len * s2 / 2);
+    c2.lineTo(x + dy / len * s2 / 2, y - dx / len * s2 / 2); c2.stroke();
+  }
+  for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
+    if (!g.landPassable(c, r)) continue;
+    for (const p of g.neighbors(c, r)) {
+      if (!g.landPassable(...p)) edge([c, r], p, '#abc2c7', Math.max(.5, s2 * .055));
+      else if (r * MAP_W + c < p[1] * MAP_W + p[0] && g.homeCountryOf(c, r) !== g.homeCountryOf(...p)) edge([c, r], p, '#263039', Math.max(.8, s2 * .055));
+    }
+  }
+  for (const k of MAP_META.blockedEdges) {
+    const [a, b] = k.split('|').map(v => v.split(',').map(Number));
+    edge(a, b, '#68a9d2', Math.max(2, s2 * .17));
+  }
+  // 河流图层；跨河消耗由引擎中的河流边处理。
   if ((RIVERS || []).length) {
     c2.strokeStyle = 'rgba(70,120,200,.55)';
     c2.lineWidth = Math.max(1, s2 * 0.10);
@@ -183,22 +207,32 @@ function rebuildTerrain(g, z) {
     for (const river of RIVERS) {
       c2.beginPath();
       river.path.forEach(([c, r], i) => {
-        const x = s2 * SQ3 * (c + 0.5 * (r & 1)), y = s2 * 1.5 * r;
+        const x = s2 * SQ3 * (c + (river.geographic ? 0 : 0.5 * (r & 1))), y = s2 * 1.5 * r;
         i ? c2.lineTo(x, y) : c2.moveTo(x, y);
       });
       c2.stroke();
     }
   }
-  c2.strokeStyle = 'rgba(255,255,255,.5)'; c2.lineWidth = 1.5;
-  for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
-    if (g.tile(c, r) !== '=') continue;
-    const x = s2 * SQ3 * (c + 0.5 * (r & 1)), y = s2 * 1.5 * r;
-    c2.beginPath();
-    for (let i = -1; i <= 1; i++) {
-      c2.moveTo(x - s2 * 0.5, y + i * s2 * 0.3);
-      c2.quadraticCurveTo(x, y + i * s2 * 0.3 - 4, x + s2 * 0.5, y + i * s2 * 0.3);
+  c2.strokeStyle = '#85b5d999'; c2.lineWidth = Math.max(.6, s2 * .04); c2.setLineDash([s2 * .35, s2 * .25]);
+  for (const route of MAP_META.routes) {
+    const a = pix(...route.a), b = pix(...route.b);
+    c2.beginPath(); c2.moveTo(...a); c2.lineTo(...b); c2.stroke();
+  }
+  c2.setLineDash([]);
+  c2.textAlign = 'center'; c2.fillStyle = '#b9d2df'; c2.font = `${Math.max(10, s2 * .5)}px "Microsoft YaHei",sans-serif`;
+  for (const label of MAP_META.labels) {
+    c2.fillStyle = label.kind === 'region' ? '#ead6a4' : '#b9d2df';
+    c2.fillText(label.name, s2 * SQ3 * label.grid[0], s2 * 1.5 * label.grid[1]);
+  }
+  if (UI.political) {
+    const labelPoints = {de:[10,51.5],uk:[-3.4,54.2],fr:[2,46.7],es:[-3.2,39.6],pt:[-8,39.5],it:[12,43],su:[42,58],pl:[21.5,52.3],se:[16,63],no:[8,62],fi:[27,64],ro:[25,46],hu:[19,47],yu:[19,44],gr:[22,39],tr:[33,39],ie:[-8,53],dk:[9.2,56.3],ee:[25.5,58.6],lv:[25,57],lt:[23.7,55.5],bg:[25,42.5],is:[-19,65]};
+    c2.font = `600 ${Math.max(10, s2 * .6)}px "Microsoft YaHei",sans-serif`;
+    for (const [ct, p] of Object.entries(labelPoints)) {
+      const [x, y] = Geography.geoToGrid(...p);
+      const label = COUNTRIES[ct].short || COUNTRIES[ct].name;
+      c2.strokeStyle = '#17232add'; c2.lineWidth = 3; c2.strokeText(label, x * s2 * SQ3, y * s2 * 1.5);
+      c2.fillStyle = '#faf1d7'; c2.fillText(label, x * s2 * SQ3, y * s2 * 1.5);
     }
-    c2.stroke();
   }
   drawCities(c2, g, s2);
 }
@@ -225,7 +259,7 @@ function drawCities(c2, g, s2) {
       c2.font = `900 ${Math.max(9, s2 * 0.34)}px sans-serif`;
       c2.fillText('★', x - s2 * 0.28, y - s2 * 0.28);
     }
-    if (s2 > 15) {
+    if (s2 > 15 || ((ci.cap || ci.major) && s2 > 8)) {
       c2.font = `600 ${Math.max(9, s2 * 0.26)}px "Microsoft YaHei",sans-serif`;
       c2.fillStyle = 'rgba(0,0,0,.55)';
       c2.fillText(ci.n, x + 1, y + s2 * 0.78 + 1);
@@ -293,6 +327,7 @@ function render(now) {
   const uM = s * 2;
   const simple = s < 11;
   for (const u of g.units) {
+    if (!UI.showUnits) continue;
     const isSel = u === UI.sel;
     let [x, y] = hexToPix(u.c, u.r);
     const animating = UI.moveAnim && UI.moveAnim.unit === u;
@@ -443,7 +478,7 @@ cv.addEventListener('wheel', e => {
   e.preventDefault();
   const old = S();
   const [wx, wy] = screenToWorld(e.clientX, e.clientY);
-  UI.cam.z = Math.min(2.2, Math.max(0.18, UI.cam.z * (e.deltaY < 0 ? 1.12 : 0.89)));
+  UI.cam.z = Math.min(2.2, Math.max(0.07, UI.cam.z * (e.deltaY < 0 ? 1.12 : 0.89)));
   const ns = S();
   UI.cam.x = e.clientX - wx * (ns / old);
   UI.cam.y = e.clientY - wy * (ns / old);
@@ -484,8 +519,8 @@ function handleClick(sx, sy) {
   if (u && g.unitFaction(u) === myF) { select(u); return; }
   // 4) 查看敌人
   if (u) { UI.sel = null; UI.range = null; UI.targets.clear(); showUnitInfo(u); return; }
-  // 5) 己方空城 → 招募
-  if (city && city.owner === myF && !u) { showCityPanel(city); return; }
+  // 5) 城市信息；只有己方空城可以招募。
+  if (city) { deselect(); showCityPanel(city); return; }
   deselect(); updatePanel();
 }
 
@@ -508,6 +543,7 @@ function computeTargets() {
   const spots = [{ c: u.c, r: u.r, plan: null, score: 99 }];
   if (UI.range) for (const [k, cost] of UI.range.cost) {
     const [c, r] = k.split(',').map(Number);
+    if (u.eq.cls !== 'air' && g.ferryDestinations(u.c, u.r).some(p => p[0] === c && p[1] === r)) continue;
     spots.push({ c, r, plan: [c, r], score: g.terrainDefBonus(c, r) - cost * 0.01 });
   }
   for (const e of g.units) {
@@ -515,6 +551,7 @@ function computeTargets() {
     let chosen;                    // undefined=不可及; null=原地可攻
     let bs = -1;
     for (const sp of spots) {
+      if (u.eq.cls !== 'air' && u.eq.cls !== 'art' && g.blockedEdges.has(g.edgeKey([sp.c, sp.r], [e.c, e.r]))) continue;
       if (hexDist(sp.c, sp.r, e.c, e.r) <= rng) {
         if (sp.plan === null) { chosen = null; break; }
         if (sp.score > bs) { bs = sp.score; chosen = sp.plan; }
@@ -567,6 +604,7 @@ function doAttack(enemy) {
 }
 function execAttack(enemy) {
   const g = UI.game, u = UI.sel;
+  if (!g.targetsOf(u).includes(enemy)) return;
   UI.busy = true;
   const rec = g.attack(u, enemy);
   SFX.shot();
@@ -598,8 +636,8 @@ function nextUnit() {
 }
 function centerOn(c, r) {
   const [x, y] = [SQ3 * S() * (c + 0.5 * (r & 1)), 1.5 * S() * r];
-  UI.cam.x = cv.width / 2 - x;
-  UI.cam.y = cv.height / 2 - y;
+  UI.cam.x = Math.max(160, (innerWidth - 320) / 2) - x;
+  UI.cam.y = innerHeight / 2 - y;
 }
 
 /* ============================ 结束回合（含 AI 回放） ============================ */
@@ -664,14 +702,16 @@ function updateTooltip(sx, sy, target) {
       ⚔${u.eq.atk} 🛡${u.eq.def} 👣${g.movOf(u)}${u.eq.cls === 'art' ? ' 🎯' + g.rangeOf(u) : ''} ❤${u.hp}/100<br>
       ${u.dug ? '🔒 已驻防(+30%防御) ' : ''}${u.vet ? `老练度+${u.vet * 8}% ` : ''}${gen ? `<br>🎖 ${gen.name}（${gen.title}）` : ''}`;
   } else if (city) {
-    html = `<b>${city.n}</b>${city.cap ? ' ★首都' : ''}<br>${COUNTRIES[city.ct].name} · ${FACTION_NAME[city.owner]}控制<br>收入 ${city.inc} 金/回合<br><span style="color:#9aa4b0">占领该国首都可令其全境易手</span>`;
+    html = `<b>${city.n}</b>${city.cap ? ' ★首都' : ''}<br>${COUNTRIES[city.ct].name} · ${FACTION_NAME[city.owner]}控制<br>收入 ${city.inc} 金/回合${city.note ? '<br>' + city.note : ''}<br><span style="color:#9aa4b0">占领该国首都可令其全境易手</span>`;
   } else if (g.inMap(c, r)) {
     const t = g.tile(c, r);
     const T = TERRAIN[t];
     if (T) {
       let ex = '';
       if (t === 'c') { const ci = g.cityAt(c, r); ex = ci && ci.cap ? '（首都 防御+60%）' : ''; }
-      html = `${T.name} ${ex}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}${t === '=' ? '<br>可通行的海峡浅滩' : ''}`;
+      const ct = g.homeCountryOf(c, r);
+      const ll = Geography.hexToGeo(c, r);
+      html = `${T.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`;
     }
   }
   if (html) {
@@ -745,11 +785,13 @@ function showUnitInfo(u) { showUnitPanel(u); }
 function showCityPanel(city) {
   const g = UI.game;
   const body = document.getElementById('panel-body');
-  const roster = g.rosterFor(city);
+  const canRecruit = city.owner === g.playerFaction && !g.unitAt(city.x, city.y) && !UI.busy;
+  const roster = canRecruit ? g.rosterFor(city) : [];
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
     <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${city.inc} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
-    <div class="p-sub">新部队组建后下回合方可行动</div>
+    ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
+    <div class="p-sub">${canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
         <div><div class="s-name"><span class="ico">${UnitIcons.svg(it.eq.cls, 15)}</span>${it.eq.n}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
@@ -758,6 +800,7 @@ function showCityPanel(city) {
       </div>`).join('')}`;
   body.querySelectorAll('.shop-item').forEach(el => {
     el.onclick = () => {
+      if (UI.busy || city.owner !== g.playerFaction) return;
       const eqKey = el.dataset.eq;
       const u = g.recruit(city.k, eqKey);
       if (u) { SFX.cap(); updateTopbar(); showUnitPanel(u); }
@@ -771,6 +814,31 @@ const modalRoot = document.getElementById('modal-root');
 function modalOpen() { return modalRoot.style.display === 'flex'; }
 function openModal(html) { modalRoot.innerHTML = html; modalRoot.style.display = 'flex'; }
 function closeModal() { modalRoot.innerHTML = ''; modalRoot.style.display = 'none'; }
+function showCitySearch() {
+  const g = UI.game; if (!g || UI.busy) return;
+  openModal(`<div class="modal" style="width:680px;max-width:100%">
+    <h1>查找城市 <small style="font-size:14px;color:#9aa4b0">${g.cities.length} 座</small></h1>
+    <p class="sub">输入城市、国家或地区；点击结果定位。诺曼底可查到卡昂、瑟堡等城市。</p>
+    <input id="city-query" aria-label="搜索城市、国家或地区" placeholder="例如：热那亚、扎拉、利物浦、诺曼底" style="width:100%;padding:12px;background:#101820;color:#eee;border:1px solid #637386;border-radius:4px;font:inherit">
+    <div id="city-results" style="max-height:48vh;overflow:auto;margin:12px 0"></div>
+    <button class="btn" id="city-close">关闭</button></div>`);
+  const input = document.getElementById('city-query'), results = document.getElementById('city-results');
+  function update() {
+    const q = input.value.trim().toLowerCase();
+    const list = g.cities.filter(ci => [ci.n,ci.k,ci.region || '',ci.note || '',COUNTRIES[ci.ct].name].join(' ').toLowerCase().includes(q));
+    results.innerHTML = list.map(ci => `<button class="shop-item" style="width:100%;color:inherit;font:inherit;text-align:left" data-city="${ci.k}"><span><b>${ci.n}${ci.cap ? ' ★' : ''}</b><br><small>${COUNTRIES[ci.ct].name}${ci.region ? ' · ' + ci.region : ''}</small></span><span>定位 →</span></button>`).join('') || '<p class="p-sub">没有匹配的城市</p>';
+    results.querySelectorAll('[data-city]').forEach(el => el.onclick = () => {
+      const ci = g.cityByKey[el.dataset.city];
+      closeModal(); deselect(); UI.cam.z = 1; centerOn(ci.x, ci.y);
+      terrainCache.key = ''; showCityPanel(ci);
+      UI.anims.push({kind:'cap',c:ci.x,r:ci.y,t0:performance.now(),dur:1200});
+    });
+  }
+  input.oninput = update;
+  input.onkeydown = e => { if (e.key === 'Escape') closeModal(); };
+  document.getElementById('city-close').onclick = closeModal;
+  update(); input.focus();
+}
 function showModalAsync(html) {
   return new Promise(res => {
     openModal(html + `<div class="actions"><button class="btn primary" id="m-ok">继 续</button></div>`);
@@ -817,6 +885,7 @@ function showStart() {
         <button class="btn primary" id="m-start" style="font-size:16px;padding:10px 34px">开 始 战 役</button>
         ${hasSave ? '<button class="btn gold" id="m-continue">继续上次战役</button>' : ''}
         <button class="btn" id="m-help2">玩法说明</button>
+        <button class="btn gold" id="m-atlas">浏览1939地图</button>
       </div>
     </div>`);
   modalRoot.querySelectorAll('.fac-card').forEach(el => el.onclick = () => {
@@ -830,6 +899,11 @@ function showStart() {
     SFX.click();
   });
   document.getElementById('m-start').onclick = () => { closeModal(); startGame(fac, diff); };
+  document.getElementById('m-atlas').onclick = () => {
+    closeModal(); UI.game = new Game('axis', 'normal'); UI.showUnits = false;
+    document.getElementById('btn-units').textContent = '显示部队';
+    updateTopbar(); updatePanel(); renderLog(); fitMap();
+  };
   const c = document.getElementById('m-continue');
   if (c) c.onclick = () => {
     try {
@@ -842,6 +916,7 @@ function showStart() {
 }
 
 function startGame(fac, diff, loaded) {
+  UI.showUnits = true; document.getElementById('btn-units').textContent = '隐藏部队';
   UI.game = loaded || new Game(fac, diff);
   UI.sel = null; UI.range = null; UI.targets.clear(); UI.anims = []; UI.nextIdx = -1;
   const cap = { axis: 'berlin', west: 'london', sov: 'moscow' }[UI.game.playerFaction];
@@ -927,7 +1002,7 @@ function showHelp() {
         <tr><td>装甲</td><td>115%</td><td>140%</td><td>100%</td><td>40%</td></tr>
         <tr><td>空军</td><td>115%</td><td>130%</td><td>110%</td><td>—</td></tr></table>
         <h4>■ 地形防御加成</h4>
-        森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60% · 海峡浅滩+0%
+        森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60%。海洋与湖泊不可供陆军通行；跨河多消耗1点移动力。<br>蓝色虚线为抽象海运航线：从己方港口到空置目的地花费25金，并耗尽本回合行动。空军可飞越水面，但必须在陆地结束移动。
         <h4>■ 胜负</h4>
         <b>占领敌方首都 → 该国全境沦陷</b>（所有城市易手）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。<br>
         中立国（西班牙/瑞典/瑞士/土耳其等）可进攻，但会倒向你的敌人！
@@ -979,6 +1054,16 @@ function renderLog() {
 document.getElementById('log-head').onclick = () => document.getElementById('log-body').classList.toggle('collapsed');
 
 /* ---- 顶栏按钮 ---- */
+function fitMap() {
+  UI.cam.z = Math.max(.025, Math.min((innerWidth - 330) / (BASE_S * SQ3 * MAP_W), (innerHeight - 100) / (BASE_S * 1.5 * MAP_H)));
+  UI.cam.x = 20; UI.cam.y = 70;
+  document.getElementById('log-body').classList.add('collapsed');
+  deselect(); terrainCache.key = '';
+}
+document.getElementById('btn-atlas').onclick = () => UI.game && fitMap();
+document.getElementById('btn-cities').onclick = showCitySearch;
+document.getElementById('btn-mapmode').onclick = () => { UI.political = !UI.political; terrainCache.key = ''; };
+document.getElementById('btn-units').onclick = () => { UI.showUnits = !UI.showUnits; document.getElementById('btn-units').textContent = UI.showUnits ? '隐藏部队' : '显示部队'; };
 document.getElementById('btn-end').onclick = endTurnFlow;
 document.getElementById('btn-gen').onclick = () => UI.game && showGenerals();
 document.getElementById('btn-help').onclick = showHelp;

@@ -7,7 +7,7 @@
   'use strict';
 
   const STAGES = [
-    { label: '加载六边形地图',     files: ['js/core/hex.js', 'js/data/map.js'] },
+    { label: '加载六边形地图',     files: ['js/core/hex.js', 'js/core/geography.js', 'js/data/map.js'] },
     { label: '加载地形与河流',     files: ['js/data/terrain.js'] },
     { label: '加载国家与城市',     files: ['js/data/nations.js'] },
     { label: '加载经济与军事部署', files: ['js/data/economy.js', 'js/data/military.js'] },

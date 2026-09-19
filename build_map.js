@@ -1,171 +1,250 @@
-/* 地图生成器 v2：0.5°/格 真实欧洲海岸线 → MAP_ROWS（114×65）
- * 坐标系：col = round(lon*2) + 24  (lon: -12E..44.5E)
- *        row = round((66.5-lat)*2) (lat: 66.5N..34.5N)
- * 运行: node build_map.js  （输出粘贴/自动写入 data.js 的 MAP_ROWS）
- */
 'use strict';
-const W = 114, H = 65;
-const CH = new Set(['~', '=', '.', 'f', 'h', 'm']);
-
-// s: 海岸线分段(左→右, 闭区间列号)  p: 地形补丁(后应用)
-const R = [
-  // == 斯堪的纳维亚 + 科拉 (r0-15) ==
-  { s: [[0,49,'~'],[50,99,'f'],[100,105,'~'],[106,113,'f']], p: [[50,58,'m']] },              // 66.5N 北角/白海口
-  { s: [[0,48,'~'],[49,94,'f'],[95,104,'~'],[105,113,'f']], p: [[52,60,'m']] },
-  { s: [[0,46,'~'],[47,95,'f'],[96,103,'~'],[104,113,'f']], p: [[54,62,'m']] },
-  { s: [[0,45,'~'],[46,94,'f'],[95,103,'~'],[104,113,'f']], p: [[52,58,'m']] },
-  { s: [[0,43,'~'],[44,66,'f'],[67,69,'~'],[70,96,'f'],[97,102,'~'],[103,113,'f']], p: [[50,56,'m']] }, // 64.5N 波的尼亚湾
-  { s: [[0,41,'~'],[42,65,'f'],[66,69,'~'],[70,96,'f'],[97,101,'~'],[102,113,'f']], p: [[48,54,'m']] },
-  { s: [[0,41,'~'],[42,64,'f'],[65,67,'~'],[68,113,'f']], p: [[46,52,'m']] },                // 63.5N
-  { s: [[0,41,'~'],[42,61,'f'],[62,66,'~'],[67,113,'f']], p: [[44,50,'m']] },
-  { s: [[0,37,'~'],[38,60,'f'],[61,66,'~'],[67,113,'f']], p: [[42,48,'m']] },                // 62.5N
-  { s: [[0,35,'~'],[36,59,'f'],[60,66,'~'],[67,113,'f']], p: [[40,46,'m']] },
-  { s: [[0,33,'~'],[34,58,'f'],[59,66,'~'],[67,113,'f']], p: [[38,44,'m']] },                // 61.5N
-  { s: [[0,33,'~'],[34,58,'f'],[59,66,'~'],[67,113,'f']], p: [[36,42,'m']] },
-  { s: [[0,33,'~'],[34,61,'f'],[62,62,'~'],[63,64,'f'],[65,66,'~'],[67,113,'f']], p: [[34,40,'m']] }, // 60.5N 奥兰群岛
-  { s: [[0,33,'~'],[34,61,'f'],[62,67,'~'],[68,113,'f']] },                                  // 60N 赫尔辛基(74,13)
-  { s: [[0,35,'~'],[36,61,'f'],[62,84,'~'],[85,113,'f']] },                                  // 59.5N 斯德哥尔摩(60,14)
-  { s: [[0,35,'~'],[36,58,'f'],[59,69,'~'],[70,113,'f']] },                                  // 59N 列宁格勒(85,13)
-  // == 英格兰北部 + 丹麦海峡 + 波罗的 (r16-25) ==
-  { s: [[0,13,'~'],[14,17,'m'],[18,37,'~'],[38,42,'f'],[43,45,'~'],[46,57,'f'],[58,65,'~'],[66,113,'f']] },          // 58.5N 苏格兰北/挪威南
-  { s: [[0,12,'~'],[13,18,'f'],[19,38,'~'],[39,46,'~'],[47,57,'f'],[58,59,'~'],[60,62,'f'],[63,66,'~'],[67,113,'f']], p: [[14,15,'m']] }, // 58N 斯卡格拉克/哥特兰
-  { s: [[0,11,'~'],[12,19,'f'],[20,40,'~'],[41,45,'f'],[46,47,'~'],[48,57,'f'],[58,59,'~'],[60,62,'f'],[63,66,'~'],[67,113,'f']] }, // 57.5N 日德兰/卡tg/哥特兰
-  { s: [[0,12,'~'],[13,20,'f'],[21,39,'~'],[40,44,'f'],[45,47,'~'],[48,56,'f'],[57,59,'~'],[60,62,'f'],[63,65,'~'],[66,113,'f']], p: [[13,15,'h']] }, // 57N 里加(72,19)
-  { s: [[0,12,'~'],[13,20,'f'],[21,39,'~'],[40,44,'f'],[45,48,'~'],[49,53,'f'],[54,65,'~'],[66,113,'f']], p: [[14,16,'m']] }, // 56.5N 斯科讷
-  { s: [[0,12,'~'],[13,20,'f'],[21,39,'~'],[40,44,'f'],[45,46,'~'],[47,48,'f'],[49,50,'~'],[51,52,'f'],[53,65,'~'],[66,113,'f']], p: [[14,16,'m']] }, // 56N
-  { s: [[0,7,'~'],[8,11,'f'],[12,12,'~'],[13,21,'f'],[22,39,'~'],[40,45,'f'],[46,46,'='],[47,49,'f'],[50,50,'~'],[51,52,'f'],[53,65,'~'],[66,113,'f']], p: [[9,10,'h'],[50,22,'=']] }, // 55.5N 北爱/大贝尔特/厄勒海峡/哥本哈根(49,22)
-  { s: [[0,7,'~'],[8,11,'f'],[12,13,'~'],[14,21,'f'],[22,39,'~'],[40,43,'f'],[44,65,'~'],[66,113,'f']] }, // 55N
-  { s: [[0,7,'~'],[8,12,'f'],[13,13,'~'],[14,21,'f'],[22,39,'~'],[40,46,'f'],[47,49,'~'],[50,60,'f'],[61,63,'~'],[64,113,'f']] }, // 54.5N 但泽(60,24) 柯尼斯堡(65,24) 吕根
-  { s: [[0,3,'~'],[4,12,'f'],[13,16,'~'],[17,22,'f'],[23,44,'~'],[45,51,'f'],[52,65,'~'],[66,113,'f']] }, // 54N 爱尔兰/英吉利/德波海岸
-  // == 英格兰 + 低地 + 德国 (r26-33) ==
-  { s: [[0,3,'~'],[4,11,'f'],[12,14,'~'],[15,24,'f'],[25,40,'~'],[41,113,'f']] }, // 53.5N 都柏林(11,26) 汉堡(44,26) 斯德丁(53,26)
-  { s: [[0,3,'~'],[4,11,'f'],[12,15,'~'],[16,24,'f'],[25,33,'~'],[34,113,'f']] },            // 53N
-  { s: [[0,2,'~'],[3,11,'f'],[12,13,'~'],[14,27,'f'],[28,32,'~'],[33,113,'f']], p: [[14,14,'h']] }, // 52.5N 柏林(27,28) 阿姆斯特丹(34,28) 伯明翰(20,28)
-  { s: [[0,2,'~'],[3,11,'f'],[12,15,'~'],[16,27,'f'],[28,32,'~'],[33,113,'f']] },            // 52N 华沙(66,29) 鹿特丹(33,29)
-  { s: [[0,3,'~'],[4,8,'f'],[9,14,'~'],[15,26,'f'],[27,30,'~'],[31,113,'f']] },              // 51.5N 伦敦(24,30) 安特卫普(33,30) 爱尔兰南收窄
-  { s: [[0,14,'~'],[15,25,'f'],[26,26,'='],[27,113,'f']], p: [[30,32,'.']] },                // 51N 多佛尔浅滩 科隆(38,31) 布鲁塞尔(33,31) 布雷斯劳(58,31) 里尔(30,32)
-  { s: [[0,12,'~'],[13,25,'f'],[26,26,'~'],[27,113,'f']], p: [[33,35,'f']] },                // 50.5N 阿登森林
-  { s: [[0,12,'~'],[13,17,'f'],[18,26,'~'],[27,113,'f']], p: [[33,35,'f']] },                // 50N 康沃尔/塞纳湾
-  // == 法国 + 德国中部 (r34-41) ==
-  { s: [[0,26,'~'],[27,113,'f']], p: [[38,38,'h']] },                // 49.5N 布列塔尼/科唐坦 斯特拉斯堡(39,36)?? (r36)
-  { s: [[0,22,'~'],[23,113,'f']], p: [[38,38,'h'],[40,41,'f']] },    // 49N 巴黎(29,35)?? (r35)
-  { s: [[0,14,'~'],[15,20,'f'],[21,22,'~'],[23,113,'f']], p: [[38,38,'h'],[40,41,'f'],[50,53,'h']] }, // 48.5N 波希米亚丘陵
-  { s: [[0,14,'~'],[15,113,'f']], p: [[38,50,'m'],[70,74,'m']] },                            // 48N 阿尔卑斯北麓/北喀尔巴阡 维也纳(57,37) 慕尼黑(47,37)
-  { s: [[0,17,'~'],[18,93,'f'],[94,102,'~'],[103,113,'f']], p: [[38,50,'m'],[69,75,'m']] },  // 47.5N 亚速海
-  { s: [[0,19,'~'],[20,83,'f'],[84,101,'~'],[102,113,'f']], p: [[38,50,'m'],[69,75,'m']] },  // 47N 黑海 罗斯托夫(103,39)
-  { s: [[0,20,'~'],[21,85,'f'],[86,103,'~'],[104,113,'f']], p: [[36,52,'m'],[70,76,'m']] },  // 46.5N 敖德萨(85,40)
-  { s: [[0,20,'~'],[21,88,'f'],[89,90,'~'],[91,91,'f'],[92,103,'~'],[104,113,'f']], p: [[36,52,'m'],[70,76,'m'],[104,108,'m']] }, // 46N 彼列科普地峡连克里米亚
-  // == 波河/巴尔干/克里米亚/高加索 (r42-45) ==
-  { s: [[0,21,'~'],[22,47,'f'],[48,52,'~'],[53,81,'f'],[82,90,'~'],[91,94,'f'],[95,100,'~'],[101,113,'f']], p: [[37,38,'m'],[50,52,'m'],[69,75,'m'],[104,110,'m']] }, // 45.5N 都灵(39,43)?? (r43) 米兰(42,42) 里昂(34,42)（利古里亚海收窄防桥接）
-  { s: [[0,21,'~'],[22,46,'f'],[47,52,'~'],[53,81,'f'],[82,90,'~'],[91,95,'f'],[96,100,'~'],[101,113,'f']], p: [[69,75,'m'],[104,110,'m']] }, // 45N 克里米亚
-  { s: [[0,21,'~'],[22,30,'f'],[31,37,'~'],[38,45,'f'],[46,52,'~'],[53,81,'f'],[82,90,'~'],[91,97,'f'],[98,98,'='],[99,113,'f']], p: [[37,39,'m'],[43,45,'h'],[69,74,'m'],[104,110,'m']] }, // 44.5N 热那亚湾/塞瓦斯托波尔(91,44)
-  { s: [[0,21,'~'],[22,40,'f'],[41,43,'~'],[44,47,'f'],[48,52,'~'],[53,81,'f'],[82,90,'~'],[91,96,'f'],[97,100,'~'],[101,113,'f']], p: [[43,45,'h'],[69,74,'m'],[98,44,'='],[105,111,'m']] }, // 44N 比斯开湾/托斯卡纳
-  // == 伊比利亚 + 意大利 + 巴尔干 + 黑海 (r46-51) ==
-  { s: [[0,20,'~'],[21,37,'f'],[38,43,'~'],[44,52,'f'],[53,55,'~'],[56,80,'f'],[81,103,'~'],[104,113,'f']], p: [[21,27,'m'],[48,50,'h'],[56,58,'h'],[105,111,'m']] }, // 43.5N 比利牛斯/马赛(35,46)/迪纳拉
-  { s: [[0,18,'~'],[19,30,'f'],[31,43,'~'],[44,52,'f'],[53,55,'~'],[56,80,'f'],[81,103,'~'],[104,113,'f']], p: [[21,28,'m'],[48,51,'h'],[56,58,'h'],[72,76,'h'],[106,112,'m']] }, // 43N 巴塞罗那方向/保加利亚山地
-  { s: [[0,5,'~'],[6,30,'f'],[31,40,'~'],[41,42,'f'],[43,46,'~'],[47,52,'f'],[53,56,'~'],[57,79,'f'],[80,106,'~'],[107,113,'f']], p: [[20,27,'m'],[48,51,'m'],[57,59,'h'],[72,76,'h'],[108,112,'m']] }, // 42.5N 索菲亚(71,48) 萨格勒布?? (56,41)
-  { s: [[0,5,'~'],[6,29,'f'],[30,40,'~'],[41,42,'f'],[43,46,'~'],[47,52,'f'],[53,62,'~'],[63,79,'f'],[80,106,'~'],[107,113,'f']], p: [[49,52,'h'],[57,59,'h'],[108,112,'m']] }, // 42N 罗马(49,49) 那不勒斯(53,51)
-  { s: [[0,6,'~'],[7,30,'f'],[31,47,'~'],[48,55,'f'],[56,62,'~'],[63,71,'f'],[72,74,'~'],[75,79,'f'],[80,106,'~'],[107,113,'f']], p: [[50,53,'h']] }, // 41.5N 巴塞罗那(28,50) 波尔图(7,51)
-  { s: [[0,6,'~'],[7,26,'f'],[27,41,'~'],[42,43,'f'],[44,49,'~'],[50,56,'f'],[57,62,'~'],[63,71,'f'],[72,75,'~'],[76,82,'f'],[83,83,'='],[84,113,'f']], p: [[51,54,'h'],[64,66,'m'],[86,100,'h']] }, // 41N 伊斯坦布尔(82,51) 博斯普鲁斯
-  // == 马其顿/希腊/安纳托利亚 (r52-59) ==
-  { s: [[0,6,'~'],[7,24,'f'],[25,41,'~'],[42,43,'f'],[44,50,'~'],[51,60,'f'],[61,62,'~'],[63,70,'f'],[71,75,'~'],[76,83,'f'],[84,85,'~'],[86,113,'f']], p: [[54,56,'m'],[64,66,'m'],[88,100,'h']] }, // 40.5N 马德里(17,52) 萨洛尼卡(70,52) 马尔马拉
-  { s: [[0,6,'~'],[7,23,'f'],[24,28,'~'],[29,30,'f'],[31,41,'~'],[42,43,'f'],[44,51,'~'],[52,60,'f'],[61,62,'~'],[63,70,'f'],[71,75,'~'],[76,113,'f']], p: [[55,57,'m'],[64,66,'m'],[88,102,'h']] }, // 40N 帕特雷湾
-  { s: [[0,6,'~'],[7,23,'f'],[24,41,'~'],[42,43,'f'],[44,53,'~'],[54,58,'f'],[59,64,'~'],[65,70,'f'],[71,77,'~'],[78,113,'f']], p: [[56,58,'h'],[65,67,'m'],[90,104,'h']] }, // 39.5N 塔兰托/品都斯
-  { s: [[0,6,'~'],[7,23,'f'],[24,41,'~'],[42,43,'f'],[44,53,'~'],[54,57,'f'],[58,64,'~'],[65,70,'f'],[71,76,'~'],[77,113,'f']], p: [[55,57,'m'],[66,67,'m'],[90,104,'h']] }, // 39N
-  { s: [[0,5,'~'],[6,23,'f'],[24,54,'~'],[55,56,'f'],[57,65,'~'],[66,71,'f'],[72,77,'~'],[78,113,'f']], p: [[90,102,'h']] }, // 38.5N 希腊西/伊兹密尔(78,56)
-  { s: [[0,6,'~'],[7,23,'f'],[24,49,'~'],[50,53,'f'],[54,54,'='],[55,57,'f'],[58,65,'~'],[66,72,'f'],[73,77,'~'],[78,113,'f']], p: [[55,56,'m'],[90,102,'h']] }, // 38N 西西里(50-53) 墨西拿= 雅典(71,57)
-  { s: [[0,6,'~'],[7,22,'f'],[23,48,'~'],[49,54,'f'],[55,55,'='],[56,57,'f'],[58,66,'~'],[67,70,'f'],[71,77,'~'],[78,113,'f']], p: [[90,102,'h']] }, // 37.5N 巴勒莫(51,57) 伯罗奔尼撒
-  { s: [[0,6,'~'],[7,20,'f'],[21,48,'~'],[50,53,'f'],[54,54,'~'],[56,58,'f'],[59,66,'~'],[67,69,'f'],[70,77,'~'],[78,113,'f']], p: [[90,104,'h']] }, // 37N 塞维利亚(12,58)
-  // == 安达卢西亚/土耳其南/克里特/塞浦路斯 (r60-64) ==
-  { s: [[0,10,'~'],[11,19,'f'],[20,83,'~'],[84,113,'f']], p: [[88,92,'m']] },                // 36.5N 加的斯/托罗斯
-  { s: [[0,12,'~'],[13,20,'f'],[21,83,'~'],[84,113,'f']], p: [[86,90,'m']] },                // 36N 直布罗陀
-  { s: [[0,70,'~'],[71,76,'f'],[77,88,'~'],[89,93,'f'],[94,113,'~']] },                      // 35.5N 克里特/塞浦路斯
-  { s: [[0,70,'~'],[71,76,'f'],[77,89,'~'],[90,92,'f'],[93,113,'~']] },                      // 35N
-  { s: [[0,113,'~']] },                                                                      // 34.5N 公海
+/* Reproducible offline geography builder. See MAP_NOTES.md for provenance,
+ * snapshot date and the 45 km generalisation limit. No network needed. */
+const fs = require('fs'), path = require('path');
+const G = require('./js/core/geography.js');
+require('./js/core/hex.js'); require('./js/data/nations.js'); require('./js/data/military.js');
+const N = globalThis.GameData.modules.nations, military = globalThis.GameData.modules.military;
+const { width: W, height: H } = G.spec;
+const read = n => JSON.parse(fs.readFileSync(path.join(__dirname, 'map_sources', n + '.geojson'), 'utf8'));
+const modern = read('countries'), historic = read('countries1938');
+const countryCodes = {
+ 'Germany':'de','Austria':'de','United Kingdom':'uk','Ireland':'ie','France':'fr','Spain':'es',
+ 'Portugal':'pt','Belgium':'be','Netherlands':'nl','Luxembourg':'lu','Switzerland':'ch',
+ 'Italy':'it','Poland':'pl','Czechoslovakia':'cz','Hungary':'hu','Romania':'ro',
+ 'Yugoslavia':'yu','Albania':'al','Greece':'gr','Bulgaria':'bg','Turkey':'tr',
+ 'USSR':'su','Estonia':'ee','Latvia':'lv','Lithuania':'lt','Finland':'fi',
+ 'Sweden':'se','Norway':'no','Denmark':'dk','Iceland':'is'
+};
+function rings(geometry) { return geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.type === 'MultiPolygon' ? geometry.coordinates : []; }
+function bbox(ring) { return ring.reduce((b,p)=>[Math.min(b[0],p[0]),Math.min(b[1],p[1]),Math.max(b[2],p[0]),Math.max(b[3],p[1])],[Infinity,Infinity,-Infinity,-Infinity]); }
+function inRing([x,y], ring) {
+ let inside=false;
+ for(let i=0,j=ring.length-1;i<ring.length;j=i++) {
+  const a=ring[i],b=ring[j];
+  if((a[1]>y)!==(b[1]>y) && x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+ }
+ return inside;
+}
+function indexed(features, code) {
+ return features.flatMap(f=>rings(f.geometry).map(poly=>({poly,box:bbox(poly[0]),ct:code(f)})))
+  .filter(p=>p.box[2]>-30&&p.box[0]<65&&p.box[3]>32&&p.box[1]<74);
+}
+function hit(p, polys) { return polys.find(o=>p[0]>=o.box[0]&&p[0]<=o.box[2]&&p[1]>=o.box[1]&&p[1]<=o.box[3]&&inRing(p,o.poly[0])&&!o.poly.slice(1).some(h=>inRing(p,h))); }
+const coasts=indexed(modern.features, f=>f.properties.ADMIN);
+const borders=indexed(historic.features.filter(f=>countryCodes[f.properties.NAME]),f=>countryCodes[f.properties.NAME]);
+const czechModern=indexed(modern.features.filter(f=>f.properties.ADMIN==='Czechia'),()=> 'bm');
+const slovakModern=indexed(modern.features.filter(f=>f.properties.ADMIN==='Slovakia'),()=> 'sk');
+const austriaModern=indexed(modern.features.filter(f=>f.properties.ADMIN==='Austria'),()=> 'de');
+// Small annexations and the 1939 Czech/Slovak partition are explicitly generalised.
+// These control areas only apply inside the relevant historical country polygon.
+const slovakSouth=[[16.8,47.7],[18.8,47.7],[20.5,48.0],[22.5,48.3],[22.5,48.75],[21.2,48.8],[20.65,48.55],[20.0,48.4],[19.25,48.23],[18.7,48.2],[18.45,48.25],[17.95,48.17],[17.3,48.05],[16.8,47.7]];
+const protectorate=[[12.65,49.25],[13.0,49.65],[13.15,50.1],[13.65,50.3],[14.2,50.55],[14.8,50.65],[15.5,50.4],[16.2,50.2],[16.6,49.8],[17.35,49.6],[18.35,49.6],[18.3,49.05],[17.3,48.8],[16.3,48.8],[15.7,49.0],[15.1,48.75],[14.5,48.8],[13.8,49.0],[12.65,49.25]];
+const memel=[[20.9,55.0],[22.1,55.0],[22.45,55.3],[21.65,55.9],[21.05,55.9],[20.9,55.0]];
+const danzig=[[18.1,54.1],[18.35,54.45],[18.85,54.45],[19.45,54.35],[19.35,54.1],[18.65,53.9],[18.1,54.1]];
+function countryAt(lon,lat,modernName) {
+ const alias={'Republic of Serbia':'Serbia','Aland':'Finland','Jersey':'United Kingdom','Guernsey':'United Kingdom','Isle of Man':'United Kingdom'};
+ modernName=alias[modernName]||modernName;
+ const p=[lon,lat]; let ct=hit(p,borders)?.ct;
+ const europeanNames=new Set([...Object.keys(countryCodes),'Russia','Ukraine','Belarus','Moldova','Georgia','Armenia','Azerbaijan','Kazakhstan','Czechia','Slovakia','Croatia','Slovenia','Serbia','Bosnia and Herzegovina','Montenegro','Kosovo','North Macedonia','Cyprus','Northern Cyprus','Akrotiri Sovereign Base Area','Dhekelia Sovereign Base Area','Malta','Gibraltar','Faroe Islands']);
+ if(!europeanNames.has(modernName))return 'xx';
+ if(modernName==='Faroe Islands')return 'dk';
+ if(modernName==='Kazakhstan')return 'su';
+ // The historical world file contains stray 1920-era Aegean/Caucasus polygons.
+ // Use the stable physical/country outline here, then apply 1939 exceptions below.
+ if(modernName==='Turkey')ct='tr';
+ if(modernName==='Greece')ct='gr';
+ if(['Georgia','Armenia','Azerbaijan'].includes(modernName))ct='su';
+ if(hit(p,austriaModern))ct='de';
+ if(ct==='cz') {
+  if(hit(p,czechModern))ct=inRing(p,protectorate)?'bm':'de';
+  else if(hit(p,slovakModern))ct=inRing(p,slovakSouth)||lon>22.15?'hu':'sk';
+  else ct='hu'; // Carpathian Ruthenia, occupied by Hungary in March 1939.
+ }
+ if(ct==='lt'&&inRing(p,memel))ct='de';
+ if((ct==='de'||ct==='pl')&&inRing(p,[[17.3,53.3],[17.2,54.0],[17.7,54.45],[18.1,54.85],[18.6,54.7],[18.55,54.45],[18.1,54.1],[18.65,53.9],[18.8,53.6],[19.4,53.4],[18.6,53.05],[17.3,53.3]]))ct='pl';
+ if((ct==='de'||ct==='pl')&&inRing(p,danzig))ct='dz';
+ // Southern Dobruja remained Romanian until September 1940.
+ if(modernName==='Bulgaria'&&inRing(p,[[26.55,44.15],[27.1,43.95],[28.6,43.75],[28.65,43.4],[27.8,43.35],[27.2,43.65],[26.55,44.15]]))ct='ro';
+ // Italian Dodecanese, British Cyprus/Malta/Gibraltar. Do not inherit today's owners.
+ if(lon>26.2&&lon<29.8&&lat>35.5&&lat<37.6&&modernName==='Greece')ct='it';
+ if(modernName==='Cyprus'||modernName==='Northern Cyprus'||modernName==='Akrotiri Sovereign Base Area'||modernName==='Dhekelia Sovereign Base Area')ct='uk';
+ if(modernName==='Malta'||modernName==='Gibraltar')ct='uk';
+ if(modernName==='Iceland')ct='is';
+ if(modernName==='Russia'&&!ct)ct='su';
+ // Modern coast polygons occasionally extend beyond the coarser historical coast.
+ if(!ct) {
+  const alias={Russia:'su',Ukraine:'su',Belarus:'su',Georgia:'su',Armenia:'su',Azerbaijan:'su',Moldova:'ro',Czechia:'bm',Slovakia:'sk',Croatia:'yu',Slovenia:'yu',Serbia:'yu','Bosnia and Herzegovina':'yu',Montenegro:'yu',Kosovo:'yu','North Macedonia':'yu'};
+  ct=countryCodes[modernName]||alias[modernName]||'xx';
+ }
+ return ct;
+}
+const naturalLakeNames=/Ladoga|Onega|Peipus|Vänern|Vättern|Saimaa|Inari|Oulujärvi|Päijänne|Pielinen|Imandra|Beloye|Ilmen|Geneva|Léman|Constance|Balaton|Van$|Beyşehir|Tuz|Prespa|Ohrid|Scutari/i;
+const lakes=indexed(read('lakes').features.filter(f=>naturalLakeNames.test(f.properties.name||'')),()=>null);
+const mountains=[
+ ['斯堪的纳维亚山脉',65,[[6,59],[7,61],[9,63],[12,65],[15,67],[19,69],[23,70]]],
+ ['苏格兰高地',38,[[-5.3,56.5],[-4.8,57.4],[-4.5,58.2]]],
+ ['比利牛斯山脉',32,[[-1.6,43.1],[0,42.8],[1.4,42.65],[2.6,42.45]]],
+ ['坎塔布连山脉',32,[[-7,43.0],[-5,43.15],[-3,43.05]]],
+ ['伊比利亚山脉',30,[[-3.1,42.0],[-2.1,40.6],[-.8,40.0]]],
+ ['中央山系',30,[[-6.4,40.4],[-4.8,40.5],[-3.6,41.0]]],
+ ['贝蒂科山脉',40,[[-5.4,36.7],[-3.5,37.1],[-2.4,37.3]]],
+ ['阿尔卑斯山脉',55,[[6.4,44.0],[6.8,45.1],[7.5,46],[9.1,46.6],[11.3,47],[13.0,46.8],[14.4,46.5]]],
+ ['亚平宁山脉',30,[[8.5,44.4],[10.4,44.2],[12.3,43.3],[13.5,42.2],[14.6,41],[16.0,39.6]]],
+ ['喀尔巴阡山脉',38,[[17.8,49],[19.6,49.2],[21.6,49.0],[23.9,48.0],[25.8,47.1],[26.2,45.5],[24.5,45.4],[22.6,45.2]]],
+ ['迪纳拉山脉',35,[[14.5,45.5],[16.0,44.5],[17.8,43.7],[19.1,42.7],[20.1,41.2]]],
+ ['品都斯山脉',30,[[20.2,40.5],[21.1,39.5],[22.1,38.6],[22.3,37.5]]],
+ ['巴尔干山脉',28,[[22.6,43.3],[24.5,42.8],[26.8,42.8]]],
+ ['罗多彼山脉',35,[[23.3,42],[24.5,41.7],[25.5,41.4]]],
+ ['高加索山脉',55,[[39.5,44.2],[41.5,43.3],[43.5,42.7],[45.4,42.1],[47.7,41.2]]],
+ ['托罗斯山脉',45,[[29.5,36.7],[31.3,37.4],[33.2,37.1],[35,37.8],[37.2,38.2]]],
+ ['本都山脉',35,[[31.4,41.0],[34,41.2],[37,40.6],[40,40.5]]],
+ ['乌拉尔山脉',45,[[59,52],[59.1,55],[59.3,58],[59.4,61],[60,64],[62,67]]]
 ];
-
-const out = [];
-for (let r = 0; r < H; r++) {
-  const spec = R[r];
-  const row = new Array(W).fill('~');
-  for (const [a, b, ch] of spec.s) {
-    if (a < 0 || b >= W || a > b) throw new Error(`row ${r} bad segment ${a}-${b}`);
-    for (let c = a; c <= b; c++) row[c] = ch;
-  }
-  for (const [a, bOrC, ch] of (spec.p || [])) {
-    // ch === '=' 时为跨行单格浅滩标记 [c, r, '=']；其余为区段 [a, b, ch]
-    if (ch === '=') {
-      const pc = a, pr = bOrC;
-      if (pc < 0 || pc >= W || pr < 0 || pr >= H) throw new Error(`bad shallows ${pc},${pr}`);
-      if (pr === r) row[pc] = '=';
-      continue;
-    }
-    const b = bOrC;
-    if (a < 0 || b >= W || a > b) throw new Error(`row ${r} bad patch ${a}-${b}`);
-    for (let c = a; c <= b; c++) row[c] = ch;
-  }
-  const str = row.join('');
-  for (const ch of str) if (!CH.has(ch)) throw new Error(`row ${r} bad char`);
-  // 防回归：西经 12°~11°（col 0-1）是开阔大西洋，任何行都不应有陆地
-  if (row[0] !== '~' || row[1] !== '~') throw new Error(`row ${r} land in open Atlantic (col 0-1)`);
-  out.push(str);
+const hills=[
+ [45,[[-4,52],[-3.3,53],[-2.2,54.2]]], [50,[[2.4,44.3],[3,45.2],[3.2,46.2]]],
+ [30,[[6.8,47.6],[7,48.5]]],[35,[[8.2,47.8],[8.3,48.7]]],
+ [50,[[7.5,50],[9,51],[10.5,51.5],[12.1,50.2]]], [35,[[13,49],[14.3,48.7]]],
+ [35,[[15.5,50.5],[17,50.1]]], [55,[[30,58],[33,57],[34,55.5]]],
+ [65,[[30,49],[29,48],[28.5,47]]], [55,[[44.5,53],[45,51],[44,49.5]]]
+];
+const forests=[
+ [[-7,60],[5,60],[5,72],[35,72],[40,63],[38,59],[31,57],[25,57],[20,55],[13,55],[9,57],[-7,60]],
+ [[28,59],[38,59],[40,63],[56,68],[65,65],[65,55],[50,54],[40,54],[31,55],[28,59]],
+ [[23,53],[28,53],[31,52],[30,51],[25,51],[23,53]],
+ [[4.5,50.4],[6.4,50.5],[6.6,49.4],[5.1,49.5],[4.5,50.4]],
+ [[-.9,45.2],[-.8,43.7],[.2,44],[.2,45],[-.9,45.2]],
+ [[12.4,49.5],[13.4,50.1],[14.2,49.1],[13.4,48.6],[12.4,49.5]]
+];
+function segmentDistance(p,a,b) {
+ const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1)));
+ return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);
 }
-
-/* --write 模式：输出解耦后的 js/data/map.js（陆海骨架+浅滩）并更新 js/data/terrain.js 的地形细节 */
-if (process.argv.includes('--write')) {
-  const fs = require('fs');
-  const path = require('path');
-  const land = [], shallows = [], detail = [];
-  out.forEach((row, r) => {
-    const segs = [];
-    let c = 0;
-    while (c < row.length) {
-      if (row[c] === '~') { c++; continue; }
-      let e = c;
-      while (e + 1 < row.length && row[e + 1] !== '~') e++;
-      segs.push([c, e]); c = e + 1;
-    }
-    land.push(segs);
-    const d = [];
-    c = 0;
-    while (c < row.length) {
-      if (!'fhm'.includes(row[c])) { c++; continue; }
-      let e = c;
-      while (e + 1 < row.length && row[e + 1] === row[c]) e++;
-      d.push([c, e, row[c]]); c = e + 1;
-    }
-    detail.push(d);
-    for (let cc = 0; cc < row.length; cc++) if (row[cc] === '=') shallows.push([cc, r]);
-  });
-  const mapJs = `/* =========================================================================
- * ① 六边形地图骨架（由 build_map.js --write 生成，勿手改）
- * land[r]: 第 r 行的陆地区段（列号闭区间）；未列出的格为海洋
- * shallows: 可通行海峡浅滩格（多佛尔/博斯普鲁斯/墨西拿）
- * 地形细节(f/h/m)与河流见 terrain.js
- * ========================================================================= */
-(function () {
-  const root = typeof window !== 'undefined' ? window : globalThis;
-  root.GameData = root.GameData || { modules: {} };
-  const land = ${JSON.stringify(land)};
-  const shallows = ${JSON.stringify([...shallows, [98, 44]])};
-  const width = ${W}, height = ${H};
-  root.GameData.modules.map = { width, height, land, shallows };
-})();
-`;
-  fs.writeFileSync(path.join(__dirname, 'js', 'data', 'map.js'), mapJs);
-  const terPath = path.join(__dirname, 'js', 'data', 'terrain.js');
-  let ter = fs.readFileSync(terPath, 'utf8');
-  const BEGIN = '/* GENERATED-DETAIL-BEGIN */';
-  const END = '/* GENERATED-DETAIL-END */';
-  const bi = ter.indexOf(BEGIN), ei = ter.indexOf(END);
-  if (bi < 0 || ei < 0) throw new Error('terrain.js 缺少 GENERATED-DETAIL 标记');
-  const inner = detail.map(d => '    [' + d.map(x => `[${x[0]},${x[1]},'${x[2]}']`).join(', ') + '],').join('\n');
-  ter = ter.slice(0, bi + BEGIN.length) + '\n' + inner + '\n    ' + ter.slice(ei);
-  fs.writeFileSync(terPath, ter);
-  console.log(`--write 完成：map.js（${land.length} 行陆海骨架，浅滩 ${shallows.length} 处）+ terrain.js 细节`);
-  process.exit(0);
+const ranges=mountains.map(([name,width,line])=>({name,width,line:line.map(p=>G.project(...p))}));
+const hillRanges=hills.map(([width,line])=>({width,line:line.map(p=>G.project(...p))}));
+function near(p,o) { return o.line.slice(1).some((b,i)=>segmentDistance(p,o.line[i],b)<o.width); }
+function terrainAt(p) {
+ const xy=G.project(...p);
+ if(ranges.some(o=>near(xy,o)))return 'm';
+ if(hillRanges.some(o=>near(xy,o)))return 'h';
+ if(forests.some(r=>inRing(p,r)))return 'f';
+ // Scattered central European woodland; deterministic and geographically bounded.
+ if(p[0]>7&&p[0]<24&&p[1]>48&&p[1]<55 && Math.sin(p[0]*2.7)+Math.cos(p[1]*3.1)>1.05)return 'f';
+ return '.';
 }
-
-console.log('const MAP_ROWS = [');
-for (const s of out) console.log(`  '${s}',`);
-console.log('];');
+const rows=Array.from({length:H},()=>Array(W).fill('~'));
+const homes=Array.from({length:H},()=>Array(W).fill(null));
+for(let r=0;r<H;r++)for(let c=0;c<W;c++) {
+ const p=G.hexToGeo(c,r), land=hit(p,coasts);
+ if(!land)continue;
+ // IJsselmeer: do not show post-war Flevoland reclamations in 1939.
+ if(p[0]>5.15&&p[0]<5.85&&p[1]>52.3&&p[1]<52.8&&!hit(p,borders))continue;
+ if(hit(p,lakes)){ rows[r][c]='l';continue; }
+ const ct=countryAt(...p,land.ct);homes[r][c]=ct;
+ rows[r][c]=ct==='xx'?'x':terrainAt(p);
+}
+const inMap=(c,r)=>c>=0&&r>=0&&c<W&&r<H;
+const neigh=(c,r)=>[[1,0],[-1,0],[r&1?1:0,-1],[r&1?0:-1,-1],[r&1?1:0,1],[r&1?0:-1,1]].map(([x,y])=>[x+c,y+r]).filter(p=>inMap(...p));
+const landAt=(c,r)=>inMap(c,r)&&homes[r][c]&&homes[r][c]!=='xx';
+const edgeKey=(a,b)=>[a.join(','),b.join(',')].sort().join('|');
+// Retain tiny but strategically relevant islands and states at one-hex resolution.
+// Only these explicit anchors can promote a sea cell to land; never arbitrary units.
+const anchors={valletta:'uk',gibraltar:'uk',luxembourg:'lu',danzig:'dz',rhodes:'it',bratislava:'sk',kosice:'hu',zara:'it',dunkirk:'fr'};
+for(const ci of N.CITIES.filter(ci=>anchors[ci.k])){
+ const [c,r]=G.geoToHex(ci.lon,ci.lat);rows[r][c]='.';homes[r][c]=ci.ct;
+}
+const cityLocations={},used=new Set();
+for(const ci of N.CITIES) {
+ const target=G.project(ci.lon,ci.lat); let best=null,bd=Infinity;
+ for(let r=0;r<H;r++)for(let c=0;c<W;c++) {
+  if(homes[r][c]!==ci.ct||used.has(c+','+r))continue;
+  const p=G.project(...G.hexToGeo(c,r)); const d=Math.hypot(p[0]-target[0],p[1]-target[1]);
+  if(d<bd){bd=d;best=[c,r];}
+ }
+ if(!best||bd>105)throw Error('City too far from historical location: '+ci.k+' '+bd);
+ cityLocations[ci.k]=best;used.add(best.join(','));
+}
+// Perekop is narrower than a hex: preserve its genuine north-south land connection.
+function lineHexes(a,b) {
+ const p=G.project(...a),q=G.project(...b),n=Math.ceil(Math.hypot(q[0]-p[0],q[1]-p[1])/8),out=[];
+ for(let i=0;i<=n;i++){const h=G.geoToHex(...G.unproject(p[0]+(q[0]-p[0])*i/n,p[1]+(q[1]-p[1])*i/n));if(inMap(...h)&&!out.some(v=>v.join(',')===h.join(',')))out.push(h);}return out;
+}
+for(const [c,r]of lineHexes([33.7,46.35],[33.9,45.7])){rows[r][c]='.';homes[r][c]='su';}
+// Explicit sea cuts prevent sub-grid straits from becoming walkable land bridges.
+const cuts=[
+ ['多佛尔海峡',[.7,50.65],[2.15,51.5]],
+ ['墨西拿海峡',[15.4,38.45],[15.85,37.8]],
+ ['博斯普鲁斯海峡',[29.12,41.3],[28.99,40.95]],
+ ['达达尼尔海峡',[26.1,40.0],[26.8,40.5]],
+ ['厄勒海峡',[12.55,55.35],[12.65,56.15]],
+ ['大贝尔特海峡',[10.85,54.7],[11.05,55.85]],
+ ['小贝尔特海峡',[9.65,54.9],[9.8,55.6]],
+ ['刻赤海峡',[36.45,45.5],[36.6,45.0]],
+ ['直布罗陀海峡',[-6,35.95],[-5.1,35.95]]
+];
+function crosses(a,b,c,d) {const cross=(p,q,s)=>(q[0]-p[0])*(s[1]-p[1])-(q[1]-p[1])*(s[0]-p[0]);return cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0;}
+const blockedEdges=[];
+for(let r=0;r<H;r++)for(let c=0;c<W;c++)if(landAt(c,r))for(const p of neigh(c,r))if(landAt(...p)&&r*W+c<p[1]*W+p[0]){
+ const a=G.project(...G.hexToGeo(c,r)),b=G.project(...G.hexToGeo(...p));
+ const cts=[homes[r][c],homes[p[1]][p[0]]];
+ if((cts.includes('dk')&&cts.includes('se'))||(cts.includes('uk')&&cts.includes('fr'))||cuts.some(([,s,t])=>crosses(a,b,G.project(...s),G.project(...t))))blockedEdges.push(edgeKey([c,r],p));
+}
+// City placement must not connect Malta / Rhodes / Gibraltar across open water.
+for(const k of ['valletta','rhodes']){
+ const p=cityLocations[k];for(const q of neigh(...p))if(landAt(...q)&&Math.hypot(...G.project(...G.hexToGeo(...q)).map((v,i)=>v-G.project(N.CITIES.find(c=>c.k===k).lon,N.CITIES.find(c=>c.k===k).lat)[i]))>35)blockedEdges.push(edgeKey(p,q));
+}
+// Ferry routes are graph edges, NEVER land/shallows. Both endpoints are named ports.
+// One voyage consumes the whole turn, with a transport fee; see engine.
+const routeDefs=[['多佛尔—加来','dover','calais'],['爱尔兰海航线','belfast','manch'],['爱尔兰海航线','dublin','london'],['科西嘉航线','marseille','ajaccio'],['撒丁岛航线','cagliari','rome'],['西西里航线','naples','palermo'],['马耳他航线','palermo','valletta'],['克里特航线','athens','heraklion'],['罗得岛航线','heraklion','rhodes'],['塞浦路斯航线','rhodes','nicosia'],['丹麦海峡航线','copenhagen','hamburg'],['厄勒海峡航线','copenhagen','goteborg'],['北海航线','edinburgh','bergen'],['冰岛航线','glasgow','reykjavik']];
+const routes=routeDefs.map(([name,a,b])=>({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]}));
+for (const [name,a,b] of [['亚得里亚海航线','ancona','zara'],['利物浦—都柏林','liverpool','dublin']]) routes.push({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]});
+// Istanbul has a ferry to Asian shore even though there is no separate city there.
+const ist=cityLocations.istanbul; const asian=lineHexes([29.15,40.95],[29.5,40.8]).find(p=>landAt(...p)&&p.join(',')!==ist.join(','));
+if(asian)routes.push({name:'博斯普鲁斯渡运',a:ist,b:asian,cities:['istanbul']});
+// Geographic remapping of old deployments, constrained to their own 1939 country.
+const occupied=new Set(used), deployments=[];
+for(const d of military.INITIAL_UNITS) {
+ const ct=d.ct; const lon=d.lon??(d.x-24)/2,lat=d.lat??66.5-d.y/2;const target=G.project(lon,lat);
+ let best,bd=Infinity;
+ for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+  if(homes[r][c]!==ct||occupied.has(c+','+r))continue;
+  const p=G.project(...G.hexToGeo(c,r)),dist=Math.hypot(p[0]-target[0],p[1]-target[1]);
+  if(dist<bd){bd=dist;best=[c,r];}
+ }
+ if(!best)throw Error('No deployment land for '+ct);
+ occupied.add(best.join(','));deployments.push({...d,x:best[0],y:best[1]});
+}
+for(const ct of ['sk','lu','dz']){
+ const ci=N.CITIES.find(ci=>ci.ct===ct),p=cityLocations[ci.k];
+ const spot=neigh(...p).find(v=>homes[v[1]][v[0]]===ct&&!occupied.has(v.join(',')))||p;
+ if(deployments.some(d=>d.x===spot[0]&&d.y===spot[1]))continue;
+ deployments.push({ct,eq:'neutral:inf:0',x:spot[0],y:spot[1]});occupied.add(spot.join(','));
+}
+const riverNames={Rhine:'莱茵河',Danube:'多瑙河',Seine:'塞纳河',Loire:'卢瓦尔河',Rhone:'罗讷河',Po:'波河',Elbe:'易北河',Oder:'奥得河',Vistula:'维斯瓦河',Dnieper:'第聂伯河',Don:'顿河',Volga:'伏尔加河',Dniester:'德涅斯特河',Daugava:'西德维纳河',Dvina:'西德维纳河',Tagus:'塔霍河',Douro:'杜罗河',Ebro:'埃布罗河',Dnepr:'第聂伯河'};
+const rivers=read('rivers').features.filter(f=>riverNames[f.properties.name]).flatMap(f=>{
+ const lines=f.geometry.type==='MultiLineString'?f.geometry.coordinates:[f.geometry.coordinates];
+ return lines.map(line=>({name:riverNames[f.properties.name],path:line.map(p=>G.geoToGrid(...p).map(v=>+v.toFixed(3))),geographic:true}));
+});
+const riverEdges = new Set();
+for(const river of rivers)for(let i=1;i<river.path.length;i++) {
+ const a=river.path[i-1],b=river.path[i];
+ for(let r=Math.max(0,Math.floor(Math.min(a[1],b[1]))-1);r<=Math.min(H-1,Math.ceil(Math.max(a[1],b[1]))+1);r++)
+ for(let c=Math.max(0,Math.floor(Math.min(a[0],b[0]))-1);c<=Math.min(W-1,Math.ceil(Math.max(a[0],b[0]))+1);c++) {
+  if(!landAt(c,r))continue;
+  for(const [x,y] of neigh(c,r))if(landAt(x,y)&&crosses([c+.5*(r&1),r],[x+.5*(y&1),y],a,b))riverEdges.add(edgeKey([c,r],[x,y]));
+ }
+}
+const landingCells=[];
+for(let r=0;r<H;r++)for(let c=0;c<W;c++)if(homes[r][c]==='fr'){
+ const [lon,lat]=G.hexToGeo(c,r);
+ if(lon>=-1.8&&lon<=.3&&lat>=49.05&&lat<=49.65&&neigh(c,r).some(([x,y])=>rows[y][x]==='~'))landingCells.push([c,r]);
+}
+const labels=[['大西洋',-15,48],['北海',3,57],['波罗的海',19,57],['地中海',8,37],['黑海',34,43],['挪威海',0,66],['亚得里亚海',16,42],['爱琴海',25,38],['白海',37,65.5],['拉多加湖',31.5,61],['里海',50,43]].map(([name,lon,lat])=>({name,grid:G.geoToGrid(lon,lat)}));
+labels.push({name:'诺曼底',grid:G.geoToGrid(-.7,48.8),kind:'region'});
+const map={...G.spec,rows:rows.map(r=>r.join('')),homes,cityLocations,deployments,rivers,riverEdges:[...riverEdges],blockedEdges:[...new Set(blockedEdges)],routes,landingCells,labels,land:[],shallows:[]};
+const output='/* Generated by node build_map.js --write. Sources and limitations: MAP_NOTES.md. */\n(function(){const root=typeof window!==\'undefined\'?window:globalThis;root.GameData=root.GameData||{modules:{}};root.GameData.modules.map='+JSON.stringify(map)+';})();\n';
+if(process.argv.includes('--write'))fs.writeFileSync(path.join(__dirname,'js/data/map.js'),output);
+else if(process.argv.includes('--check')) {if(fs.readFileSync(path.join(__dirname,'js/data/map.js'),'utf8')!==output)throw Error('Generated map out of date');}
+else console.log(output);
+const totals={};for(const row of rows)for(const t of row)totals[t]=(totals[t]||0)+1;
+console.error(JSON.stringify({grid:[W,H],terrain:totals,cities:N.CITIES.length,units:deployments.length,coastalLandingCells:landingCells.length,blockedEdges:map.blockedEdges.length}));

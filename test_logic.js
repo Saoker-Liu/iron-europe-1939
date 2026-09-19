@@ -18,20 +18,20 @@ D.MAP_ROWS.forEach((row, i) => {
 });
 for (const ci of D.CITIES) {
   const t = D.MAP_ROWS[ci.y][ci.x];
-  assert(t && t !== '~', `城市 ${ci.n} (${ci.x},${ci.y}) 落在海洋上(=${t})`);
+  assert(t && D.TERRAIN[t].pass, `城市 ${ci.n} (${ci.x},${ci.y}) 落在海洋上(=${t})`);
 }
 const cityPos = new Set(D.CITIES.map(ci => key(ci.x, ci.y)));
 assert(cityPos.size === D.CITIES.length, '存在重叠城市');
 for (const u of D.INITIAL_UNITS) {
   const t = D.MAP_ROWS[u.y] && D.MAP_ROWS[u.y][u.x];
-  assert(t && t !== '~', `初始单位 ${u.ct} ${u.eq} (${u.x},${u.y}) 站在海上/越界 (=${t})`);
+  assert(t && D.TERRAIN[t].pass, `初始单位 ${u.ct} ${u.eq} (${u.x},${u.y}) 站在海上/越界 (=${t})`);
 }
 const posCount = {};
 for (const u of D.INITIAL_UNITS) { const k = key(u.x, u.y); posCount[k] = (posCount[k] || 0) + 1; }
 for (const k in posCount) assert(posCount[k] === 1, `初始单位叠格: ${k} 有 ${posCount[k]} 个`);
 console.log(`  城市 ${D.CITIES.length} 座，初始单位 ${D.INITIAL_UNITS.length} 个`);
 
-/* 连通性：从柏林出发应能走遍所有城市（不穿过海） */
+/* 地理连通性：允许显式港口航线；不再要求岛屿与大陆有陆桥。 */
 {
   const g = new Game('axis', 'normal');
   const berlin = D.CITIES.find(ci => ci.k === 'berlin');
@@ -39,13 +39,12 @@ console.log(`  城市 ${D.CITIES.length} 座，初始单位 ${D.INITIAL_UNITS.le
   const q = [[berlin.x, berlin.y]];
   while (q.length) {
     const [c, r] = q.shift();
-    for (const [nc, nr] of g.neighbors(c, r)) {
+    for (const [nc, nr] of [...g.landNeighbors(c, r), ...g.ferryDestinations(c, r)]) {
       const t = g.tile(nc, nr);
-      if (t && t !== '~' && !seen.has(key(nc, nr))) { seen.add(key(nc, nr)); q.push([nc, nr]); }
+      if (g.landPassable(nc, nr) && !seen.has(key(nc, nr))) { seen.add(key(nc, nr)); q.push([nc, nr]); }
     }
   }
   for (const ci of D.CITIES) {
-    if (ci.k === 'dublin' || ci.k === 'belfast') continue;   // 爱尔兰岛为真实孤岛（海路不可达属预期）
     assert(seen.has(key(ci.x, ci.y)), `城市 ${ci.n} 与大陆不连通`);
   }
   console.log('  大陆连通性 OK，可达格 ' + seen.size);
@@ -62,13 +61,16 @@ console.log('== 机制测试 ==');
   // 德波步兵互殴
   const deInf = g.units.find(u => u.ct === 'de' && u.eq.cls === 'inf');
   const plInf = g.units.find(u => u.ct === 'pl');
-  deInf.c = 15; deInf.r = 7; plInf.c = 16; plInf.r = 7;
+  const city = g.cityByKey.berlin;
+  deInf.c = city.x; deInf.r = city.y;
+  [plInf.c, plInf.r] = g.landNeighbors(city.x, city.y)[0];
   const before = plInf.hp;
   g.attack(deInf, plInf);
   assert(plInf.hp < before, '攻击未造成伤害');
   assert(deInf.attacked === true, '攻击后应标记 acted');
   // 招募
   const berlin = g.cityByKey.berlin;
+  g.units = g.units.filter(u => u !== deInf);
   const gold0 = g.gold.axis;
   const u2 = g.recruit('berlin', 'de:inf:0');
   assert(u2 && g.gold.axis === gold0 - 60, '柏林招募步兵应花费60金');
@@ -94,7 +96,7 @@ for (const pf of ['axis', 'west', 'sov']) {
         // 不变量
         for (const u of g.units) {
           const tk = g.tile(u.c, u.r);
-          assert(tk && tk !== '~', `[${pf}] 单位 ${u.eq.n} 站在海上 (${u.c},${u.r}) 回合${g.turn}`);
+          assert(tk && D.TERRAIN[tk].pass, `[${pf}] 单位 ${u.eq.n} 站在海上 (${u.c},${u.r}) 回合${g.turn}`);
         }
         const unitsAt = {};
         for (const u of g.units) { const k = key(u.c, u.r); unitsAt[k] = (unitsAt[k] || 0) + 1; }

@@ -27,13 +27,15 @@
   #topbar { position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
     display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
     background: linear-gradient(#1b222c, #141a22); border-bottom: 1px solid #2e3947;
-    box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+    box-shadow: 0 2px 8px rgba(0,0,0,.5); overflow-x: auto; white-space: nowrap; gap: 14px; }
   #tb-left { display: flex; align-items: center; gap: 16px; font-size: 14px; }
   .fac-badge { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
   .fac-dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 1px solid #0006; }
   .stat { color: #d8b24a; font-weight: 700; }
   .stat small { color: #9aa4b0; font-weight: 400; }
-  #tb-right { display: flex; gap: 8px; }
+  #tb-left, #tb-right { flex-shrink: 0; }
+  #tb-right { display: flex; gap: 4px; }
+  #tb-right .btn { padding: 6px 8px; }
   button { font-family: inherit; }
   .btn { background: #26303d; color: #e8e4d8; border: 1px solid #3a4757; border-radius: 4px;
     padding: 6px 12px; font-size: 13px; cursor: pointer; transition: background .15s; }
@@ -44,7 +46,7 @@
   .btn.gold { background: #6b5a1e; border-color: #8f7a2e; }
 
   /* ---- 右侧面板 ---- */
-  #panel { position: absolute; top: 56px; right: 12px; width: 296px; max-height: calc(100% - 140px);
+  #panel { position: absolute; top: 56px; right: 12px; width: 296px; max-height: calc(100% - 220px);
     z-index: 15; background: rgba(17, 22, 29, .94); border: 1px solid #2e3947; border-radius: 6px;
     overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,.5); }
   #panel-body { padding: 12px; font-size: 13px; }
@@ -132,6 +134,10 @@
     <span id="date" style="color:#c9d1da"></span>
   </div>
   <div id="tb-right">
+    <button class="btn" id="btn-atlas">地图全览</button>
+    <button class="btn" id="btn-cities">查找城市</button>
+    <button class="btn" id="btn-mapmode">政区 / 地形</button>
+    <button class="btn" id="btn-units">隐藏部队</button>
     <button class="btn" id="btn-gen">🎖 将领</button>
     <button class="btn" id="btn-help">❓ 帮助</button>
     <button class="btn" id="btn-sound">🔊</button>
@@ -148,6 +154,13 @@
 </div>
 
 <div id="tooltip"></div>
+<div id="map-legend" style="position:absolute;right:12px;width:296px;bottom:14px;z-index:4;pointer-events:none;background:#111b27ed;padding:10px 14px;border:1px solid #586673;border-radius:5px;font-size:12px;line-height:1.7">
+  <b style="color:#dfc88e">欧洲 · 1939 年开战前夕</b><br>
+  国界基准：1939.08.31　|　★ 首都<br>
+  蓝色虚线：海运航线　|　蓝色实线：河流<br>
+  海运 25 金 / 次，耗尽行动；渡河额外消耗 1 移动力<br>
+  地形：浅绿平原 · 深绿森林 · 褐色丘陵 · 灰色山地
+</div>
 <div id="banner"></div>
 <div id="modal-root"></div>
 
