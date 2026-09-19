@@ -38,6 +38,9 @@ class Game {
     this.cf = {};
     for (const k in COUNTRIES) this.cf[k] = COUNTRIES[k].faction;
     this.cf.it = 'neutral'; this.cf.hu = 'neutral'; this.cf.ro = 'neutral';
+    for (const ct in COUNTRIES) {
+      if (COUNTRIES[ct].controller) this.cf[ct] = this.cf[COUNTRIES[ct].controller];
+    }
 
     // 地形 & 城市
     this.terr = {};              // key -> 字符
@@ -49,6 +52,20 @@ class Game {
     for (const ci of this.cities) this.terr[key(ci.x, ci.y)] = 'c';
     this.cityByKey = {}; for (const ci of this.cities) this.cityByKey[ci.k] = ci;
     this.terrDirty = true; this._terrCache = null;
+    this.blockedEdges = new Set(MAP_META.blockedEdges);
+    this.riverEdges = new Set(MAP_META.riverEdges || []);
+    this.provinces = new Int16Array(MAP_W * MAP_H).fill(-1);
+    const citiesByCountry = {};
+    this.cities.forEach((ci, i) => (citiesByCountry[ci.ct] ||= []).push(i));
+    for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
+      const list = citiesByCountry[this.homeCountryOf(c, r)] || [];
+      let best = -1, bd = Infinity;
+      for (const i of list) {
+        const ci = this.cities[i], d = hexDist(c, r, ci.x, ci.y);
+        if (d < bd) { best = i; bd = d; }
+      }
+      this.provinces[r * MAP_W + c] = best;
+    }
 
     // 将领状态
     this.genUnit = {};           // genId -> unitId | null
@@ -72,6 +89,20 @@ class Game {
     for (const [dc, dr] of D) { const nc = c + dc, nr = r + dr; if (this.inMap(nc, nr)) out.push([nc, nr]); }
     return out;
   }
+  edgeKey(a, b) { return [a.join(','), b.join(',')].sort().join('|'); }
+  landPassable(c, r) { return !!TERRAIN[this.tile(c, r)]?.pass; }
+  landNeighbors(c, r) {
+    return this.neighbors(c, r).filter(p => this.landPassable(...p) &&
+      !this.blockedEdges.has(this.edgeKey([c, r], p)));
+  }
+  ferryDestinations(c, r) {
+    const out = [];
+    for (const route of MAP_META.routes) {
+      if (route.a[0] === c && route.a[1] === r) out.push(route.b);
+      if (route.b[0] === c && route.b[1] === r) out.push(route.a);
+    }
+    return out;
+  }
   unitAt(c, r) { return this.units.find(u => u.c === c && u.r === r) || null; }
   cityAt(c, r) { return this.cities.find(ci => ci.x === c && ci.y === r) || null; }
   unitFaction(u) { return this.cf[u.ct]; }
@@ -90,30 +121,16 @@ class Game {
 
   equipOf(eqKey) { const [ct, cls, idx] = eqKey.split(':'); return EQUIP[ct][cls][+idx]; }
 
-  /* 领土：每格归属最近城市的所有者阵营（医疗/冬季判定用） */
+  /* Fixed historical borders; city control spreads only within its own country. */
   territoryOwner(c, r) {
-    if (this.terrDirty || !this._terrCache) {
-      const cache = {};
-      for (let rr = 0; rr < MAP_H; rr++) for (let cc = 0; cc < MAP_W; cc++) {
-        if (this.tile(cc, rr) === '~') continue;
-        let best = null, bd = 1e9;
-        for (const ci of this.cities) {
-          const d = hexDist(cc, rr, ci.x, ci.y);
-          if (d < bd) { bd = d; best = ci; }
-        }
-        cache[key(cc, rr)] = best ? best.owner : 'neutral';
-      }
-      this._terrCache = cache; this.terrDirty = false;
-    }
-    return this._terrCache[key(c, r)];
+    if (!this.inMap(c, r)) return null;
+    const ct = this.homeCountryOf(c, r);
+    if (!ct) return null;
+    const i = this.provinces[r * MAP_W + c];
+    return i >= 0 ? this.cities[i].owner : this.cf[ct];
   }
   homeCountryOf(c, r) {   // 该格属于哪个母国的势力范围（冬季"苏联土地"判定）
-    let best = null, bd = 1e9;
-    for (const ci of this.cities) {
-      const d = hexDist(c, r, ci.x, ci.y);
-      if (d < bd) { bd = d; best = ci; }
-    }
-    return best ? best.ct : null;
+    return HOME_COUNTRIES[r]?.[c] || null;
   }
 
   /* ------------------------------ 将领技能 ------------------------------ */
@@ -135,6 +152,7 @@ class Game {
   /* ------------------------------ 移动 ------------------------------ */
   terrainCost(u, c, r) {
     const t = this.tile(c, r); const T = TERRAIN[t];
+    if (CLASSES[u.eq.cls].fly && (t === '~' || t === 'l')) return 1;
     if (!T || !T.pass) return Infinity;
     return T.cost ? T.cost[u.eq.cls] : 1;
   }
@@ -153,16 +171,18 @@ class Game {
       if (zocStop.has(bk)) continue;                      // 控制区：到此为止
       for (const [nc, nr] of this.neighbors(c, r)) {
         const nk = key(nc, nr), t = this.tile(nc, nr);
-        if (!t || t === '~') continue;                    // 海洋不可入(浅滩=可)
+        if (!t || (!CLASSES[u.eq.cls].fly && !this.landPassable(nc, nr))) continue;
+        if (!CLASSES[u.eq.cls].fly && this.blockedEdges.has(this.edgeKey([c, r], [nc, nr]))) continue;
         const occ = this.unitAt(nc, nr);
         if (occ && this.unitFaction(occ) !== this.unitFaction(u)) continue;   // 敌方格阻挡
-        const step = this.terrainCost(u, nc, nr);
+        const step = this.terrainCost(u, nc, nr) +
+          (!CLASSES[u.eq.cls].fly && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
         const ncost = bc + step;
         if (ncost > mov) continue;
         if (!cost.has(nk) || ncost < cost.get(nk)) { cost.set(nk, ncost); prev.set(nk, bk); }
         // 进入敌方控制区 → 移动终止于该格
         if (!this.hasNoZOC(u)) {
-          const nearEnemy = this.neighbors(nc, nr).some(([ec, er]) => {
+          const nearEnemy = this.landNeighbors(nc, nr).some(([ec, er]) => {
             const e = this.unitAt(ec, er);
             return e && this.atWar(this.unitFaction(u), this.unitFaction(e));
           });
@@ -173,7 +193,17 @@ class Game {
     cost.delete(start);
     // 可停留格：无单位占据
     const ends = new Map();
-    for (const [k, v] of cost) { if (!this.unitAt(...k.split(',').map(Number))) ends.set(k, v); }
+    for (const [k, v] of cost) {
+      const p = k.split(',').map(Number);
+      if (this.landPassable(...p) && !this.unitAt(...p)) ends.set(k, v);
+    }
+    // Transport is an explicit port-to-port voyage, not a bridge over the sea.
+    const f = this.unitFaction(u);
+    if (!CLASSES[u.eq.cls].fly && this.territoryOwner(u.c, u.r) === f && this.gold[f] >= 25) {
+      for (const p of this.ferryDestinations(u.c, u.r)) if (!this.unitAt(...p)) {
+        ends.set(key(...p), mov); prev.set(key(...p), start);
+      }
+    }
     return { cost: ends, prev };
   }
   pathTo(u, ck) {
@@ -189,16 +219,21 @@ class Game {
   }
 
   moveUnit(u, c, r, path) {
+    const f = this.unitFaction(u);
+    const voyage = !CLASSES[u.eq.cls].fly && this.ferryDestinations(u.c, u.r).some(p => p[0] === c && p[1] === r);
+    if (voyage && (this.gold[f] < 25 || this.territoryOwner(u.c, u.r) !== f || this.unitAt(c, r))) return false;
+    path = path || (voyage ? [[c, r]] : this.pathTo(u, key(c, r))) || [[c, r]];
+    if (voyage) { this.gold[f] -= 25; u.attacked = true; this.pushLog('部队完成海运：花费25金，本回合无法攻击。', 'info'); }
+    for (const p of path) {
+      const ct = this.homeCountryOf(...p);
+      if (ct && !COUNTRIES[ct].context && !COUNTRIES[ct].controller && this.cf[ct] === 'neutral' && f !== 'neutral') this.neutralDefect(ct, f);
+    }
     u.moved = true; u.dug = false;
     u.c = c; u.r = r;
     const city = this.cityAt(c, r);
     if (city && city.owner !== this.unitFaction(u)) this.captureCity(city, this.unitFaction(u), u);
     // 大国军队开进中立国领土 → 中立国即刻倒向敌方（历史：1940 低地国家）
-    const hc = this.homeCountryOf(c, r);
-    if (hc && COUNTRIES[hc].faction === 'neutral' && this.cf[hc] === 'neutral'
-        && this.unitFaction(u) !== 'neutral') {
-      this.neutralDefect(hc, this.unitFaction(u));
-    }
+    return true;
   }
 
   /* ------------------------------ 战斗 ------------------------------ */
@@ -266,6 +301,7 @@ class Game {
     for (const e of this.units) {
       if (!this.atWar(f, this.unitFaction(e))) continue;
       const dist = hexDist(u.c, u.r, e.c, e.r);
+      if (u.eq.cls !== 'air' && u.eq.cls !== 'art' && this.blockedEdges.has(this.edgeKey([u.c, u.r], [e.c, e.r]))) continue;
       if (u.eq.cls === 'art') { if (dist <= rng) out.push(e); }
       else if (dist === 1) out.push(e);
     }
@@ -287,7 +323,7 @@ class Game {
     } else {
       // 反击：近战 & 防守方为步兵/装甲
       const dist = hexDist(att.c, att.r, def.c, def.r);
-      if (dist === 1 && (def.eq.cls === 'inf' || def.eq.cls === 'tank')) {
+      if (dist === 1 && !this.blockedEdges.has(this.edgeKey([att.c, att.r], [def.c, def.r])) && (def.eq.cls === 'inf' || def.eq.cls === 'tank')) {
         let cm = 0.55;
         const cs = this.genSkill(def, 'counter'); if (cs) cm += cs.m;
         const a2 = this.effAtk(def, att);
@@ -325,7 +361,7 @@ class Game {
     if (city.cap) {
       let flipped = 0;
       for (const ci of this.cities) {
-        if (ci.ct === city.ct && ci.owner !== faction) { ci.owner = faction; flipped++; }
+        if ((ci.ct === city.ct || COUNTRIES[ci.ct].controller === city.ct) && ci.owner !== faction) { ci.owner = faction; flipped++; }
       }
       this.terrDirty = true;
       this.pushLog(`${cn}首都 ${city.n} 陷落，${cn}全境沦陷！（${flipped} 座城市易手）`, 'war');
@@ -457,7 +493,8 @@ class Game {
       if (ev.kind === 'log') { this.pushLog(`【${ev.title}】${ev.text}`, 'event'); this.pendingEvents.push(ev); }
       else if (ev.kind === 'italy') {
         this.cf.it = 'axis';
-        for (const ci of this.cities) if (ci.ct === 'it') ci.owner = 'axis';
+        this.cf.al = 'axis';
+        for (const ci of this.cities) if (ci.ct === 'it' || ci.ct === 'al') ci.owner = 'axis';
         this.declareWar('axis', 'west'); this.terrDirty = true;
         this.pushLog(`【${ev.title}】${ev.text}`, 'event'); this.pendingEvents.push(ev);
       }
@@ -497,9 +534,9 @@ class Game {
       else if (ev.kind === 'dday') {
         const foes = ['axis', 'west', 'sov'].filter(f => this.atWar('west', f));
         if (!foes.length) continue;
-        let spots = this.spawnSpots([], 0, 0, [[24, 34], [25, 34], [26, 34], [27, 34], [28, 34], [24, 35], [25, 35], [26, 35], [27, 35], [28, 35]]);
+        let spots = this.spawnSpots([], 0, 0, MAP_META.landingCells);
         spots = spots.filter(([c, r]) => foes.includes(this.territoryOwner(c, r)));
-        if (spots.length < 2) spots = this.spawnSpots(['london'], 6, 2);
+        if (!spots.length) { this.pushLog('诺曼底登陆取消：没有可用的敌占海滩。', 'event'); continue; }
         const roster = ['us:tank:0', 'us:tank:0', 'us:inf:0', 'us:inf:0', 'uk:art:0', 'uk:inf:0'];
         let n = 0;
         for (let i = 0; i < roster.length && spots.length; i++) {
@@ -517,7 +554,7 @@ class Game {
     if (fixed) {
       for (const [c, r] of fixed) {
         const t = this.tile(c, r);
-        if (t && t !== '~' && !this.unitAt(c, r)) cand.push([c, r]);
+        if (this.landPassable(c, r) && !this.unitAt(c, r)) cand.push([c, r]);
       }
       return cand.slice(0, want || cand.length);
     }
@@ -527,7 +564,7 @@ class Game {
         for (let cc = ci.x - radius; cc <= ci.x + radius; cc++) {
           if (!this.inMap(cc, rr)) continue;
           const t = this.tile(cc, rr);
-          if (t && t !== '~' && !this.unitAt(cc, rr) && !cand.some(([a, b]) => a === cc && b === rr)) cand.push([cc, rr]);
+          if (this.landPassable(cc, rr) && this.territoryOwner(cc, rr) === ci.owner && !this.unitAt(cc, rr) && !cand.some(([a, b]) => a === cc && b === rr)) cand.push([cc, rr]);
         }
     }
     // 优先离城市近的
@@ -665,10 +702,11 @@ class Game {
     while (heap.length) {
       const [d, c, r] = pop();
       if (d > (dist.get(key(c, r)) ?? 1e9)) continue;
-      for (const [nc, nr] of this.neighbors(c, r)) {
+      for (const [nc, nr] of [...this.landNeighbors(c, r), ...this.ferryDestinations(c, r)]) {
         const t = this.tile(nc, nr);
-        if (!t || t === '~') continue;
-        const nd = d + (COST[t] || 2);
+        if (!this.landPassable(nc, nr)) continue;
+        const ferry = this.ferryDestinations(c, r).some(p => p[0] === nc && p[1] === nr);
+        const nd = d + (ferry ? 8 : (COST[t] || 2)) + (this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
         if (nd < (dist.get(key(nc, nr)) ?? 1e9)) { dist.set(key(nc, nr), nd); push(nd, nc, nr); }
       }
     }
@@ -743,7 +781,7 @@ class Game {
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {
     return JSON.stringify({
-      v: 2, turn: this.turn, nextId: this.nextId,
+      v: 3, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
       playerFaction: this.playerFaction, difficulty: this.difficulty,
       gold: this.gold, westBonus: this.westBonus, usaIn: this.usaIn,
       wars: [...this.wars], cf: this.cf,
@@ -759,6 +797,7 @@ class Game {
   }
   static deserialize(str) {
     const d = JSON.parse(str);
+    if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
     const g = new Game(d.playerFaction, d.difficulty);
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;

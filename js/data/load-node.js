@@ -7,6 +7,7 @@ const root = globalThis;
 root.GameData = root.GameData || { modules: {} };
 
 require('../core/hex.js');
+require('../core/geography.js');
 require('./map.js');
 require('./terrain.js');
 require('./nations.js');
@@ -21,6 +22,9 @@ module.exports = {
   MAP_W: root.MAP_W,
   MAP_H: root.MAP_H,
   MAP_ROWS: root.MAP_ROWS,
+  MAP_META: root.MAP_META,
+  HOME_COUNTRIES: root.HOME_COUNTRIES,
+  Geography: root.Geography,
   TERRAIN: root.TERRAIN,
   RIVERS: root.RIVERS,
   CLASSES: root.CLASSES,
