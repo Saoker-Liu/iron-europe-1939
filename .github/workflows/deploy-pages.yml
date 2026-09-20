@@ -32,6 +32,7 @@ jobs:
           node test_transport.js
           node test_air.js
           node test_air_equipment.js
+          node test_construction.js
           node test_naval.js
           node test_naval_names.js
           node test_logic.js

@@ -27,7 +27,7 @@
   const entries=[];
   for(const [role,rule]of Object.entries(roles)){
    const list=ct==='neutral'?['基础型','改进型','先进型'].map((n,i)=>[n+rule.name,[1939,1942,1944][i],'通用游戏模板']):models[ct][role];
-   list.forEach(([n,yr,note=''],tier)=>entries.push({n,cls:'air',airRole:role,tier,atk:role==='transport'?0:rule.atk+tier*8,def:rule.def+tier*5,mov:rule.radius+tier,cost:rule.cost+tier*Math.round(rule.cost*.25),yr,nt:note,role:rule.role}));
+   list.forEach(([n,yr,note=''],tier)=>entries.push({n,cls:'air',airRole:role,tier,atk:role==='transport'?0:rule.atk+tier*8,def:rule.def+tier*5,mov:rule.radius+tier,cost:rule.cost+tier*Math.round(rule.cost*.10),yr,nt:note,role:rule.role}));
   }
   const old=legacy[ct];if(old){const i=entries.findIndex(e=>e.airRole===old[0]&&e.tier===old[1]);entries.unshift(...entries.splice(i,1));}
   equipment[ct]=entries;

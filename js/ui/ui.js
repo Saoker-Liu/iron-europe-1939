@@ -330,6 +330,7 @@ function drawFrame(now) {
     }
   } else terrainCache.pend = 0;
   blitTerrain(z);
+  drawConstruction(g);
   drawHarbors(g);
   drawAirfields(g);
   drawFallout(g);
@@ -636,6 +637,41 @@ function drawHarbors(g) {
   }
   cx.restore();
 }
+function drawConstruction(g) {
+  if(UI.cam.z<.4)return;
+  cx.save();cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillStyle='#ffe285';
+  for(const ci of g.cities)if(ci.factory){const [x,y]=hexToPix(ci.x,ci.y);cx.fillText('⚒',x-Math.max(14,S()*.7),y+Math.max(14,S()*.7));}
+  for(const p of g.construction){
+    const ci=g.cityByKey[p.cityKey],[x,y]=hexToPix(p.kind==='harbor'?p.c:ci.x,p.kind==='harbor'?p.r:ci.y);
+    if(p.kind==='harbor'){hexPath(x,y,S()*.85);cx.strokeStyle='#ffe285';cx.lineWidth=2;cx.stroke();cx.fillText('⚓施工 '+p.remaining,x,y);}
+  }
+  cx.restore();
+}
+function constructionHTML(city) {
+  const g=UI.game;
+  return `<div class="p-sub">城市设施 · 每种一座；不同设施可同时施工。费用开工时支付，城市易手后设施及工程由新控制方接管。</div>`+
+    Object.entries(ECONOMY.construction).map(([kind,rule])=>{
+      const job=g.construction.find(p=>p.cityKey===city.k&&p.kind===kind),done=g.hasFacility(city,kind),error=g.constructionError(city.k,kind);
+      const state=done?'已建成':job?'建设中 · 剩余'+job.remaining+'回合':error||'可建设';
+      return `<div class="p-sub">${rule.name}：${state}${kind==='factory'?' · 目前不提供收益加成':''}</div>`+
+        (!done&&!job&&city.owner===g.playerFaction?`<button class="btn" id="city-build-${kind}" ${error||UI.busy?'disabled':''}>${kind==='harbor'?'选择海格建设港口':'建设'+rule.name} · ${rule.cost}金 · ${rule.turns}回合</button>`:'');
+    }).join('');
+}
+function beginConstruction(city,kind,site=null) {
+  const g=UI.game;if(UI.busy)return;
+  if(g.startConstruction(city.k,kind,site)){closeModal();SFX.click();updateTopbar();renderLog();showCityPanel(city);autoSave();}
+  else {banner(g.constructionError(city.k,kind,site)||'请选择港址',2200);showCityPanel(city);}
+}
+function chooseHarborSite(city) {
+  const g=UI.game,sites=g.harborSites(city),rule=ECONOMY.construction.harbor;
+  const [x,y]=hexToPix(city.x,city.y);
+  openModal(`<div class="modal"><h1>${city.n} · 选择港址</h1><p>费用${rule.cost}金，工期${rule.turns}回合。选择城市相邻的空闲海格开工；非己方部队占据工地时暂停施工。</p>${sites.map((p,i)=>{
+    const [sx,sy]=hexToPix(...p),direction=(sx>x?'东':'西')+(sy<y?'北':sy>y?'南':'');
+    return `<button class="btn" id="harbor-site-${i}">在${direction}侧海域建设（${p.join(',')}）</button>`;
+  }).join('')||'<p>没有可用的相邻海域。</p>'}<button class="btn" id="harbor-site-cancel">取消</button></div>`);
+  sites.forEach((p,i)=>document.getElementById('harbor-site-'+i).onclick=()=>beginConstruction(city,'harbor',p));
+  document.getElementById('harbor-site-cancel').onclick=closeModal;
+}
 function shipNameKind(entry) { return {historical:'史实舰名',planned:'计划舰名／代号',proposed:'游戏拟名',generic:'通用编号'}[entry.kind]||'通用编号'; }
 function showHarborPanel(h) {
   if(!h)return;
@@ -695,6 +731,8 @@ function handleClick(sx, sy) {
   if (city) { deselect(); showCityPanel(city); return; }
   const harbor=g.harborAt(c,r);
   if(harbor){deselect();showHarborPanel(harbor);return;}
+  const work=g.construction.find(p=>p.kind==='harbor'&&p.c===c&&p.r===r);
+  if(work){deselect();showCityPanel(g.cityByKey[work.cityKey]);return;}
   deselect(); updatePanel();
 }
 
@@ -943,6 +981,7 @@ function showUnitPanel(u) {
     ${atSea?`<div class="p-sub">🚢 ${ship.name} · 海上攻击保留${Math.round(ship.attackMultiplier*100)}% · 射程1<br>航行移动力固定${ship.move}；海上无法驻防或自动补员。</div>`:''}
     ${g.isNaval(u)?`<div class="p-sub">舰名来源：${shipNameKind(g.shipNameInfo(u))}${g.shipNameInfo(u).note?' · '+g.shipNameInfo(u).note:''}<br>⚓ ${u.eq.role}<br>仅在海上航行；己方军港每回合修复25兵力。射程内可反击，无法占领城市。</div>`:''}
     ${g.cityAt(u.c,u.r)?`<div class="p-sub">🛡 ${cityDefenseText(g.cityAt(u.c,u.r))}<br>与驻防、老练及将领加成共同计入战斗防御。</div>`:''}
+    ${g.cityAt(u.c,u.r)?'<button class="btn" id="garrison-city">查看城市 · 建设设施</button>':''}
     ${!g.isAir(u)&&g.airfields.some(ci=>ci.x===u.c&&ci.y===u.r)?'<button class="btn gold" id="garrison-airfield">✈ 打开机场 · 组建空军</button>':''}
     ${g.isAir(u)?`<div class="p-sub">✈ 驻扎机场：${g.airBase(u)?.n||'无'}<br>作战半径 ${g.airRadius(u)}格（约${g.airRadius(u)*45}公里） · 每回合出击一次<br>地图青色格为出击范围，蓝格为可转场的己方机场；转场后本回合不能攻击。空军无法占领城市或驻防。</div><button class="btn" id="unit-airfield">打开驻扎机场</button>`:''}
     ${g.isAir(u)?`<div class="p-sub">机种：${g.airRoleName(u)}<br>${u.eq.role}<br>${u.eq.nt||''}</div>`:''}
@@ -966,6 +1005,7 @@ function showUnitPanel(u) {
   const unload=document.getElementById('air-unload');if(unload)unload.onclick=()=>{if(!UI.busy&&g.unloadParatrooper(u))select(u);};
   const drop=document.getElementById('air-drop');if(drop)drop.onclick=()=>beginAirMission('drop');
   const nuclear=document.getElementById('air-nuclear');if(nuclear)nuclear.onclick=()=>beginAirMission('nuclear');
+  const garrisonCity=document.getElementById('garrison-city');if(garrisonCity)garrisonCity.onclick=()=>showCityPanel(g.cityAt(u.c,u.r));
   const garrisonAirport=document.getElementById('garrison-airfield');if(garrisonAirport)garrisonAirport.onclick=()=>showAirfieldPanel(g.cityAt(u.c,u.r));
   const airportButton=document.getElementById('unit-airfield');if(airportButton)airportButton.onclick=()=>showAirfieldPanel(g.airBase(u));
   ECONOMY.transports.forEach((t,i)=>{const button=document.getElementById('pb-ship-'+i);if(button)button.onclick=()=>{if(!UI.busy&&g.equipTransport(u,t.id)){SFX.click();select(u);updateTopbar();}};});
@@ -992,6 +1032,7 @@ function showCityPanel(city) {
     <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${g.cityIncome(city)} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
     ${g.airfields.includes(city)?'<button class="btn gold" id="city-airfield">✈ 打开机场 · 组建空军</button>':''}
     ${g.harbors.some(h=>h.cityKey===city.k)?'<button class="btn gold" id="city-harbor">⚓ 打开军港 · 建造舰艇</button>':''}
+    ${constructionHTML(city)}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
     <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
     ${roster.map(it => `
@@ -1000,6 +1041,7 @@ function showCityPanel(city) {
         <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;
+  for(const kind of Object.keys(ECONOMY.construction)){const button=document.getElementById('city-build-'+kind);if(button)button.onclick=()=>{if(UI.busy)return;kind==='harbor'?chooseHarborSite(city):beginConstruction(city,kind);};}
   const airportButton=document.getElementById('city-airfield');if(airportButton)airportButton.onclick=()=>showAirfieldPanel(city);
   const harborButton=document.getElementById('city-harbor');
   if(harborButton)harborButton.onclick=()=>showHarborPanel(g.harbors.find(h=>h.cityKey===city.k));

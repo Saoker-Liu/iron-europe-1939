@@ -209,3 +209,25 @@ assert(h.run('UI.game.contamination(blastCity.x,blastCity.y)===6&&nukePlane.atta
 h.run('showCityPanel(blastCity)');assert(h.run("document.getElementById('panel-body').innerHTML.includes('收入 0 金/回合')"));
 h.run('centerOn(blastCity.x,blastCity.y)');h.texts.length=0;h.run('drawFallout(UI.game)');assert(h.texts.includes('☢ 6'));
 console.log('Aircraft missions UI: seven roles, cargo loading, map paradrop, nuclear cancel/confirm, zero income and pollution overlay passed.');
+// City construction uses the production panels and event handlers.
+h.run(`UI.game=new Game('axis','normal',{initialFleet:false});UI.game.units=[];UI.game.gold.axis=10000;UI.sel=null;UI.busy=false;
+ globalThis.localStorage={setItem(){}};
+ const buildCity=UI.game.cities.find(c=>c.owner==='axis'&&!UI.game.airfields.includes(c)&&!c.demilitarized);
+ const buildGuard=UI.game.spawnUnit('de','de:inf:0',buildCity.x,buildCity.y,{});
+ showUnitPanel(buildGuard);document.getElementById('garrison-city').onclick();`);
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('建设机场 · 120金 · 2回合')"));
+h.run("document.getElementById('city-build-airfield').onclick()");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('建设中 · 剩余2回合')"));
+assert.equal(h.run('UI.game.gold.axis'),9880);
+h.run("UI.game.advanceConstruction();UI.game.advanceConstruction();showCityPanel(buildCity)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('打开机场 · 组建空军')"));
+h.run("document.getElementById('city-build-factory').onclick();UI.game.advanceConstruction();UI.game.advanceConstruction();UI.game.advanceConstruction();showCityPanel(buildCity);drawConstruction(UI.game)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('工厂：已建成')"));
+h.run(`const buildCoast=UI.game.cities.find(c=>c.owner==='axis'&&!c.demilitarized&&!UI.game.harbors.some(h=>h.cityKey===c.k)&&UI.game.harborSites(c).length);
+ showCityPanel(buildCoast);document.getElementById('city-build-harbor').onclick();`);
+assert(h.run("modalRoot.innerHTML.includes('选择港址')"));
+h.run("document.getElementById('harbor-site-0').onclick();drawConstruction(UI.game)");
+assert.equal(h.run("UI.game.construction.filter(p=>p.kind==='harbor').length"),1);
+h.run("UI.game.advanceConstruction();UI.game.advanceConstruction();UI.game.advanceConstruction();showCityPanel(buildCoast);document.getElementById('city-harbor').onclick()");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('点击舰种建造')"));
+console.log('Construction UI: garrison access, cost, progress, completion, port selection and facility panels passed.');

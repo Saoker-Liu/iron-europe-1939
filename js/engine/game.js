@@ -26,6 +26,7 @@ class Game {
     this.aiMult = DMULT[this.difficulty] || DMULT.normal;
     this.turn = 0;
     this.fallout = {};
+    this.construction = [];
     this.nextId = 1;
     this.gold = Object.assign({}, START_GOLD);
     this.westBonus = 0;          // 美国参战后同盟国收入加成
@@ -269,6 +270,51 @@ class Game {
       if(spots.length){const [c,r]=spots[0];used.add(key(c,r));out.push({cityKey:ci.k,c,r});}
     }
     return out;
+  }
+  hasFacility(city,kind) {
+    return kind==='factory'?!!city.factory:kind==='airfield'?this.airfields.includes(city):kind==='harbor'?this.harbors.some(h=>h.cityKey===city.k):false;
+  }
+  harborSites(city) {
+    return this.neighbors(city.x,city.y).filter(([c,r])=>this.ocean(c,r)&&
+      !this.harborAt(c,r)&&!this.unitAt(c,r)&&
+      !this.construction.some(p=>p.kind==='harbor'&&p.c===c&&p.r===r));
+  }
+  constructionError(cityKey,kind,site=null,faction=this.playerFaction) {
+    const ci=this.cityByKey[cityKey],rule=ECONOMY.construction[kind];
+    if(!ci||!Object.hasOwn(ECONOMY.construction,kind))return '无效的建设项目';
+    if(!['axis','west','sov'].includes(faction)||ci.owner!==faction)return '只能在己方城市建设';
+    if(ci.demilitarized&&kind!=='factory')return '非军事区不能建设军事设施';
+    if(this.hasFacility(ci,kind))return '此设施已建成';
+    if(this.construction.some(p=>p.cityKey===ci.k&&p.kind===kind))return '此设施正在建设';
+    if(kind==='harbor'){
+      const sites=this.harborSites(ci);
+      if(!sites.length)return '没有可用的相邻海域';
+      if(site&&(!Array.isArray(site)||site.length!==2||!sites.some(p=>p[0]===site[0]&&p[1]===site[1])))return '港址必须是空闲且未被预留的相邻海格';
+    }
+    if(this.gold[faction]<rule.cost)return '经济不足';
+    return '';
+  }
+  startConstruction(cityKey,kind,site=null,faction=this.playerFaction) {
+    if(this.constructionError(cityKey,kind,site,faction)||kind==='harbor'&&!site)return false;
+    const rule=ECONOMY.construction[kind],ci=this.cityByKey[cityKey];
+    this.gold[faction]-=rule.cost;
+    this.construction.push({cityKey,kind,remaining:rule.turns,...(kind==='harbor'?{c:site[0],r:site[1]}:{})});
+    this.pushLog(`${ci.n}开始建设${rule.name}（-${rule.cost}金，${rule.turns}回合）。`,'econ');
+    return true;
+  }
+  advanceConstruction() {
+    this.construction=this.construction.filter(p=>{
+      const ci=this.cityByKey[p.cityKey],occupant=p.kind==='harbor'?this.unitAt(p.c,p.r):null;
+      if(occupant&&this.unitFaction(occupant)!==ci.owner){
+        this.pushLog(`${ci.n}港口工地被非己方部队占据，本回合停工。`,'info');return true;
+      }
+      if(--p.remaining>0)return true;
+      if(p.kind==='factory')ci.factory=true;
+      else if(p.kind==='airfield')this.airfields.push(ci);
+      else this.harbors.push({cityKey:ci.k,c:p.c,r:p.r});
+      this.pushLog(`${ci.n}${ECONOMY.construction[p.kind].name}建设完成。`,'econ');
+      return false;
+    });
   }
   harborAt(c,r) { return this.harbors.find(h=>h.c===c&&h.r===r)||null; }
   navalCountry(city) {
@@ -764,6 +810,7 @@ class Game {
     this.applyFalloutDamage();
     this.turn++;
     this.processEvents();
+    this.advanceConstruction();
     this.startTurnFor(this.playerFaction);
     this.ageFallout();
     this.pushLog(`—— ${this.dateLabel()}，${this.factionName(this.playerFaction)}回合开始（收入 +${this.factionIncome(this.playerFaction)} 金）——`, 'info');
@@ -1163,7 +1210,9 @@ class Game {
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {
     return JSON.stringify({
-      v: 8, fallout:this.fallout, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
+      facilities:{factories:this.cities.filter(ci=>ci.factory).map(ci=>ci.k),airfields:this.airfields.map(ci=>ci.k),harbors:this.harbors},
+      construction:this.construction,
+      v: 9, fallout:this.fallout, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
       terrainRevision:MAP_META.terrainRevision||0,
       usedShipNames:[...this.usedShipNames],
       playerFaction: this.playerFaction, difficulty: this.difficulty,
@@ -1193,6 +1242,27 @@ class Game {
       g.fallout[k]=n;
     }
     d.cityOwners.forEach((o, i) => { g.cities[i].owner = o; });
+    if(d.facilities){
+      const f=d.facilities;
+      if(!Array.isArray(f.factories)||!Array.isArray(f.airfields)||!Array.isArray(f.harbors))throw Error('存档中的设施数据无效');
+      for(const k of [...f.factories,...f.airfields])if(!g.cityByKey[k])throw Error('存档中的设施城市无效');
+      for(const k of f.factories)g.cityByKey[k].factory=true;
+      g.airfields=[...new Set(f.airfields)].map(k=>g.cityByKey[k]);
+      if(g.airfields.some(ci=>ci.demilitarized))throw Error('非军事区不能设置机场');
+      const used=new Set(),cities=new Set();
+      g.harbors=f.harbors.map(h=>{
+        const ci=g.cityByKey[h.cityKey],k=key(h.c,h.r);
+        if(!ci||ci.demilitarized||!Number.isInteger(h.c)||!Number.isInteger(h.r)||!g.ocean(h.c,h.r)||hexDist(ci.x,ci.y,h.c,h.r)!==1||used.has(k)||cities.has(ci.k))throw Error('存档中的港口数据无效');
+        used.add(k);cities.add(ci.k);return {cityKey:ci.k,c:h.c,r:h.r};
+      });
+    }
+    g.construction=[];
+    for(const p of d.construction||[]){
+      const ci=g.cityByKey[p.cityKey],rule=ECONOMY.construction[p.kind];
+      if(!ci||!Object.hasOwn(ECONOMY.construction,p.kind)||!Number.isInteger(p.remaining)||p.remaining<1||p.remaining>rule.turns||g.hasFacility(ci,p.kind)||g.construction.some(q=>q.cityKey===ci.k&&q.kind===p.kind)||ci.demilitarized&&p.kind!=='factory')throw Error('存档中的建设数据无效');
+      if(p.kind==='harbor'&&(!Number.isInteger(p.c)||!Number.isInteger(p.r)||!g.ocean(p.c,p.r)||hexDist(ci.x,ci.y,p.c,p.r)!==1||g.harborAt(p.c,p.r)||g.construction.some(q=>q.kind==='harbor'&&q.c===p.c&&q.r===p.r)))throw Error('存档中的港址数据无效');
+      g.construction.push({cityKey:p.cityKey,kind:p.kind,remaining:p.remaining,...(p.kind==='harbor'?{c:p.c,r:p.r}:{})});
+    }
     g.stats = d.stats;
     g.genUnit = d.genUnit; g.genKills = d.genKills;
     const coastCorrections=new Set(['54,27','55,27','47,37','44,57','76,107','78,107','79,107','77,108','79,108']);
