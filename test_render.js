@@ -22,7 +22,7 @@ function harness() {
   const sandbox = {...D, MapLabels:require('./js/ui/map-labels'), Game, hexDist, HexMath:globalThis.HexMath, console,
     innerWidth:1280,innerHeight:900,performance:{now:()=>1005},
     document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element(true)},
-    addEventListener(){},requestAnimationFrame(fn){frames.push(fn);},setTimeout(fn){timers.push(fn);},
+    clearTimeout(){},addEventListener(){},requestAnimationFrame(fn){frames.push(fn);},setTimeout(fn){timers.push(fn);},
     Path2D:class {moveTo(){} lineTo(){} closePath(){}},
   };
   sandbox.window=sandbox;
@@ -174,7 +174,7 @@ assert(h.run("document.getElementById('panel-body').innerHTML.includes('柏林�
 h.run("document.getElementById('air-build-0').onclick()");
 assert(h.run("UI.game.isAir(UI.sel)&&UI.sel.airbase==='berlin'&&UI.sel.attacked"));
 assert(h.run("UI.game.unitAt(airCity.x,airCity.y)===garrison"));
-assert(h.run("document.getElementById('panel-body').innerHTML.includes('作战半径 7格')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('作战半径 6格')"));
 assert(!h.run("document.getElementById('panel-body').innerHTML.includes('pb-dug')"));
 h.run("UI.game.startTurnFor('axis');select(UI.sel);centerOn(airCity.x,airCity.y)");
 h.texts.length=0;h.run('drawAirfields(UI.game)');assert(h.texts.includes('✈'));
@@ -185,3 +185,27 @@ assert(h.run('UI.sel.airbase===transferCity.k&&UI.sel.moved&&UI.sel.attacked'));
 h.run("showUnitPanel(garrison);document.getElementById('garrison-airfield').onclick()");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('柏林机场')"));
 console.log('Airport UI: occupied-city entry, map icon, purchase, aircraft selection, radius display and transfer passed.');
+
+// Seven-class shop and live special-mission controls use authoritative engine validation.
+h.run(`UI.game=new Game('axis','normal',{initialFleet:false});UI.game.units=[];UI.sel=null;UI.busy=false;UI.game.gold.axis=10000;
+ const missionBase=UI.game.cityByKey.berlin;showAirfieldPanel(missionBase);`);
+for(const label of ['轻型战斗机','重型战斗机','近地支援机','海军轰炸机','战术轰炸机','战略轰炸机','运输机','机型发展与解锁年份'])
+ assert(h.run(`document.getElementById('panel-body').innerHTML.includes('${label}')`));
+h.run(`const transportKey=UI.game.airRoster(missionBase).find(o=>o.eq.airRole==='transport').eqKey;
+ const carrier=UI.game.spawnUnit('de',transportKey,missionBase.x,missionBase.y,{});
+ const parachutist=UI.game.spawnUnit('de','de:para:0',missionBase.x,missionBase.y,{});
+ select(carrier);document.getElementById('air-load').onclick();`);
+assert(h.run('UI.game.cargoOf(carrier)===parachutist'));
+h.run("document.getElementById('air-drop').onclick()");assert.equal(h.run('UI.airMission'),'drop');
+h.run(`const dropSpot=UI.game.landNeighbors(missionBase.x,missionBase.y)[0];centerOn(...dropSpot);handleClick(...hexToPix(...dropSpot));`);
+assert(h.run('!parachutist.carrierId&&parachutist.c===dropSpot[0]&&carrier.attacked'));
+h.run(`UI.game.turn=64;const strategicKey=UI.game.airRoster(missionBase).find(o=>o.eq.airRole==='strategic').eqKey;
+ const nukePlane=UI.game.spawnUnit('de',strategicKey,missionBase.x,missionBase.y,{});
+ select(nukePlane);document.getElementById('air-nuclear').onclick();const blastCity=UI.game.cityByKey.hamburg;airMissionTarget(blastCity.x,blastCity.y);`);
+assert(h.run("document.getElementById('modal-root').innerHTML.includes('确认核打击')"));
+h.run("document.getElementById('nuclear-cancel').onclick()");assert(h.run('Object.keys(UI.game.fallout).length===0&&!nukePlane.attacked'));
+h.run("document.getElementById('air-nuclear').onclick();airMissionTarget(blastCity.x,blastCity.y);document.getElementById('nuclear-confirm').onclick()");
+assert(h.run('UI.game.contamination(blastCity.x,blastCity.y)===6&&nukePlane.attacked&&UI.game.gold.axis===8000'));
+h.run('showCityPanel(blastCity)');assert(h.run("document.getElementById('panel-body').innerHTML.includes('收入 0 金/回合')"));
+h.run('centerOn(blastCity.x,blastCity.y)');h.texts.length=0;h.run('drawFallout(UI.game)');assert(h.texts.includes('☢ 6'));
+console.log('Aircraft missions UI: seven roles, cargo loading, map paradrop, nuclear cancel/confirm, zero income and pollution overlay passed.');

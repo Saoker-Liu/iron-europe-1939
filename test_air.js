@@ -46,7 +46,7 @@ console.log('Airfields: recruitment isolation, shared base, radius, sorties, tra
 
 const early=new Game('west','normal',{initialFleet:false});early.units=[];early.gold.west=10000;
 assert.equal(early.recruitAir('london','uk:air:0'),null,'1942 model locked in 1939');
-const basic=early.recruitAir('london','neutral:air:0');assert(basic&&basic.ct==='uk','generic 1939 fallback keeps national allegiance');
+const basic=early.recruitAir('london',early.airRoster(early.cityByKey.london).find(o=>o.eq.airRole==='fighter').eqKey);assert(basic&&basic.ct==='uk','1939 national fighter keeps allegiance');
 early.turn=28;assert(early.recruitAir('london','uk:air:0'),'1942 unlock');
 const occupied=new Game('axis','normal',{initialFleet:false});occupied.units=[];occupied.gold.axis=10000;
 occupied.captureCity(occupied.cityByKey.london,'axis');const occupationAir=occupied.recruitAir('london','de:air:0');assert(occupationAir&&occupationAir.ct==='de'&&occupationAir.airbase==='london');
