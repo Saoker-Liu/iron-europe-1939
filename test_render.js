@@ -231,3 +231,11 @@ assert.equal(h.run("UI.game.construction.filter(p=>p.kind==='harbor').length"),1
 h.run("UI.game.advanceConstruction();UI.game.advanceConstruction();UI.game.advanceConstruction();showCityPanel(buildCoast);document.getElementById('city-harbor').onclick()");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('点击舰种建造')"));
 console.log('Construction UI: garrison access, cost, progress, completion, port selection and facility panels passed.');
+// New-campaign airports expose the actual national opening formations.
+h.run("UI.game=new Game('axis');UI.sel=null;UI.busy=false;UI.cam.z=1;centerOn(UI.game.cityByKey.berlin.x,UI.game.cityByKey.berlin.y);drawAirfields(UI.game);showAirfieldPanel(UI.game.cityByKey.berlin)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('Bf 109 E')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('Ju 52/3m')"));
+assert.equal(h.run("UI.game.airUnitsAt('berlin').length"),5);
+h.run("document.getElementById('airfield-unit-0').onclick()");
+assert(h.run("UI.game.isAir(UI.sel)&&UI.sel.ct==='de'&&UI.sel.airbase==='berlin'"));
+console.log('Initial air UI: deployed aircraft display, airport roster and selection passed.');
