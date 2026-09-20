@@ -1259,7 +1259,9 @@
       "lon": 10.1228,
       "lat": 54.3233,
       "ct": "de",
-      "note": "波罗的海海军基地"
+      "note": "基尔／霍尔特瑙，威廉皇帝运河 Kaiser-Wilhelm-Kanal（今称北海—波罗的海运河）的东端；1895年通航，1914年前完成扩建。",
+      "major": true,
+      "region": "基尔运河东口"
     },
     {
       "k": "lubeck",
@@ -2544,6 +2546,529 @@
       "ct": "su",
       "region": "北奥塞梯",
       "note": "今弗拉季高加索；采用1939年地名，北高加索交通节点",
+      "major": true
+    },
+    {
+      "k": "sukhumi",
+      "n": "苏呼米",
+      "lon": 41.0234,
+      "lat": 43.0015,
+      "ct": "su",
+      "region": "阿布哈兹／格鲁吉亚",
+      "note": "1939年苏联格鲁吉亚苏维埃社会主义共和国境内阿布哈兹自治共和国首府、黑海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "kerch",
+      "n": "刻赤",
+      "lon": 36.468,
+      "lat": 45.356,
+      "ct": "su",
+      "region": "克里米亚／刻赤海峡",
+      "note": "1939年苏联俄罗斯苏维埃联邦社会主义共和国克里米亚自治共和国港口；隔刻赤海峡望塔曼半岛",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "sochi",
+      "n": "索契",
+      "lon": 39.7231,
+      "lat": 43.5855,
+      "ct": "su",
+      "region": "北高加索黑海沿岸",
+      "note": "苏联黑海港口与沿海交通节点",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "novgorod",
+      "n": "诺夫哥罗德",
+      "lon": 31.2758,
+      "lat": 58.5215,
+      "ct": "su",
+      "region": "沃尔霍夫河／伊尔门湖",
+      "note": "今大诺夫哥罗德，1941—1944年战场；不是下诺夫哥罗德（本图称高尔基）",
+      "major": true
+    },
+    {
+      "k": "kazan",
+      "n": "喀山",
+      "lon": 49.1064,
+      "lat": 55.7963,
+      "ct": "su",
+      "region": "伏尔加河／鞑靼自治共和国",
+      "note": "苏联鞑靼自治共和国首府，工业与交通中心",
+      "major": true
+    },
+    {
+      "k": "nikolaev",
+      "n": "尼古拉耶夫",
+      "lon": 31.9946,
+      "lat": 46.975,
+      "ct": "su",
+      "region": "乌克兰／南布格河口",
+      "note": "今米科拉伊夫 Mykolaiv，苏联造船与河口港城",
+      "major": true
+    },
+    {
+      "k": "cherkassy",
+      "n": "切尔卡瑟",
+      "lon": 32.0598,
+      "lat": 49.4444,
+      "ct": "su",
+      "region": "乌克兰／第聂伯河",
+      "note": "Cherkasy，第聂伯河交通节点；不使用战后水库岸线",
+      "major": true
+    },
+    {
+      "k": "pskov",
+      "n": "普斯科夫",
+      "lon": 28.3345,
+      "lat": 57.8136,
+      "ct": "su",
+      "region": "苏联西北部",
+      "note": "靠近1939年爱沙尼亚、拉脱维亚边界的交通节点",
+      "major": true
+    },
+    {
+      "k": "tikhvin",
+      "n": "季赫温",
+      "lon": 33.5293,
+      "lat": 59.6273,
+      "ct": "su",
+      "region": "拉多加湖以东",
+      "note": "列宁格勒东侧铁路与1941年战役地点",
+      "major": true
+    },
+    {
+      "k": "petrozavodsk",
+      "n": "彼得罗扎沃茨克",
+      "lon": 34.3469,
+      "lat": 61.7891,
+      "ct": "su",
+      "region": "卡累利阿／奥涅加湖",
+      "note": "1939年卡累利阿自治共和国首府",
+      "major": true
+    },
+    {
+      "k": "kalinin",
+      "n": "加里宁",
+      "lon": 35.9176,
+      "lat": 56.8587,
+      "ct": "su",
+      "region": "伏尔加河上游",
+      "note": "今特维尔 Tver，使用1931—1990年名称",
+      "major": true
+    },
+    {
+      "k": "yaroslavl",
+      "n": "雅罗斯拉夫尔",
+      "lon": 39.8845,
+      "lat": 57.6261,
+      "ct": "su",
+      "region": "伏尔加河上游",
+      "note": "伏尔加河工业与铁路节点",
+      "major": true
+    },
+    {
+      "k": "ryazan",
+      "n": "梁赞",
+      "lon": 39.7126,
+      "lat": 54.6292,
+      "ct": "su",
+      "region": "奥卡河流域",
+      "note": "莫斯科东南交通节点",
+      "major": true
+    },
+    {
+      "k": "tambov",
+      "n": "坦波夫",
+      "lon": 41.4523,
+      "lat": 52.7212,
+      "ct": "su",
+      "region": "苏联中部",
+      "note": "铁路和农业地区中心",
+      "major": true
+    },
+    {
+      "k": "penza",
+      "n": "奔萨",
+      "lon": 45.0183,
+      "lat": 53.1959,
+      "ct": "su",
+      "region": "伏尔加河以西",
+      "note": "苏联中部工业与铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "kuibyshev",
+      "n": "古比雪夫",
+      "lon": 50.1002,
+      "lat": 53.1959,
+      "ct": "su",
+      "region": "伏尔加河中游",
+      "note": "今萨马拉 Samara，使用1935年起的名称；1941年疏散政府机关驻地",
+      "major": true
+    },
+    {
+      "k": "ulyanovsk",
+      "n": "乌里扬诺夫斯克",
+      "lon": 48.4031,
+      "lat": 54.3142,
+      "ct": "su",
+      "region": "伏尔加河中游",
+      "note": "苏联伏尔加河工业与运输城市",
+      "major": true
+    },
+    {
+      "k": "kirov",
+      "n": "基洛夫",
+      "lon": 49.668,
+      "lat": 58.6035,
+      "ct": "su",
+      "region": "维亚特卡河流域",
+      "note": "原维亚特卡 Vyatka，1934年更名；苏联东北部铁路节点",
+      "major": true
+    },
+    {
+      "k": "vinnytsia",
+      "n": "文尼察",
+      "lon": 28.4682,
+      "lat": 49.2331,
+      "ct": "su",
+      "region": "乌克兰／波多利亚",
+      "note": "苏联西部交通枢纽",
+      "major": true
+    },
+    {
+      "k": "poltava",
+      "n": "波尔塔瓦",
+      "lon": 34.5514,
+      "lat": 49.5883,
+      "ct": "su",
+      "region": "乌克兰中部",
+      "note": "哈尔科夫与第聂伯河之间的交通节点",
+      "major": true
+    },
+    {
+      "k": "sumy",
+      "n": "苏梅",
+      "lon": 34.7981,
+      "lat": 50.9077,
+      "ct": "su",
+      "region": "乌克兰东北部",
+      "note": "苏联西部工业与交通城市",
+      "major": true
+    },
+    {
+      "k": "kherson",
+      "n": "赫尔松",
+      "lon": 32.6169,
+      "lat": 46.6354,
+      "ct": "su",
+      "region": "乌克兰／第聂伯河口",
+      "note": "苏联河口港口与船舶工业节点",
+      "major": true
+    },
+    {
+      "k": "kremenchug",
+      "n": "克列缅丘格",
+      "lon": 33.4204,
+      "lat": 49.0658,
+      "ct": "su",
+      "region": "乌克兰／第聂伯河",
+      "note": "今克雷门丘克 Kremenchuk，第聂伯河交通与工业节点",
+      "major": true
+    },
+    {
+      "k": "simferopol",
+      "n": "辛菲罗波尔",
+      "lon": 34.1024,
+      "lat": 44.9521,
+      "ct": "su",
+      "region": "克里米亚",
+      "note": "1939年克里米亚自治共和国首府，苏联境内内陆铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "maikop",
+      "n": "迈科普",
+      "lon": 40.1007,
+      "lat": 44.6098,
+      "ct": "su",
+      "region": "北高加索／阿迪格",
+      "note": "北高加索石油产区与交通节点",
+      "major": true
+    },
+    {
+      "k": "kuressaare",
+      "n": "库雷萨雷",
+      "lon": 22.485,
+      "lat": 58.252,
+      "ct": "ee",
+      "region": "萨列马岛",
+      "note": "Kuressaare／Saaremaa，1939年8月31日仍属独立爱沙尼亚的岛屿港口",
+      "major": true,
+      "mapLabel": "库雷萨雷·萨列马岛",
+      "port": true
+    },
+    {
+      "k": "tartu",
+      "n": "塔尔图",
+      "lon": 26.729,
+      "lat": 58.378,
+      "ct": "ee",
+      "region": "爱沙尼亚东南部",
+      "note": "独立爱沙尼亚的大学与地区中心",
+      "major": true
+    },
+    {
+      "k": "narva",
+      "n": "纳尔瓦",
+      "lon": 28.1903,
+      "lat": 59.3772,
+      "ct": "ee",
+      "region": "爱沙尼亚东北部",
+      "note": "1939年爱沙尼亚边境工业城市",
+      "major": true
+    },
+    {
+      "k": "liepaja",
+      "n": "利耶帕亚",
+      "lon": 21.0108,
+      "lat": 56.5047,
+      "ct": "lv",
+      "region": "库尔兰",
+      "note": "1939年独立拉脱维亚波罗的海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "daugavpils",
+      "n": "陶格夫匹尔斯",
+      "lon": 26.5362,
+      "lat": 55.8747,
+      "ct": "lv",
+      "region": "拉特加尔",
+      "note": "1939年独立拉脱维亚铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "siauliai",
+      "n": "希奥利艾",
+      "lon": 23.3137,
+      "lat": 55.9349,
+      "ct": "lt",
+      "region": "立陶宛北部",
+      "note": "1939年独立立陶宛铁路与地区中心",
+      "major": true
+    },
+    {
+      "k": "brunsbuettel",
+      "n": "布伦斯比特尔",
+      "lon": 9.143,
+      "lat": 53.897,
+      "ct": "de",
+      "region": "基尔运河西口",
+      "note": "Kaiser-Wilhelm-Kanal／Kiel Canal，运河在易北河口的西端；连接北海与波罗的海",
+      "major": true
+    },
+    {
+      "k": "flensburg",
+      "n": "弗伦斯堡",
+      "lon": 9.436,
+      "lat": 54.7937,
+      "ct": "de",
+      "region": "石勒苏益格",
+      "note": "德国北部港口，靠近丹麦边界",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "schwerin",
+      "n": "什未林",
+      "lon": 11.4075,
+      "lat": 53.6355,
+      "ct": "de",
+      "region": "梅克伦堡",
+      "note": "德国东北地区中心",
+      "major": true
+    },
+    {
+      "k": "limoges",
+      "n": "利摩日",
+      "lon": 1.2611,
+      "lat": 45.8336,
+      "ct": "fr",
+      "region": "利穆赞",
+      "note": "法国中部地区中心与交通节点",
+      "major": true
+    },
+    {
+      "k": "clermontferrand",
+      "n": "克莱蒙费朗",
+      "lon": 3.087,
+      "lat": 45.7772,
+      "ct": "fr",
+      "region": "奥弗涅",
+      "note": "法国中部工业城市",
+      "major": true
+    },
+    {
+      "k": "poitiers",
+      "n": "普瓦捷",
+      "lon": 0.3404,
+      "lat": 46.5802,
+      "ct": "fr",
+      "region": "普瓦图",
+      "note": "法国西部交通节点",
+      "major": true
+    },
+    {
+      "k": "amiens",
+      "n": "亚眠",
+      "lon": 2.2958,
+      "lat": 49.8941,
+      "ct": "fr",
+      "region": "皮卡第",
+      "note": "法国北部铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "larochelle",
+      "n": "拉罗谢尔",
+      "lon": -1.1511,
+      "lat": 46.1603,
+      "ct": "fr",
+      "region": "法国大西洋沿岸",
+      "note": "法国大西洋港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "perpignan",
+      "n": "佩皮尼昂",
+      "lon": 2.8956,
+      "lat": 42.6887,
+      "ct": "fr",
+      "region": "鲁西永",
+      "note": "法国南部与西班牙边境交通节点",
+      "major": true
+    },
+    {
+      "k": "livorno",
+      "n": "里窝那",
+      "lon": 10.3106,
+      "lat": 43.5485,
+      "ct": "it",
+      "region": "托斯卡纳",
+      "note": "意大利第勒尼安海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "verona",
+      "n": "维罗纳",
+      "lon": 10.9916,
+      "lat": 45.4384,
+      "ct": "it",
+      "region": "威尼托",
+      "note": "意大利东北铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "perugia",
+      "n": "佩鲁贾",
+      "lon": 12.3888,
+      "lat": 43.1107,
+      "ct": "it",
+      "region": "翁布里亚",
+      "note": "意大利中部地区中心",
+      "major": true
+    },
+    {
+      "k": "pescara",
+      "n": "佩斯卡拉",
+      "lon": 14.2161,
+      "lat": 42.4618,
+      "ct": "it",
+      "region": "阿布鲁佐",
+      "note": "意大利亚得里亚海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "coimbra",
+      "n": "科英布拉",
+      "lon": -8.4292,
+      "lat": 40.2033,
+      "ct": "pt",
+      "region": "葡萄牙中部",
+      "note": "葡萄牙中部地区与交通中心",
+      "major": true
+    },
+    {
+      "k": "faro",
+      "n": "法鲁",
+      "lon": -7.9304,
+      "lat": 37.0194,
+      "ct": "pt",
+      "region": "阿尔加维",
+      "note": "葡萄牙南部港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "patras",
+      "n": "帕特雷",
+      "lon": 21.7346,
+      "lat": 38.2466,
+      "ct": "gr",
+      "region": "伯罗奔尼撒",
+      "note": "希腊西部港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "ioannina",
+      "n": "约阿尼纳",
+      "lon": 20.8537,
+      "lat": 39.665,
+      "ct": "gr",
+      "region": "伊庇鲁斯",
+      "note": "希腊西北部地区与山地交通中心",
+      "major": true
+    },
+    {
+      "k": "samsun",
+      "n": "萨姆松",
+      "lon": 36.3361,
+      "lat": 41.2867,
+      "ct": "tr",
+      "region": "安纳托利亚黑海沿岸",
+      "note": "土耳其黑海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "konya",
+      "n": "科尼亚",
+      "lon": 32.4846,
+      "lat": 37.8746,
+      "ct": "tr",
+      "region": "安纳托利亚中部",
+      "note": "土耳其内陆铁路与地区中心",
+      "major": true
+    },
+    {
+      "k": "erzurum",
+      "n": "埃尔祖鲁姆",
+      "lon": 41.2769,
+      "lat": 39.9043,
+      "ct": "tr",
+      "region": "安纳托利亚东部",
+      "note": "土耳其东部山地交通中心",
       "major": true
     }
   ]

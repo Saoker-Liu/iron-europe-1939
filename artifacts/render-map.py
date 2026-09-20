@@ -37,6 +37,15 @@ for mode in ['political','terrain']:
  for label in M['labels']:
   c,r=label['grid'];d.text((ox+dx*c,oy+dy*r),label['name'],font=f(21),fill='#ead6a4' if label.get('kind')=='region' else '#b2ccdb',anchor='mm',stroke_width=1,stroke_fill='#294552')
  label_boxes=[]
+ for canal in M.get('canals',[]):
+  pts=[(ox+dx*c,oy+dy*r)for c,r in canal['path']]
+  d.line(pts,fill='#193748',width=5);d.line(pts,fill='#8ce5ef',width=3)
+  label_boxes.append((min(x for x,y in pts)-4,min(y for x,y in pts)-4,max(x for x,y in pts)+4,max(y for x,y in pts)+4))
+  c,r=canal['labelAnchor'];x,y=ox+dx*c,oy+dy*r
+  lx,ly=x+sz*canal['labelOffset'][0],y+sz*canal['labelOffset'][1]
+  d.line([(x,y),(lx,ly+4)],fill='#8ce5ef',width=1)
+  d.text((lx,ly),canal['name'],font=f(16),fill='#b3f5ff',anchor='mm',stroke_width=1,stroke_fill='#193748')
+  label_boxes.append(d.textbbox((lx,ly),canal['name'],font=f(16),anchor='mm',stroke_width=3))
  for ct in D['countries']:
   if ct=='xx':continue
   cells=[(c,r)for r,row in enumerate(M['homes'])for c,x in enumerate(row)if x==ct]
@@ -50,12 +59,15 @@ for mode in ['political','terrain']:
   xy=p(c,r)
   d.text(xy,name,font=f(22),fill='#fff2d5',anchor='mm',stroke_width=2,stroke_fill='#303d3b')
   label_boxes.append(d.textbbox(xy,name,font=f(22),anchor='mm',stroke_width=4))
- for ci in D['cities']:
+ canal_ports={k for canal in M.get('canals',[]) for k in canal['endpoints']}
+ for ci in sorted(D['cities'],key=lambda city:city['k'] not in canal_ports):
   x,y=p(ci['x'],ci['y']);cap=ci.get('cap',False)
   d.ellipse((x-3,y-3,x+3,y+3),fill='#ffe4a1' if cap else '#ded8bf',outline='#243441')
   if cap or ci.get('major'):
    txt=('★' if cap else '')+ci.get('mapLabel',ci['n'])
-   for sx,sy in [(x+7,y+6),(x+7,y-23),(x-95,y+6),(x-95,y-23),(x+7,y+26)]:
+   positions=[(x+7,y+6),(x+7,y-23),(x-95,y+6),(x-95,y-23),(x+7,y+26)]
+   if ci['k']=='brunsbuettel':positions.insert(0,(x-140,y+8))
+   for sx,sy in positions:
     box=d.textbbox((sx,sy),txt,font=f(15),stroke_width=2)
     if all(box[2]<b[0] or box[0]>b[2] or box[3]<b[1] or box[1]>b[3]for b in label_boxes):
      d.line([(x,y),(sx+5,sy+8)],fill='#d7c9a0',width=1)

@@ -7,9 +7,10 @@ const vm = require('node:vm');
 const D = require('./js/data/load-node');
 const { Game, hexDist } = require('./js/engine/game');
 function harness() {
-  const frames = [], timers = [], blits = [], arcs = [], elements = new Map();
+  const frames = [], timers = [], blits = [], arcs = [], texts = [], elements = new Map();
   let resizes = 0, failBlit = false;
   const context = new Proxy({
+    fillText(text,x,y) { assert([x,y].every(Number.isFinite),'valid label coordinates');texts.push(text); },
     arc(x,y,r) { assert(r >= 0 && [x,y,r].every(Number.isFinite), 'valid canvas arc'); arcs.push([x,y,r]); },
     drawImage(...args) { if (failBlit) { failBlit = false; throw Error('transient canvas failure'); } blits.push(args); },
   }, {get: (o,k) => k in o ? o[k] : () => {}});
@@ -32,7 +33,7 @@ function harness() {
     UI.sel = UI.game.spawnUnit('de','de:inf:0',ci.x,ci.y,{});
     const destination=UI.game.landNeighbors(ci.x,ci.y)[0];
     centerOn(ci.x,ci.y); doMove(...destination);`);
-  return {run,frames,timers,blits,arcs,get resizes(){return resizes;},failNextBlit(){failBlit=true;},
+  return {run,frames,timers,blits,arcs,texts,get resizes(){return resizes;},failNextBlit(){failBlit=true;},
     frame(now){assert.equal(frames.length,1,'exactly one next frame'); frames.shift()(now);}};
 }
 
@@ -40,6 +41,8 @@ function harness() {
 const h=harness();
 assert.doesNotThrow(()=>h.run('render(1000)'), 'movement first frame must not access path[-1]');
 assert.equal(h.frames.length,1);
+assert(h.texts.includes('基尔运河'),'canal label rendered by production UI');
+assert(h.texts.includes('库雷萨雷·萨列马岛'),'island label rendered at its city');
 const start=h.arcs[0].slice(0,2);
 h.run('UI.cam.x += 80; UI.cam.y += 40'); h.arcs.length=0;
 h.frame(1000);
