@@ -138,6 +138,8 @@ deserialize以initialFleet:false构造，再恢复原单位；两遍处理舰名
 
 兵种图标改造（`js/ui/unit-icons.js`）沉淀的三条铁律与事故记录，合并时保留备查。
 
+覆盖范围与 `CLASSES` 全集对齐：4 个陆空兵种（inf/art/tank/air）+ naval.js 八舰种（sub/dd/cl/ca/bc/bb/cve/cv）+ transport（`economy.transports` 海运陆军的地图侧影，键不属于 CLASSES）。新增舰种或兵种时同步扩 `SHAPES`/`DETAILS`，否则会静默回退成步兵侧影；`tools/icon-preview.html` 全量列出自查。
+
 1. **禁止每帧重建地形几何**——曾每帧为可见格重建 Path2D（全图构建 332ms），是 4FPS 卡顿的根源。任何新增的"画地图上的东西"都应进 `rebuildTerrain` 的缓存层，而不是 render 主循环
 2. **主画布文本是贵操作**——CJK `strokeText/fillText` 很贵；低倍速（`simple = s < 11`）已自动省略单位小字，新增文字标记请放进同一分支。单位兵种现已改为**矢量图标**（`js/ui/unit-icons.js`），不再逐帧绘制中文，所以图标在低倍速下照常绘制（这正是替换的收益）。但图标描边必须用「`stroke` → `fill` 共用同一 transform」：**禁止把同一个 `Path2D` 换个 transform 再填一遍**来描边——实测会让 Chrome 无法复用光栅化缓存，从 6.6µs 暴涨到 62µs/单位。另：`lineJoin='round'` 下先 stroke 后 fill，线宽内半会被白色主体盖住，接缝也一并盖住，因此不会出现脏线。
 3. **动态层做视口剔除**——单位/文字循环必须有 `hexToPix` 后的屏内判断

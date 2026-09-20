@@ -19,11 +19,17 @@ function harness() {
     return {style:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
       set width(v){this._width=v;if(canvas)resizes++;}, get width(){return this._width;},height:0};
   }
+  const iconDraws = [];
   const sandbox = {...D, MapLabels:require('./js/ui/map-labels'), Game, hexDist, HexMath:globalThis.HexMath, console,
     innerWidth:1280,innerHeight:900,performance:{now:()=>1005},
     document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element(true)},
     clearTimeout(){},addEventListener(){},requestAnimationFrame(fn){frames.push(fn);},setTimeout(fn){timers.push(fn);},
     Path2D:class {moveTo(){} lineTo(){} closePath(){}},
+    // 单位侧影（js/ui/unit-icons.js）在浏览器由 loader 先载入；这里用记录型替身，
+    // 既能断言"舰艇/部队画了图标"，又不依赖真实光栅化。
+    UnitIcons:{BOX_RATIO:0.85,
+      draw(cx,cls,x,y,box){assert([x,y,box].every(Number.isFinite),'valid icon coordinates');iconDraws.push([cls,x,y,box]);},
+      svg:()=>''},
   };
   sandbox.window=sandbox;
   vm.createContext(sandbox);
@@ -34,7 +40,7 @@ function harness() {
     UI.sel = UI.game.spawnUnit('de','de:inf:0',ci.x,ci.y,{});
     const destination=UI.game.landNeighbors(ci.x,ci.y)[0];
     centerOn(ci.x,ci.y); doMove(...destination);`);
-  return {run,frames,timers,blits,arcs,texts,get resizes(){return resizes;},failNextBlit(){failBlit=true;},
+  return {run,frames,timers,blits,arcs,texts,get resizes(){return resizes;},get iconDraws(){return iconDraws;},failNextBlit(){failBlit=true;},
     frame(now){assert.equal(frames.length,1,'exactly one next frame'); frames.shift()(now);}};
 }
 
@@ -135,7 +141,7 @@ h.run("showHarborPanel(UI.game.harbors.find(h=>h.cityKey==='kiel'))");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('泊位被')"));
 const count=h.run('UI.game.units.length');h.run("document.getElementById('naval-build-0').onclick()");
 assert.equal(h.run('UI.game.units.length'),count,'stale occupied-berth click cannot duplicate ships');
-h.texts.length=0;h.frame(9000);assert(h.texts.includes('⚓'),'harbor marker painted');assert(h.texts.includes('驱'),'naval unit painted');
+h.texts.length=0;h.frame(9000);assert(h.texts.includes('⚓'),'harbor marker painted');assert(h.iconDraws.some(a=>a[0]==='dd'),'naval unit painted as vector silhouette');
 console.log('Naval UI: harbor click, production, blocked berth, unit panel and markers passed.');
 
 // Named ships expose nation, type, class and personal name in production UI.

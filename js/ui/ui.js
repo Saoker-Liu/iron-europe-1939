@@ -3,6 +3,12 @@
  * ========================================================================= */
 'use strict';
 
+/* 兵种矢量图标（js/ui/unit-icons.js，loader 先于本文件载入）。
+ * Node 侧 test_render.js 只把 ui.js 单独装进沙箱，没有图标模块——
+ * 这里兜底成空实现：缺模块时地图不画图标、面板不出内联 SVG，逻辑照常跑。 */
+const Icons = typeof UnitIcons !== 'undefined' ? UnitIcons
+  : { BOX_RATIO: 0.85, draw() {}, svg() { return ''; } };
+
 /* ============================ 音效（WebAudio 合成） ============================ */
 const SFX = (() => {
   let ctx = null, on = true;
@@ -395,16 +401,9 @@ function drawFrame(now) {
     // 兵种图标（矢量侧影，见 unit-icons.js）
     // 低倍速也照画：图标比汉字耐缩，这正是替换汉字的主要收益。
     // 细节层（负重轮/发动机短舱等）只在格宽足够大时叠加，否则糊成一团。
-    UnitIcons.draw(cx, u.eq.cls, x, y, s * UnitIcons.BOX_RATIO, { detail: s >= 18 });
+    // 海运中的陆军画运输船侧影：装载的具体部队点开面板可见。
+    Icons.draw(cx, g.isEmbarked(u) ? 'transport' : u.eq.cls, x, y, s * Icons.BOX_RATIO, { detail: s >= 18 });
     if (!simple) {
-      // 登船单位无矢量侧影：回退为文字字形（显式居中：主画布不再有城市循环预设 textAlign）
-      if (g.isEmbarked(u)) {
-        cx.textAlign = 'center';
-        cx.font = `900 ${s * 0.44}px "Microsoft YaHei",sans-serif`;
-        cx.fillStyle = '#fff'; cx.strokeStyle = 'rgba(0,0,0,.6)'; cx.lineWidth = 3;
-        cx.strokeText('船', x, y + s * 0.16);
-        cx.fillText('船', x, y + s * 0.16);
-      }
       // 将领星
       if (u.gen) {
         cx.font = `900 ${s * 0.34}px sans-serif`; cx.fillStyle = '#ffd75e';
@@ -618,7 +617,7 @@ function showAirfieldPanel(ci) {
     <div class="p-sub">驻扎空军（机场失守时，未撤离的飞机损失）</div>
     ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${g.airRoleName(u)} · ${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
     <div class="p-sub">组建空军</div>
-    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name">${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
+    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${Icons.svg('air', 15)}</span>${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
   document.getElementById('airfield-city').onclick=()=>showCityPanel(ci);
   const transferButton=document.getElementById('airfield-transfer');if(transferButton)transferButton.onclick=()=>{if(!UI.busy&&g.rebaseAir(selected,ci.k)){select(selected);updateTopbar();renderLog();}};
   units.forEach((u,i)=>{document.getElementById('airfield-unit-'+i).onclick=()=>{if(UI.busy||!g.units.includes(u))return;if(UI.sel&&UI.targets.has(u.id)){doAttack(u);return;}if(g.unitFaction(u)===g.playerFaction)select(u);else showUnitInfo(u);};});
@@ -693,7 +692,7 @@ function showHarborPanel(h) {
       const country=o.country==='neutral'?COUNTRIES[city.ct].name:COUNTRIES[o.country]?.name;
       const list=EQUIP[o.country][o.eq.cls];
       const nextName=g.nextShipName(o.country==='neutral'?city.ct:o.country,o.eqKey);
-      return `<div class="shop-item" style="display:block"><div class="s-name">${CLASSES[o.eq.cls].glyph} ${CLASSES[o.eq.cls].name} · ${country}</div>
+      return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${Icons.svg(o.eq.cls, 15)}</span>${CLASSES[o.eq.cls].name} · ${country}</div>
       <div>${o.eq.n}${o.locked?' · '+o.eq.yr+'年解锁':''}</div><div class="s-info">下艘舰名：${nextName.n} · ${shipNameKind(nextName)}</div>
       <div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 移动${o.eq.mov} · 射程${o.eq.rng}<br>${o.eq.role}<br>${o.eq.nt}</div>
       <button class="btn gold" id="naval-build-${i}" ${error||UI.busy?'disabled':''}>${o.locked?'尚未解锁':error||'建造'} · ${o.eq.cost}金</button>
@@ -1056,7 +1055,7 @@ function showCityPanel(city) {
     <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
-        <div><div class="s-name"><span class="ico">${UnitIcons.svg(it.eq.cls, 15)}</span>${it.eq.n}${it.eq.group ? ' · ' + it.eq.group : ''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
+        <div><div class="s-name"><span class="ico">${Icons.svg(it.eq.cls, 15)}</span>${it.eq.n}${it.eq.group ? ' · ' + it.eq.group : ''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
         <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;

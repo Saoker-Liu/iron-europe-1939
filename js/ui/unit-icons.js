@@ -1,9 +1,11 @@
 /* =========================================================================
  * unit-icons.js —— 兵种图标（矢量图形，零外部资源、零依赖）
  *
- * 用可辨识的"侧影"替代原先的兵种汉字（步/炮/坦/轰）：
+ * 用可辨识的"侧影"替代原先的兵种汉字（步/炮/坦/轰 + 舰种字）：
  *   步兵 = 钢盔士兵侧影  ·  炮兵 = 野战炮侧影
  *   装甲 = 坦克侧影      ·  空军 = 俯视轰炸机
+ *   海军 = 八舰种侧影（sub 潜艇 · dd 驱逐舰 · cl/ca 巡洋舰 · bc/bb 主力舰 ·
+ *          cve/cv 航母）  ·  海运陆军 = 运输船侧影
  * 收益：任何缩放级别下都能一眼分辨兵种，同时省掉每帧的中文描边文本开销
  * （DEVELOPMENT.md §6.3 已记录 CJK strokeText/fillText 是贵操作）。
  *
@@ -115,11 +117,99 @@ const UnitIcons = (() => {
     'M 7 26 L 25 37 L 25 42 L 7 33 Z',                      // 右平尾
   ].join(' ');
 
+  /* ---- 独立海军（naval.js 八舰种）+ 海运陆军（economy.transports） ----
+   * 舰体侧视，舰艏朝右，与坦克／火炮的朝向一致。设计语言：
+   *   · 舰体低矮、上层建筑向上伸展——圆形国徽棋子上"下重上轻"才像船；
+   *   · 每舰种一个一眼可辨的主特征，保证 15px 面板图标与低倍速地图格仍可区分：
+   *     潜艇=低矮指挥塔+潜望镜  驱逐舰=单烟囱小舰体  轻巡=双烟囱+单桅
+   *     重巡=单粗烟囱+三炮塔   战巡=细长舰体+两座高烟囱  战列舰=高塔楼+深舰体
+   *     航母=全通甲板+大岛式舰桥  护航航母=小舰体+窄甲板+小舰岛
+   * 与陆军图标相同：相邻子路径必须重叠 1—2 个坐标单位，让白色主体盖住接缝。 */
+  const NAVAL_SUB = [
+    'M -46 9 L -40 -2 L -6 -6 L 26 -4 L 45 2 L 40 9 L -38 12 Z',  // 耐压壳（雪茄形）
+    'M -14 -4 L 6 -4 L 4 -20 L -12 -20 Z',                        // 指挥塔
+    'M -6 -18 L -4 -33 L -2 -33 L 0 -18 Z',                       // 潜望镜
+    'M -46 3 L -33 -1 L -33 5 L -46 8 Z',                         // 尾舵
+    'M 30 -5 L 42 -10 L 43 -5 L 31 -1 Z',                         // 艏升降舵
+  ].join(' ');
+  const NAVAL_DD = [
+    'M -40 7 L -34 -1 L 18 -5 L 42 1 L 44 5 L 37 10 L -34 11 Z',  // 单薄舰体
+    'M 4 -3 L 15 -3 L 13 -15 L 5 -15 Z',                          // 舰桥
+    'M -8 -3 L 0 -3 L -2 -22 L -10 -22 Z',                        // 单烟囱（主特征）
+    'M 22 -3 L 29 -3 L 28 -11 L 23 -11 Z',                        // 前主炮
+    'M -26 0 L -15 0 L -16 -10 L -25 -10 Z',                      // 后甲板室
+  ].join(' ');
+  const NAVAL_CL = [
+    'M -46 8 L -40 -1 L 22 -5 L 45 1 L 47 6 L 40 11 L -40 12 Z',
+    'M 8 -3 L 19 -3 L 17 -17 L 10 -17 Z',                         // 舰桥
+    bar(13, -17, 9, -31, 1.5),                                    // 单桅
+    'M -4 -3 L 4 -3 L 2 -20 L -6 -20 Z',                          // 双烟囱（主特征）
+    'M -18 -3 L -10 -3 L -12 -19 L -20 -19 Z',
+    'M 26 -3 L 34 -3 L 33 -12 L 27 -12 Z',                        // 前主炮
+    'M -33 2 L -25 2 L -26 -7 L -32 -7 Z',                        // 尾炮
+  ].join(' ');
+  const NAVAL_CA = [
+    'M -48 9 L -42 -1 L 24 -6 L 47 1 L 49 6 L 42 12 L -42 13 Z',  // 更深的舰体
+    'M 10 -4 L 23 -4 L 21 -19 L 12 -19 Z',                        // 块状舰桥
+    bar(16, -19, 12, -31, 1.5),
+    'M -2 -4 L 8 -4 L 6 -24 L -4 -24 Z',                          // 单粗烟囱（与轻巡区分）
+    'M 28 -4 L 38 -4 L 37 -14 L 29 -14 Z',                        // 三座炮塔（主特征）
+    'M -14 -1 L -4 -1 L -5 -11 L -13 -11 Z',
+    'M -36 2 L -26 2 L -27 -8 L -35 -8 Z',
+  ].join(' ');
+  const NAVAL_BC = [
+    'M -49 8 L -44 -1 L 28 -6 L 48 1 L 50 6 L 43 12 L -44 13 Z',  // 最长的舰体
+    'M 12 -4 L 23 -4 L 21 -15 L 14 -15 Z',                        // 低矮舰桥
+    'M 0 -4 L 9 -4 L 6 -26 L -3 -26 Z',                           // 两座高烟囱（主特征）
+    'M -18 -4 L -9 -4 L -12 -24 L -21 -24 Z',
+    'M 30 -4 L 42 -4 L 41 -15 L 31 -15 Z',                        // 前主炮
+    'M -39 2 L -28 2 L -29 -9 L -38 -9 Z',                        // 尾主炮
+  ].join(' ');
+  const NAVAL_BB = [
+    'M -49 9 L -44 -1 L 26 -7 L 47 1 L 49 7 L 42 14 L -44 15 Z',  // 最深的舰体
+    'M 4 -5 L 22 -5 L 19 -20 L 7 -20 Z',                          // 舯楼
+    'M 8 -18 L 18 -18 L 16 -33 L 10 -33 Z',                       // 高塔楼（主特征，全图最高点）
+    'M -6 -5 L 2 -5 L 0 -22 L -8 -22 Z',                          // 宽烟囱
+    'M 28 -5 L 41 -5 L 40 -17 L 29 -17 Z',                        // 前主炮
+    'M -20 -1 L -9 -1 L -10 -12 L -19 -12 Z',                     // 中部后主炮
+    'M -40 3 L -30 3 L -31 -7 L -39 -7 Z',                        // 尾主炮
+  ].join(' ');
+  const NAVAL_CV = [
+    'M -48 9 L -44 1 L 32 1 L 47 6 L 43 13 L -44 14 Z',
+    'M -49 -9 L 50 -9 L 50 2 L -49 2 Z',                          // 全通飞行甲板（主特征）
+    'M 12 -7 L 28 -7 L 26 -21 L 14 -21 Z',                        // 大型岛式舰桥
+    bar(20, -21, 17, -30, 1.4),
+  ].join(' ');
+  const NAVAL_CVE = [
+    'M -38 8 L -34 1 L 28 1 L 41 5 L 37 11 L -34 12 Z',           // 小舰体
+    'M -42 -6 L 46 -6 L 47 3 L -43 3 Z',                          // 窄长的飞行甲板
+    'M 16 -4 L 25 -4 L 24 -13 L 17 -13 Z',                        // 小型舰岛
+  ].join(' ');
+  const TRANSPORT = [
+    'M -47 9 L -42 1 L 30 1 L 46 6 L 42 13 L -42 14 Z',
+    'M 0 3 L 14 3 L 12 -14 L 2 -14 Z',                            // 船楼
+    'M 4 -12 L 10 -12 L 9 -20 L 5 -20 Z',                         // 烟囱
+    'M 20 3 L 30 3 L 29 -6 L 21 -6 Z',                            // 货舱口
+    'M 34 3 L 42 3 L 41 -5 L 35 -5 Z',
+    'M -24 3 L -14 3 L -15 -6 L -23 -6 Z',
+    bar(25, -6, 21, -20, 1.3),                                    // 吊杆桅
+    bar(-19, -6, -23, -18, 1.3),
+  ].join(' ');
+
   const SHAPES = {
     inf: normalizeWinding(INF),
     art: normalizeWinding(ART),
     tank: normalizeWinding(TANK),
     air: normalizeWinding(AIR),
+    sub: normalizeWinding(NAVAL_SUB),
+    dd: normalizeWinding(NAVAL_DD),
+    cl: normalizeWinding(NAVAL_CL),
+    ca: normalizeWinding(NAVAL_CA),
+    bc: normalizeWinding(NAVAL_BC),
+    bb: normalizeWinding(NAVAL_BB),
+    cve: normalizeWinding(NAVAL_CVE),
+    cv: normalizeWinding(NAVAL_CV),
+    transport: normalizeWinding(TRANSPORT),
   };
 
   /* ------------------------------ 细节层 ------------------------------ */
@@ -139,8 +229,34 @@ const UnitIcons = (() => {
   const AIR_DETAIL = circle(0, -28, 5) +
     [15, 31].map(x => circle(x, 2.5 + (x - 10) * 0.45, 4.5)).join(' ') +
     [15, 31].map(x => circle(-x, 2.5 + (x - 10) * 0.45, 4.5)).join(' ');
+  /* 海军：主炮炮管 / 测距仪 / 甲板中线等（炮管一律指向舰艏方向外侧） */
+  const NAVAL_SUB_DETAIL = bar(20, -6, 32, -11, 1.8) + ' ' +          // 甲板炮
+    circle(-20, 3, 2) + ' ' + circle(-13, 3, 2);                      // 舷侧通海阀
+  const NAVAL_DD_DETAIL = bar(28, -11, 41, -15, 1.4) + ' ' +          // 前主炮炮管
+    bar(-20, -10, -33, -14, 1.4) + ' ' +                              // 后炮
+    bar(-9, -22, -1, -22, 1.6);                                       // 烟囱帽
+  const NAVAL_CL_DETAIL = bar(33, -12, 46, -16, 1.4) + ' ' +          // 前炮管
+    bar(-31, -7, -44, -11, 1.4) + ' ' +                               // 尾炮管
+    bar(5, -26, 13, -26, 1.2);                                        // 桅横杆
+  const NAVAL_CA_DETAIL = bar(37, -14, 50, -18, 1.6) + ' ' +          // 三座炮塔炮管
+    bar(-9, -11, -22, -15, 1.6) + ' ' +
+    bar(-31, -8, -44, -12, 1.6);
+  const NAVAL_BC_DETAIL = bar(41, -14, 50, -18, 1.8) + ' ' +          // 前主炮
+    bar(-38, -9, -50, -13, 1.8);                                      // 尾主炮
+  const NAVAL_BB_DETAIL = bar(39, -14, 50, -18, 1.6) + ' ' +          // 前主炮
+    bar(-19, -11, -32, -15, 1.5) + ' ' + bar(-39, -7, -50, -11, 1.5) + ' ' + // 中部／尾部主炮
+    circle(13, -27, 2);                                               // 塔楼测距仪
+  const NAVAL_CV_DETAIL = [-36, -14, 4, 22, 38].map(x => bar(x, -5.5, x + 8, -5.5, 1)).join(' '); // 甲板中线
+  const NAVAL_CVE_DETAIL = [-30, -10, 6].map(x => bar(x, -3.5, x + 6, -3.5, 1)).join(' ');
+  const TRANSPORT_DETAIL = bar(21, -6, 13, -17, 1.1) + ' ' +          // 吊杆
+    circle(25, -2.5, 2) + ' ' + circle(38, -2, 1.8) + ' ' + circle(-19, -2.5, 2); // 舱口盖
 
-  const DETAILS = { tank: TANK_DETAIL, art: ART_DETAIL, inf: INF_DETAIL, air: AIR_DETAIL };
+  const DETAILS = {
+    tank: TANK_DETAIL, art: ART_DETAIL, inf: INF_DETAIL, air: AIR_DETAIL,
+    sub: NAVAL_SUB_DETAIL, dd: NAVAL_DD_DETAIL, cl: NAVAL_CL_DETAIL,
+    ca: NAVAL_CA_DETAIL, bc: NAVAL_BC_DETAIL, bb: NAVAL_BB_DETAIL,
+    cve: NAVAL_CVE_DETAIL, cv: NAVAL_CV_DETAIL, transport: TRANSPORT_DETAIL,
+  };
 
   /* ------------------------ 懒加载的 Path2D 缓存 ------------------------ */
   const cShape = {}, cDetail = {};
@@ -163,7 +279,7 @@ const UnitIcons = (() => {
   /**
    * 在 (x,y) 处画一枚兵种图标。
    * @param {CanvasRenderingContext2D} cx
-   * @param {string} cls   兵种键：inf / art / tank / air
+   * @param {string} cls   兵种键：inf/art/tank/air、naval.js 八舰种、transport（海运陆军）
    * @param {number} x,y   屏幕坐标（图标中心）
    * @param {number} box   图标外接盒边长（像素）
    * @param {object} [o]   { detail:boolean 画细节层, dark:string 描边与细节色 }
