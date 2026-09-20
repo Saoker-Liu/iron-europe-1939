@@ -31,11 +31,12 @@ jobs:
           node test_render.js
           node test_transport.js
           node test_naval.js
+          node test_naval_names.js
           node test_logic.js
       - name: 打包游戏和地图资料
         run: |
           mkdir -p _site/artifacts
-          cp index.html README.md MAP_NOTES.md CITY_CATALOG.md NAVAL_CATALOG.md _site/
+          cp index.html README.md MAP_NOTES.md CITY_CATALOG.md NAVAL_CATALOG.md NAVAL_NAMES.md _site/
           cp -R js map_sources _site/
           cp artifacts/europe-1939-political.png artifacts/europe-1939-terrain.png artifacts/label-levels.png artifacts/naval-ports-detail.png _site/artifacts/
           touch _site/.nojekyll

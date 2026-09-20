@@ -15,7 +15,7 @@ const DIRS_EVEN = [[1, 0], [-1, 0], [0, -1], [-1, -1], [0, 1], [-1, 1]];
 const DIRS_ODD  = [[1, 0], [-1, 0], [1, -1], [0, -1], [1, 1], [0, 1]];
 
 class Game {
-  constructor(playerFaction, difficulty) {
+  constructor(playerFaction, difficulty, options = {}) {
     this.playerFaction = playerFaction || 'axis';
     this.difficulty = difficulty || 'normal';
     const DMULT = {
@@ -38,6 +38,7 @@ class Game {
     this.cf = {};
     for (const k in COUNTRIES) this.cf[k] = COUNTRIES[k].faction;
     this.cf.it = 'neutral'; this.cf.hu = 'neutral'; this.cf.ro = 'neutral';
+    if(options.initialFleet!==false)this.cf.us='neutral';
     for (const ct in COUNTRIES) {
       if (COUNTRIES[ct].controller) this.cf[ct] = this.cf[COUNTRIES[ct].controller];
     }
@@ -75,9 +76,11 @@ class Game {
 
     // 单位
     this.units = [];
+    this.usedShipNames = new Set();
     for (const d of INITIAL_UNITS) {
       this.spawnUnit(d.ct, d.eq, d.x, d.y, { gen: d.gen, silent: true });
     }
+    if(options.initialFleet!==false)this.deployInitialFleets();
     this.pushLog(`1939年9月，德国入侵波兰，英法对德宣战——第二次世界大战爆发！`, 'war');
     this.checkVictory();
   }
@@ -98,6 +101,45 @@ class Game {
   }
   transportOf(u) { return (ECONOMY.transports || []).find(t => t.id === u.transport) || null; }
   isNaval(u) { return !!CLASSES[u.eq.cls].naval; }
+  unitName(u) { return this.isNaval(u)?u.shipName:u.eq.n; }
+  navalIdentity(u) {
+    return `${COUNTRIES[u.ct]?.name||u.ct} · ${CLASSES[u.eq.cls].name} · ${u.eq.n} · ${this.unitName(u)}`;
+  }
+  shipNamePool(ct,eqKey) { return eqKey.split(':')[0]===ct ? NAVAL.names[eqKey]||[] : []; }
+  genericShipName(cls) { return {bc:'战列巡洋舰',cve:'护航航母',cv:'航空母舰'}[cls]||CLASSES[cls].name; }
+  shipNameAvailable(ct,entry) {
+    return !this.usedShipNames.has(`${ct}:${entry.n}`)&&(!entry.identity||!this.usedShipNames.has(`${ct}:@${entry.identity}`));
+  }
+  nextShipName(ct,eqKey) {
+    const found=this.shipNamePool(ct,eqKey).find(e=>this.shipNameAvailable(ct,e));
+    if(found)return found;
+    const prefix=this.genericShipName(this.equipOf(eqKey).cls);
+    let i=1;while(this.usedShipNames.has(`${ct}:${prefix}${i}`))i++;
+    return {n:prefix+i,kind:'generic'};
+  }
+  rememberShipName(ct,entry) {
+    this.usedShipNames.add(`${ct}:${entry.n}`);
+    if(entry.identity)this.usedShipNames.add(`${ct}:@${entry.identity}`);
+  }
+  shipNameInfo(u) {
+    return this.shipNamePool(u.ct,u.eqKey).find(e=>e.n===u.shipName)||{n:u.shipName,kind:'generic'};
+  }
+  deployInitialFleets() {
+    const reserved=new Set(this.harbors.map(h=>key(h.c,h.r)));
+    for(const d of NAVAL.initialFleets||[]){
+      const harbor=typeof d.base==='string'?this.harbors.find(h=>h.cityKey===d.base):null;
+      const origin=Array.isArray(d.base)?d.base:harbor?[harbor.c,harbor.r]:null;
+      if(!origin||!this.ocean(...origin))throw Error('开局舰队基地无效：'+d.base);
+      const queue=[origin],seen=new Set([key(...origin)]);let spot=null;
+      for(let i=0;i<queue.length;i++){
+        const p=queue[i];
+        if(!reserved.has(key(...p))&&!this.unitAt(...p)){spot=p;break;}
+        for(const q of this.seaNeighbors(...p))if(!seen.has(key(...q))){seen.add(key(...q));queue.push(q);}
+      }
+      if(!spot)throw Error('开局舰队没有可用海格：'+d.ct);
+      this.spawnUnit(d.ct,d.eq,...spot,{silent:true});
+    }
+  }
   isEmbarked(u) { return !!u.embarked && !!this.transportOf(u) && !CLASSES[u.eq.cls].fly && !this.isNaval(u); }
   isSeagoing(u) { return this.isNaval(u) || this.isEmbarked(u); }
   buildHarbors() {
@@ -143,7 +185,7 @@ class Game {
     const ct=rosterCt==='neutral'?ci.ct:rosterCt;
     this.gold[faction]-=eq.cost;
     const u=this.spawnUnit(ct,eqKey,h.c,h.r,{});u.moved=true;u.attacked=true;
-    this.pushLog(`${this.factionName(faction)} 在${ci.n}军港建造 ${eq.n}（-${eq.cost}金），下回合可行动。`,'econ');
+    this.pushLog(`${this.factionName(faction)} 在${ci.n}军港建造 ${this.navalIdentity(u)}（-${eq.cost}金），下回合可行动。`,'econ');
     return u;
   }
   ocean(c,r) { return this.tile(c,r) === '~'; }
@@ -425,8 +467,8 @@ class Game {
       }
     }
     this.updateVet(att);
-    const an = att.eq.n + (att.gen ? `(${this.genOf(att).name})` : '');
-    const dn = def.eq.n;
+    const an = this.unitName(att) + (att.gen ? `(${this.genOf(att).name})` : '');
+    const dn = this.unitName(def);
     this.pushLog(`${an} 攻击 ${dn}，造成 ${rec.dmg} 点伤害${rec.killed ? '，将其歼灭！' : ''}${rec.counter ? `，遭反击 ${rec.counter} 点。` : ''}`, 'battle');
     return rec;
   }
@@ -512,6 +554,10 @@ class Game {
       hp: 100, xp: 0, vet: 0, c: x, r: y,
       moved: false, attacked: false, dug: false, gen: null, transport:null, embarked:false,
     };
+    if(this.isNaval(u)){
+      const entry=this.nextShipName(ct,eqKey);
+      u.shipName=entry.n;this.rememberShipName(ct,entry);
+    }
     this.units.push(u);
     if (opt && opt.gen && this.genUnit[opt.gen] === null) {
       u.gen = opt.gen; this.genUnit[opt.gen] = u.id;
@@ -616,7 +662,8 @@ class Game {
         this.pendingEvents.push(ev);
       }
       else if (ev.kind === 'usa') {
-        this.usaIn = true; this.gold.west += 150;
+        this.usaIn = true; this.cf.us='west'; this.gold.west += 150;
+        for(const ci of this.cities)if(ci.ct==='us')ci.owner='west';
         this.pushLog(`【${ev.title}】${ev.text}`, 'event'); this.pendingEvents.push(ev);
         const london = this.cityByKey.london;
         if (london && london.owner === 'west') {
@@ -935,7 +982,8 @@ class Game {
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {
     return JSON.stringify({
-      v: 5, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
+      v: 6, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
+      usedShipNames:[...this.usedShipNames],
       playerFaction: this.playerFaction, difficulty: this.difficulty,
       gold: this.gold, westBonus: this.westBonus, usaIn: this.usaIn,
       wars: [...this.wars], cf: this.cf,
@@ -943,7 +991,7 @@ class Game {
       stats: this.stats,
       genUnit: this.genUnit, genKills: this.genKills,
       units: this.units.map(u => ({
-        id: u.id, ct: u.ct, eqKey: u.eqKey, hp: u.hp, xp: u.xp, vet: u.vet,
+        id: u.id, ct: u.ct, eqKey: u.eqKey, shipName:u.shipName, hp: u.hp, xp: u.xp, vet: u.vet,
         c: u.c, r: u.r, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
       })),
       log: this.log.slice(-80),
@@ -952,7 +1000,7 @@ class Game {
   static deserialize(str) {
     const d = JSON.parse(str);
     if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
-    const g = new Game(d.playerFaction, d.difficulty);
+    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false});
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;
     g.wars = new Set(d.wars); g.cf = d.cf;
@@ -978,6 +1026,22 @@ class Game {
       if(!unit.embarked&&!g.landPassable(unit.c,unit.r))throw Error('存档中存在未登船的海上单位');
       return unit;
     });
+    // Reserve all existing names before allocating names to legacy unnamed ships.
+    g.usedShipNames=new Set(Array.isArray(d.usedShipNames)?d.usedShipNames.filter(v=>typeof v==='string'):[]);
+    const liveNames=new Set();
+    for(const u of g.units.filter(u=>g.isNaval(u)&&u.shipName)){
+      if(typeof u.shipName!=='string')throw Error('存档中的舰名无效');
+      const record=g.shipNamePool(u.ct,u.eqKey).find(e=>e.n===u.shipName);
+      const prefix=g.genericShipName(u.eq.cls),suffix=u.shipName.slice(prefix.length);
+      if(!record&&!(u.shipName.startsWith(prefix)&&/^[1-9]\d*$/.test(suffix)))throw Error('存档中的舰名无效');
+      const nameKey=`${u.ct}:${u.shipName}`,hullKey=record?.identity?`${u.ct}:@${record.identity}`:null;
+      if(liveNames.has(nameKey)||(hullKey&&liveNames.has(hullKey)))throw Error('存档中存在重复舰名');
+      liveNames.add(nameKey);if(hullKey)liveNames.add(hullKey);
+      g.rememberShipName(u.ct,record||{n:u.shipName});
+    }
+    for(const u of g.units.filter(u=>g.isNaval(u)&&!u.shipName).sort((a,b)=>a.id-b.id)){
+      const record=g.nextShipName(u.ct,u.eqKey);u.shipName=record.n;g.rememberShipName(u.ct,record);
+    }
     g.log = d.log || [];
     g.terrDirty = true; g.over = null; g.pendingEvents = [];
     g.checkVictory();

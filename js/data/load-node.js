@@ -14,6 +14,8 @@ require('./nations.js');
 require('./economy.js');
 require('./military.js');
 require('./naval.js');
+require('./naval-names.js');
+require('./naval-scenario.js');
 require('./generals.js');
 require('./events.js');
 require('../core/assemble.js');
