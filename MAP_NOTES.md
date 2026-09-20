@@ -198,3 +198,9 @@ node test_logic.js
 
 - [美国海军历史与遗产司令部：LST-383](https://www.history.navy.mil/content/history/museums/nmusn/explore/photography/ships-us/ships-usn-l/uss-lst-383.html/1000)
 - [美国海军历史与遗产司令部：诺曼底登陆运输与突击艇](https://www.history.navy.mil/browse-by-topic/wars-conflicts-and-operations/world-war-ii/1944/overlord.html)
+
+## 海军军港的格网表达
+
+在不移动436个城市格和128个初始单位的前提下，将汉堡西侧(50,55)及列宁格勒西侧(77,37)概化为通航水面，分别表达易北河口与芬兰湾东端。它们是45公里尺度的港口水域抽象，不表示真实岸线突然加宽。
+
+直布罗陀(15,97)—(17,97)、达达尼尔(80,92)—(81,91)、博斯普鲁斯(83,90)—(83,88)保留短距离水面连接。这样既不删除直布罗陀／伊斯坦布尔城市格，也不会让狭窄海峡在海军寻路中被陆格封死。连接只供海上单位使用，按格距计费，在图上以青色短线显示；没有恢复城市间海运航线。基尔运河仍未增加过闸玩法。

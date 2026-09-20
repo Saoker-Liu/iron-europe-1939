@@ -120,3 +120,20 @@ assert(h.run("document.getElementById('panel-body').innerHTML.includes('航行�
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('海上攻击保留20%')"));
 assert(!h.run("document.getElementById('panel-body').innerHTML.includes('id=\"pb-dug\"')"),'no sea entrenchment button');
 console.log('Render: first-frame timing, delayed movement, camera panning, cache reuse and frame recovery passed.');
+
+// Real harbor icon click, latest offer buttons, launch and subsequent render.
+h.run(`UI.game=new Game('axis');UI.game.units=[];UI.game.gold.axis=10000;UI.sel=null;UI.busy=false;
+ UI.cam.z=1;{const h=UI.game.harbors.find(h=>h.cityKey==='kiel');centerOn(h.c,h.r);handleClick(...harborScreen(h));}`);
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('基尔军港')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('德意志级前无畏舰')"));
+h.run("document.getElementById('naval-build-1').onclick()");
+assert.equal(h.run('UI.sel.eq.cls'),'dd');
+assert(h.run('UI.game.isNaval(UI.sel) && UI.game.ocean(UI.sel.c,UI.sel.r)'));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('id=\"pb-ship-0\"')"));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('id=\"pb-dug\"')"));
+h.run("showHarborPanel(UI.game.harbors.find(h=>h.cityKey==='kiel'))");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('泊位被')"));
+const count=h.run('UI.game.units.length');h.run("document.getElementById('naval-build-0').onclick()");
+assert.equal(h.run('UI.game.units.length'),count,'stale occupied-berth click cannot duplicate ships');
+h.texts.length=0;h.frame(9000);assert(h.texts.includes('⚓'),'harbor marker painted');assert(h.texts.includes('驱'),'naval unit painted');
+console.log('Naval UI: harbor click, production, blocked berth, unit panel and markers passed.');

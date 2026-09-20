@@ -1,7 +1,7 @@
 import json, math, subprocess
 from PIL import Image,ImageDraw,ImageFont
 from pathlib import Path
-D=json.loads(subprocess.check_output(['node','-e',"const D=require('./js/data/load-node');process.stdout.write(JSON.stringify({map:D.MAP_META,countries:D.COUNTRIES,cities:D.CITIES,terrain:D.TERRAIN}));"],encoding='utf8'))
+D=json.loads(subprocess.check_output(['node','-e',"const D=require('./js/data/load-node'),{Game}=require('./js/engine/game');process.stdout.write(JSON.stringify({map:D.MAP_META,countries:D.COUNTRIES,cities:D.CITIES,terrain:D.TERRAIN,harbors:new Game().harbors,passages:D.NAVAL.passages}));"],encoding='utf8'))
 M=D['map']; sz=12; dx=sz*math.sqrt(3);dy=sz*1.5;ox=45;oy=160
 w=round(M['width']*dx+90);h=round(M['height']*dy+260)
 font='C:/Windows/Fonts/msyh.ttc'
@@ -50,6 +50,11 @@ for mode in ['political','terrain']:
   a,b=[p(*map(int,v.split(',')))for v in key.split('|')]
   x=(a[0]+b[0])/2;y=(a[1]+b[1])/2;vx=b[0]-a[0];vy=b[1]-a[1];ll=math.hypot(vx,vy)
   d.line([(x-vy/ll*sz/2,y+vx/ll*sz/2),(x+vy/ll*sz/2,y-vx/ll*sz/2)],fill='#78b3d4',width=4)
+ for passage in D['passages']:
+  d.line([p(*passage['a']),p(*passage['b'])],fill='#81dbe6',width=3)
+ for harbor in D['harbors']:
+  x,y=p(harbor['c'],harbor['r'])
+  d.text((x+8,y-8),'⚓',font=ImageFont.truetype('C:/Windows/Fonts/seguisym.ttf',13),anchor='mm',fill='#dbf1ff',stroke_width=1,stroke_fill='#102535')
  # Shared label selection and layout, with real font metrics for this export.
  for canal in M.get('canals',[]):
   pts=[(ox+dx*c,oy+dy*r)for c,r in canal['path']]

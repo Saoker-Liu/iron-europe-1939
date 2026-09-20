@@ -162,6 +162,9 @@ for(const [a,b]of [[[-5.55,50.12],[-4.7,50.4]],[[-4.7,50.4],[-3.8,50.65]]])
 // Preserve the Bristol Channel and Severn/Avon estuary at sub-grid scale.
 // This opens the formerly enclosed water hex west of Bristol to the Atlantic.
 for(const [c,r]of lineHexes([-4.2,51.35],[-3.15,51.43])){rows[r][c]='~';homes[r][c]=null;}
+// Preserve the navigable Elbe estuary and eastern Gulf of Finland at 45 km resolution.
+// Explicit water approaches: Hamburg and Leningrad retain their existing city cells.
+for(const [c,r]of [[50,55],[77,37]]){rows[r][c]='~';homes[r][c]=null;}
 // Retain tiny but strategically relevant islands and states at one-hex resolution.
 // Only these explicit anchors can promote a sea cell to land; never arbitrary units.
 const anchors={valletta:'uk',gibraltar:'uk',luxembourg:'lu',danzig:'dz',rhodes:'it',bratislava:'sk',kosice:'hu',zara:'it',dunkirk:'fr',fiume:'it',scapaflow:'uk',ronne:'dk',torshavn:'dk',jersey:'uk',janmayen:'no',douglas:'uk',visby:'se',mariehamn:'fi',plymouth:'uk',kuressaare:'ee',brunsbuettel:'de',geneva:'ch',thehague:'nl',odense:'dk'};
