@@ -1040,7 +1040,9 @@
       "lon": -2.5879,
       "lat": 51.4545,
       "ct": "uk",
-      "note": "港口与航空工业中心"
+      "note": "布里斯托尔及埃文茅斯港区；经埃文河口通往布里斯托尔湾，埃文茅斯港1877年启用。",
+      "major": true,
+      "port": true
     },
     {
       "k": "plymouth",
@@ -1048,7 +1050,8 @@
       "lon": -4.1427,
       "lat": 50.3755,
       "ct": "uk",
-      "note": "德文港海军基地"
+      "note": "德文港海军基地",
+      "port": true
     },
     {
       "k": "portsmouth",
@@ -1648,7 +1651,7 @@
       "k": "bastogne",
       "n": "巴斯托涅",
       "lon": 5.72,
-      "lat": 50.0,
+      "lat": 50,
       "ct": "be",
       "note": "1944年阿登战役节点",
       "major": true
@@ -1748,7 +1751,10 @@
       "lon": -2.935,
       "lat": 43.263,
       "ct": "es",
-      "note": "西班牙北部工业港口"
+      "note": "毕尔巴鄂 Bilbao，巴斯克工业中心，内尔维翁河口港口",
+      "major": true,
+      "region": "巴斯克",
+      "port": true
     },
     {
       "k": "valencia",
@@ -1781,6 +1787,764 @@
       "lat": 49.7384,
       "ct": "bm",
       "note": "斯柯达工业中心"
+    },
+    {
+      "k": "fiume",
+      "n": "阜姆",
+      "lon": 14.4422,
+      "lat": 45.3271,
+      "ct": "it",
+      "note": "Fiume，今里耶卡 Rijeka；1924年并入意大利，1939年意大利港口。东侧苏沙克当时属南斯拉夫。",
+      "major": true
+    },
+    {
+      "k": "palma",
+      "n": "帕尔马",
+      "lon": 2.6502,
+      "lat": 39.5696,
+      "ct": "es",
+      "region": "马略卡岛",
+      "note": "Palma，西班牙巴利阿里群岛马略卡岛港口；1939年西班牙保持中立。",
+      "major": true
+    },
+    {
+      "k": "scapaflow",
+      "n": "斯卡帕湾",
+      "lon": -3.191,
+      "lat": 58.835,
+      "ct": "uk",
+      "region": "奥克尼群岛",
+      "note": "Scapa Flow，英国皇家海军锚地与基地；以霍伊岛莱尼斯岸上基地为地图节点。",
+      "major": true
+    },
+    {
+      "k": "ronne",
+      "n": "伦讷",
+      "lon": 14.706,
+      "lat": 55.101,
+      "ct": "dk",
+      "region": "博恩霍尔姆岛",
+      "note": "Rønne，丹麦博恩霍尔姆岛港口；1945年苏军轰炸及占领发生在本地图快照之后。",
+      "major": true,
+      "mapLabel": "伦讷·博恩霍尔姆"
+    },
+    {
+      "k": "torshavn",
+      "n": "托尔斯港",
+      "lon": -6.7716,
+      "lat": 62.0079,
+      "ct": "dk",
+      "region": "法罗群岛",
+      "note": "Tórshavn，法罗群岛港口；1939年属丹麦，英国于1940年进驻。",
+      "major": true
+    },
+    {
+      "k": "jersey",
+      "n": "泽西岛",
+      "lon": -2.1045,
+      "lat": 49.1838,
+      "ct": "uk",
+      "region": "海峡群岛",
+      "note": "Jersey，以圣赫利尔 Saint Helier 港口为节点；英国王室属地，游戏归入英国，1940年才遭德军占领。",
+      "major": true
+    },
+    {
+      "k": "janmayen",
+      "n": "扬马延岛",
+      "lon": -8.5,
+      "lat": 70.98,
+      "ct": "no",
+      "region": "挪威海",
+      "note": "Jan Mayen，1930年已属挪威，1921年起设气象站；无正规港口，节点及海运表示天气允许时的登陆补给。",
+      "major": true
+    },
+    {
+      "k": "douglas",
+      "n": "道格拉斯",
+      "lon": -4.4821,
+      "lat": 54.1523,
+      "ct": "uk",
+      "region": "马恩岛",
+      "note": "英国王室属地，游戏归入英国；爱尔兰海港口",
+      "major": true,
+      "mapLabel": "道格拉斯·马恩岛",
+      "port": true
+    },
+    {
+      "k": "cardiff",
+      "n": "加的夫",
+      "lon": -3.1791,
+      "lat": 51.4816,
+      "ct": "uk",
+      "region": "威尔士",
+      "note": "南威尔士煤炭出口港",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "swansea",
+      "n": "斯旺西",
+      "lon": -3.9436,
+      "lat": 51.6214,
+      "ct": "uk",
+      "region": "威尔士",
+      "note": "南威尔士港口与金属工业中心",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "nottingham",
+      "n": "诺丁汉",
+      "lon": -1.1581,
+      "lat": 52.9548,
+      "ct": "uk",
+      "region": "英格兰中部",
+      "note": "东米德兰兹工业城市",
+      "major": true
+    },
+    {
+      "k": "leeds",
+      "n": "利兹",
+      "lon": -1.5491,
+      "lat": 53.8008,
+      "ct": "uk",
+      "region": "约克郡",
+      "note": "西约克郡工业与铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "norwich",
+      "n": "诺里奇",
+      "lon": 1.2974,
+      "lat": 52.6309,
+      "ct": "uk",
+      "region": "东安格利亚",
+      "note": "英国东部地区中心",
+      "major": true
+    },
+    {
+      "k": "southampton",
+      "n": "南安普敦",
+      "lon": -1.4044,
+      "lat": 50.9097,
+      "ct": "uk",
+      "region": "英格兰南部",
+      "note": "港口与舰船、航空工业中心",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "exeter",
+      "n": "埃克塞特",
+      "lon": -3.5339,
+      "lat": 50.7184,
+      "ct": "uk",
+      "region": "德文郡",
+      "note": "英国西南交通节点",
+      "major": true
+    },
+    {
+      "k": "inverness",
+      "n": "因弗内斯",
+      "lon": -4.2247,
+      "lat": 57.4778,
+      "ct": "uk",
+      "region": "苏格兰高地",
+      "note": "高地交通与补给节点",
+      "major": true
+    },
+    {
+      "k": "cork",
+      "n": "科克",
+      "lon": -8.4756,
+      "lat": 51.8985,
+      "ct": "ie",
+      "region": "爱尔兰南部",
+      "note": "利河港口与南部地区中心",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "galway",
+      "n": "戈尔韦",
+      "lon": -9.0568,
+      "lat": 53.2707,
+      "ct": "ie",
+      "region": "爱尔兰西部",
+      "note": "大西洋岸港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "limerick",
+      "n": "利默里克",
+      "lon": -8.6267,
+      "lat": 52.6638,
+      "ct": "ie",
+      "region": "爱尔兰西部",
+      "note": "香农河港口",
+      "major": true
+    },
+    {
+      "k": "waterford",
+      "n": "沃特福德",
+      "lon": -7.1101,
+      "lat": 52.2593,
+      "ct": "ie",
+      "region": "爱尔兰东南部",
+      "note": "苏尔河港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "acoruna",
+      "n": "拉科鲁尼亚",
+      "lon": -8.4115,
+      "lat": 43.3623,
+      "ct": "es",
+      "region": "加利西亚",
+      "note": "A Coruña／La Coruña，西班牙西北大西洋港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "vigo",
+      "n": "维戈",
+      "lon": -8.7207,
+      "lat": 42.2406,
+      "ct": "es",
+      "region": "加利西亚",
+      "note": "大西洋港口与造船业",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "oviedo",
+      "n": "奥维耶多",
+      "lon": -5.8494,
+      "lat": 43.3619,
+      "ct": "es",
+      "region": "阿斯图里亚斯",
+      "note": "西班牙北部矿业地区中心",
+      "major": true
+    },
+    {
+      "k": "santander",
+      "n": "桑坦德",
+      "lon": -3.8099,
+      "lat": 43.4623,
+      "ct": "es",
+      "region": "坎塔布里亚",
+      "note": "比斯开湾港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "burgos",
+      "n": "布尔戈斯",
+      "lon": -3.6969,
+      "lat": 42.3439,
+      "ct": "es",
+      "region": "卡斯蒂利亚",
+      "note": "西班牙北部内陆交通节点",
+      "major": true
+    },
+    {
+      "k": "valladolid",
+      "n": "巴利亚多利德",
+      "lon": -4.7286,
+      "lat": 41.6523,
+      "ct": "es",
+      "region": "卡斯蒂利亚",
+      "note": "杜罗河流域地区中心",
+      "major": true
+    },
+    {
+      "k": "salamanca",
+      "n": "萨拉曼卡",
+      "lon": -5.6639,
+      "lat": 40.9701,
+      "ct": "es",
+      "region": "卡斯蒂利亚",
+      "note": "西部内陆交通节点",
+      "major": true
+    },
+    {
+      "k": "murcia",
+      "n": "穆尔西亚",
+      "lon": -1.1307,
+      "lat": 37.9922,
+      "ct": "es",
+      "region": "穆尔西亚",
+      "note": "西班牙东南部地区中心",
+      "major": true
+    },
+    {
+      "k": "cartagena",
+      "n": "卡塔赫纳",
+      "lon": -0.986,
+      "lat": 37.6257,
+      "ct": "es",
+      "region": "穆尔西亚",
+      "note": "地中海港口与海军基地",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "granada",
+      "n": "格拉纳达",
+      "lon": -3.5986,
+      "lat": 37.1773,
+      "ct": "es",
+      "region": "安达卢西亚",
+      "note": "西班牙南部内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "malaga",
+      "n": "马拉加",
+      "lon": -4.4214,
+      "lat": 36.7213,
+      "ct": "es",
+      "region": "安达卢西亚",
+      "note": "西班牙南部地中海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "cordoba",
+      "n": "科尔多瓦",
+      "lon": -4.7794,
+      "lat": 37.8882,
+      "ct": "es",
+      "region": "安达卢西亚",
+      "note": "瓜达尔基维尔河流域交通节点",
+      "major": true
+    },
+    {
+      "k": "alicante",
+      "n": "阿利坎特",
+      "lon": -0.4907,
+      "lat": 38.3452,
+      "ct": "es",
+      "region": "瓦伦西亚地区",
+      "note": "西班牙东南地中海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "wilhelmshaven",
+      "n": "威廉港",
+      "lon": 8.112,
+      "lat": 53.5323,
+      "ct": "de",
+      "region": "北海沿岸",
+      "note": "德国海军基地，亚德湾港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "emden",
+      "n": "埃姆登",
+      "lon": 7.206,
+      "lat": 53.3675,
+      "ct": "de",
+      "region": "东弗里斯兰",
+      "note": "埃姆斯河口港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "rostock",
+      "n": "罗斯托克",
+      "lon": 12.0991,
+      "lat": 54.0924,
+      "ct": "de",
+      "region": "梅克伦堡",
+      "note": "瓦尔诺河港口与航空工业",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "magdeburg",
+      "n": "马格德堡",
+      "lon": 11.6276,
+      "lat": 52.1205,
+      "ct": "de",
+      "region": "易北河流域",
+      "note": "工业与铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "erfurt",
+      "n": "爱尔福特",
+      "lon": 11.0299,
+      "lat": 50.9848,
+      "ct": "de",
+      "region": "图林根",
+      "note": "德国中部交通节点",
+      "major": true
+    },
+    {
+      "k": "regensburg",
+      "n": "雷根斯堡",
+      "lon": 12.1016,
+      "lat": 49.0134,
+      "ct": "de",
+      "region": "巴伐利亚",
+      "note": "多瑙河交通与工业节点",
+      "major": true
+    },
+    {
+      "k": "visby",
+      "n": "维斯比",
+      "lon": 18.2948,
+      "lat": 57.6348,
+      "ct": "se",
+      "region": "哥特兰岛",
+      "note": "Gotland，瑞典波罗的海岛屿港口",
+      "major": true,
+      "mapLabel": "维斯比·哥特兰",
+      "port": true
+    },
+    {
+      "k": "karlskrona",
+      "n": "卡尔斯克鲁纳",
+      "lon": 15.5869,
+      "lat": 56.1612,
+      "ct": "se",
+      "region": "布莱金厄",
+      "note": "瑞典海军基地",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "mariehamn",
+      "n": "玛丽港",
+      "lon": 19.9348,
+      "lat": 60.0973,
+      "ct": "fi",
+      "region": "奥兰群岛非军事区",
+      "note": "Mariehamn，芬兰自治奥兰群岛港口；1856年起非军事化，1921年确认并中立化。游戏保留通行与占领，禁止本地招募。",
+      "major": true,
+      "mapLabel": "玛丽港·奥兰非军事区",
+      "demilitarized": true,
+      "port": true
+    },
+    {
+      "k": "plovdiv",
+      "n": "普罗夫迪夫",
+      "lon": 24.7453,
+      "lat": 42.1354,
+      "ct": "bg",
+      "region": "色雷斯",
+      "note": "保加利亚南部交通和工业中心",
+      "major": true
+    },
+    {
+      "k": "burgas",
+      "n": "布尔加斯",
+      "lon": 27.4626,
+      "lat": 42.5048,
+      "ct": "bg",
+      "region": "黑海沿岸",
+      "note": "保加利亚黑海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "ruse",
+      "n": "鲁塞",
+      "lon": 25.9657,
+      "lat": 43.8356,
+      "ct": "bg",
+      "region": "多瑙河流域",
+      "note": "保加利亚多瑙河港口",
+      "major": true
+    },
+    {
+      "k": "szeged",
+      "n": "塞格德",
+      "lon": 20.1414,
+      "lat": 46.253,
+      "ct": "hu",
+      "region": "蒂萨河流域",
+      "note": "匈牙利南部城市，靠近巴奇卡与巴纳特",
+      "major": true
+    },
+    {
+      "k": "pecs",
+      "n": "佩奇",
+      "lon": 18.2323,
+      "lat": 46.0727,
+      "ct": "hu",
+      "region": "巴兰尼亚",
+      "note": "匈牙利南部矿业与地区中心",
+      "major": true
+    },
+    {
+      "k": "gyor",
+      "n": "杰尔",
+      "lon": 17.6504,
+      "lat": 47.6875,
+      "ct": "hu",
+      "region": "匈牙利西北部",
+      "note": "铁路与工业节点",
+      "major": true
+    },
+    {
+      "k": "miskolc",
+      "n": "米什科尔茨",
+      "lon": 20.7784,
+      "lat": 48.1035,
+      "ct": "hu",
+      "region": "匈牙利东北部",
+      "note": "重工业地区中心",
+      "major": true
+    },
+    {
+      "k": "timisoara",
+      "n": "蒂米什瓦拉",
+      "lon": 21.2257,
+      "lat": 45.7489,
+      "ct": "ro",
+      "region": "罗马尼亚巴纳特",
+      "note": "东巴纳特地区中心；1939年属罗马尼亚",
+      "major": true
+    },
+    {
+      "k": "arad",
+      "n": "阿拉德",
+      "lon": 21.3123,
+      "lat": 46.1866,
+      "ct": "ro",
+      "region": "克里沙纳",
+      "note": "罗马尼亚西部铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "oradea",
+      "n": "奥拉迪亚",
+      "lon": 21.9189,
+      "lat": 47.0465,
+      "ct": "ro",
+      "region": "克里沙纳",
+      "note": "1939年属罗马尼亚；1940年第二次维也纳裁决后才割予匈牙利",
+      "major": true
+    },
+    {
+      "k": "brasov",
+      "n": "布拉索夫",
+      "lon": 25.6012,
+      "lat": 45.6579,
+      "ct": "ro",
+      "region": "特兰西瓦尼亚",
+      "note": "喀尔巴阡山口交通及航空工业中心",
+      "major": true
+    },
+    {
+      "k": "sibiu",
+      "n": "锡比乌",
+      "lon": 24.1501,
+      "lat": 45.7983,
+      "ct": "ro",
+      "region": "特兰西瓦尼亚",
+      "note": "罗马尼亚中部地区中心",
+      "major": true
+    },
+    {
+      "k": "iasi",
+      "n": "雅西",
+      "lon": 27.6014,
+      "lat": 47.1585,
+      "ct": "ro",
+      "region": "摩尔达维亚",
+      "note": "罗马尼亚东北部交通节点",
+      "major": true
+    },
+    {
+      "k": "galati",
+      "n": "加拉茨",
+      "lon": 28.0074,
+      "lat": 45.4353,
+      "ct": "ro",
+      "region": "多瑙河下游",
+      "note": "多瑙河港口与船舶工业",
+      "major": true
+    },
+    {
+      "k": "craiova",
+      "n": "克拉约瓦",
+      "lon": 23.7949,
+      "lat": 44.3302,
+      "ct": "ro",
+      "region": "奥尔特尼亚",
+      "note": "罗马尼亚西南部地区中心",
+      "major": true
+    },
+    {
+      "k": "podgorica",
+      "n": "波德戈理察",
+      "lon": 19.2629,
+      "lat": 42.4304,
+      "ct": "yu",
+      "region": "黑山",
+      "note": "1939年属南斯拉夫；不使用战后铁托格勒名称",
+      "major": true
+    },
+    {
+      "k": "novisad",
+      "n": "诺维萨德",
+      "lon": 19.8335,
+      "lat": 45.2671,
+      "ct": "yu",
+      "region": "巴奇卡／伏伊伏丁那",
+      "note": "1939年属南斯拉夫；1941年匈牙利占领尚未发生",
+      "major": true
+    },
+    {
+      "k": "subotica",
+      "n": "苏博蒂察",
+      "lon": 19.665,
+      "lat": 46.1005,
+      "ct": "yu",
+      "region": "巴奇卡／伏伊伏丁那",
+      "note": "1939年属南斯拉夫；邻近匈牙利边界",
+      "major": true
+    },
+    {
+      "k": "petrovgrad",
+      "n": "彼得罗夫格勒",
+      "lon": 20.3816,
+      "lat": 45.3816,
+      "ct": "yu",
+      "region": "西巴纳特／伏伊伏丁那",
+      "note": "Petrovgrad，今兹雷尼亚宁 Zrenjanin；采用1935至1946年名称，1939年属南斯拉夫",
+      "major": true
+    },
+    {
+      "k": "nis",
+      "n": "尼什",
+      "lon": 21.8958,
+      "lat": 43.3209,
+      "ct": "yu",
+      "region": "塞尔维亚",
+      "note": "巴尔干铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "banjaluka",
+      "n": "巴尼亚卢卡",
+      "lon": 17.191,
+      "lat": 44.7722,
+      "ct": "yu",
+      "region": "波斯尼亚",
+      "note": "南斯拉夫西部地区中心",
+      "major": true
+    },
+    {
+      "k": "osijek",
+      "n": "奥西耶克",
+      "lon": 18.6955,
+      "lat": 45.554,
+      "ct": "yu",
+      "region": "斯拉沃尼亚",
+      "note": "德拉瓦河港口与地区中心",
+      "major": true
+    },
+    {
+      "k": "dubrovnik",
+      "n": "杜布罗夫尼克",
+      "lon": 18.0944,
+      "lat": 42.6507,
+      "ct": "yu",
+      "region": "达尔马提亚",
+      "note": "1939年南斯拉夫亚得里亚海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "yerevan",
+      "n": "埃里温",
+      "lon": 44.5152,
+      "lat": 40.1872,
+      "ct": "su",
+      "region": "亚美尼亚苏维埃社会主义共和国",
+      "note": "苏联加盟共和国首府；不是独立国家首都",
+      "major": true
+    },
+    {
+      "k": "batumi",
+      "n": "巴统",
+      "lon": 41.6367,
+      "lat": 41.6168,
+      "ct": "su",
+      "region": "格鲁吉亚／阿扎尔",
+      "note": "苏联黑海港口及石油运输节点",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "tbilisi",
+      "n": "第比利斯",
+      "lon": 44.8271,
+      "lat": 41.7151,
+      "ct": "su",
+      "region": "格鲁吉亚苏维埃社会主义共和国",
+      "note": "苏联加盟共和国首府与外高加索铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "baku",
+      "n": "巴库",
+      "lon": 49.8671,
+      "lat": 40.4093,
+      "ct": "su",
+      "region": "阿塞拜疆苏维埃社会主义共和国",
+      "note": "苏联重要石油工业中心和里海港口；加盟共和国首府",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "kutaisi",
+      "n": "库塔伊西",
+      "lon": 42.7034,
+      "lat": 42.2679,
+      "ct": "su",
+      "region": "格鲁吉亚",
+      "note": "西格鲁吉亚地区中心",
+      "major": true
+    },
+    {
+      "k": "grozny",
+      "n": "格罗兹尼",
+      "lon": 45.6986,
+      "lat": 43.3178,
+      "ct": "su",
+      "region": "北高加索",
+      "note": "苏联石油工业中心",
+      "major": true
+    },
+    {
+      "k": "makhachkala",
+      "n": "马哈奇卡拉",
+      "lon": 47.5047,
+      "lat": 42.9849,
+      "ct": "su",
+      "region": "达吉斯坦",
+      "note": "苏联里海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "ordzhonikidze",
+      "n": "奥尔忠尼启则",
+      "lon": 44.6818,
+      "lat": 43.0246,
+      "ct": "su",
+      "region": "北奥塞梯",
+      "note": "今弗拉季高加索；采用1939年地名，北高加索交通节点",
+      "major": true
     }
   ]
 };

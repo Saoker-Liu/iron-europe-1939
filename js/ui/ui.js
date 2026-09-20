@@ -55,7 +55,7 @@ const SFX = (() => {
 })();
 
 /* ============================ 全局 UI 状态 ============================ */
-const SAVE_KEY = 'iron-europe-1939-geographic-v4-save';
+const SAVE_KEY = 'iron-europe-1939-geographic-v6-save';
 const UI = {
   game: null,
   sel: null,            // 选中的己方单位
@@ -268,9 +268,9 @@ function drawCities(c2, g, s2) {
     if (s2 > 15 || ((ci.cap || ci.major) && s2 > 8)) {
       c2.font = `600 ${Math.max(9, s2 * 0.26)}px "Microsoft YaHei",sans-serif`;
       c2.fillStyle = 'rgba(0,0,0,.55)';
-      c2.fillText(ci.n, x + 1, y + s2 * 0.78 + 1);
+      c2.fillText(ci.mapLabel || ci.n, x + 1, y + s2 * 0.78 + 1);
       c2.fillStyle = ci.cap ? '#ffe9a8' : '#e8e4d8';
-      c2.fillText(ci.n, x, y + s2 * 0.78);
+      c2.fillText(ci.mapLabel || ci.n, x, y + s2 * 0.78);
     }
   }
 }
@@ -802,13 +802,13 @@ function showUnitInfo(u) { showUnitPanel(u); }
 function showCityPanel(city) {
   const g = UI.game;
   const body = document.getElementById('panel-body');
-  const canRecruit = city.owner === g.playerFaction && !g.unitAt(city.x, city.y) && !UI.busy;
+  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !g.unitAt(city.x, city.y) && !UI.busy;
   const roster = canRecruit ? g.rosterFor(city) : [];
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
     <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${city.inc} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
-    <div class="p-sub">${canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
+    <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
         <div><div class="s-name"><span class="ico">${UnitIcons.svg(it.eq.cls, 15)}</span>${it.eq.n}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>

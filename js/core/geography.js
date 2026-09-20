@@ -11,7 +11,7 @@
   const F = Math.cos(p1) * Math.pow(Math.tan(Math.PI / 4 + p1 / 2), n) / n;
   const rho0 = R * F / Math.pow(Math.tan(Math.PI / 4 + p0 / 2), n);
   const spec = { width: 128, height: 112, dx: 45, dy: 45 * Math.sqrt(3) / 2,
-    left: -2850, top: 2350, version: 'europe-1939-geographic-v4', date: '1939-08-31' };
+    left: -2850, top: 2350, version: 'europe-1939-geographic-v6', date: '1939-08-31' };
   function project(lon, lat) {
     const rho = R * F / Math.pow(Math.tan(Math.PI / 4 + lat * rad / 2), n);
     const theta = n * (lon - 18) * rad;

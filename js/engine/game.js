@@ -395,7 +395,7 @@ class Game {
 
   /* 招募：返回单位或 null */
   recruit(cityK, eqKey) {
-    const city = this.cityByKey[cityK]; if (!city) return null;
+    const city = this.cityByKey[cityK]; if (!city || city.demilitarized) return null;
     const f = city.owner;
     if (this.unitAt(city.x, city.y)) return null;
     const eq = this.equipOf(eqKey);

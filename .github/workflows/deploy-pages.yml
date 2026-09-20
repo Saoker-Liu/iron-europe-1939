@@ -35,7 +35,7 @@ jobs:
           cp -R js map_sources _site/
           cp artifacts/europe-1939-political.png artifacts/europe-1939-terrain.png _site/artifacts/
           touch _site/.nojekyll
-          printf '{"commit":"%s","mapVersion":"europe-1939-geographic-v4","cities":205}\n' "$GITHUB_SHA" > _site/version.json
+          node -e "const fs=require('fs'),D=require('./js/data/load-node');fs.writeFileSync('_site/version.json',JSON.stringify({commit:process.env.GITHUB_SHA,mapVersion:D.MAP_META.version,cities:D.CITIES.length})+'\n');"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
