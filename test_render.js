@@ -286,6 +286,15 @@ h.run("showEndModal(true)");assert.equal(h.run('Music.current'),'victory');asser
 h.run("toggleSound();showEndModal(false)");assert.equal(h.run('Music.current'),'defeat');assert.equal(h.run('Music.enabled'),true);
 h.run("showHelp()");assert(h.run("modalRoot.innerHTML.includes('Kevin MacLeod')&&modalRoot.innerHTML.includes('CC-BY 4.0')"));
 console.log('Music UI: scene transitions, shared mute and visible credits passed.');
+// Help dismisses to its caller instead of leaving the pre-game canvas empty.
+h.run("showStart('sov','hard');document.getElementById('m-help2').onclick()");
+assert(!h.run("modalRoot.innerHTML.includes('开始指挥')"));
+h.run("document.getElementById('help-close').onclick()");
+assert(h.run("modalRoot.innerHTML.includes('fac-card sel\" data-f=\"sov')&&modalRoot.innerHTML.includes('diff-opt sel\" data-d=\"hard')"));
+h.run("closeModal();showHelp();modalRoot.onkeydown({key:'Escape',preventDefault(){},stopPropagation(){}})");
+assert.equal(h.run('modalOpen()'),false);
+console.log('Help: close returns to chosen faction/difficulty; Escape closes in-game help.');
+
 
 assert.equal(h.run('GENERALS.length'),116);
 h.run("UI.game=new Game('axis');showGenerals()");

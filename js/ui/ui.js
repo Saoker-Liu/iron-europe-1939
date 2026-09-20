@@ -1091,8 +1091,8 @@ function showCityPanel(city) {
 /* ============================ 模态 ============================ */
 const modalRoot = document.getElementById('modal-root');
 function modalOpen() { return modalRoot.style.display === 'flex'; }
-function openModal(html) { modalRoot.innerHTML = html; modalRoot.style.display = 'flex'; }
-function closeModal() { modalRoot.innerHTML = ''; modalRoot.style.display = 'none'; }
+function openModal(html) { modalRoot.onkeydown = null; modalRoot.innerHTML = html; modalRoot.scrollTop = 0; modalRoot.style.display = 'flex'; }
+function closeModal() { modalRoot.onkeydown = null; modalRoot.innerHTML = ''; modalRoot.style.display = 'none'; }
 function showCitySearch() {
   const g = UI.game; if (!g || UI.busy) return;
   openModal(`<div class="modal" style="width:680px;max-width:100%">
@@ -1133,10 +1133,9 @@ function eventModalHTML(title, text) {
 }
 
 /* ---- 开始界面 ---- */
-function showStart() {
+function showStart(fac = 'axis', diff = 'normal') {
   Music.play('lobby');
   const hasSave = (() => { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } })();
-  let fac = 'axis', diff = 'normal';
   const FINFO = {
     axis: { name: '轴心国 · 德国', color: '#43484a',
       desc: '拥有最精良的装备与将领，开局即与英法波全面开战。闪击波兰、击溃法国，但 1941 年巴巴罗萨行动将把你拖入双线消耗的深渊。适合喜欢进攻的指挥官。',
@@ -1186,7 +1185,7 @@ function showStart() {
     } catch (e) { alert('存档损坏：' + e.message); }
   };
   const h2 = document.getElementById('m-help2');
-  if (h2) h2.onclick = showHelp;
+  if (h2) h2.onclick = () => showHelp(() => showStart(fac, diff));
 }
 
 function startGame(fac, diff, loaded) {
@@ -1319,10 +1318,14 @@ function showGenerals(targetUnit) {
 }
 
 /* ---- 帮助 ---- */
-function showHelp() {
+function showHelp(onReturn) {
+  const dismiss = typeof onReturn === 'function' ? onReturn : closeModal;
   openModal(`
-    <div class="modal" style="max-width:760px">
-      <h1><span class="zh">❓ 玩法手册</span></h1>
+    <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <div class="help-header">
+        <h1 id="help-title"><span class="zh">❓ 玩法手册</span></h1>
+        <button class="btn help-close" id="help-close" aria-label="关闭玩法说明" title="关闭（Esc）">×</button>
+      </div>
       <div class="help-body">
         <h4>■ 基本操作</h4>
         左键选择部队/城市 · 蓝色格子=可移动，红色闪烁敌军=可攻击（点击自动接敌）· 拖拽平移地图，滚轮缩放<br>陆军在沿海购买运输装备，点击相邻海格下海；下海／上岸结束整回合行动，海上按运输船移动力航行。1942、1944年解锁更高级舰艇。<br>
@@ -1356,9 +1359,13 @@ function showHelp() {
         <h4>■ 历史事件</h4>
         意大利参战(1940.6) → 匈牙利罗马尼亚入轴(1940.11) → <b>巴巴罗萨</b>(1941.6) → 美国参战(1941.12) → <b>俄罗斯严冬</b>(每年12-2月，轴心国在苏境-12兵力/回合) → <b>诺曼底登陆</b>(1944.6)
       </div>
-      <div class="actions"><button class="btn primary" id="m-close">开始指挥</button></div>
     </div>`);
-  document.getElementById('m-close').onclick = closeModal;
+  const close = document.getElementById('help-close');
+  close.onclick = dismiss;
+  close.focus?.();
+  modalRoot.onkeydown = e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dismiss(); }
+  };
 }
 
 /* ---- 终局 ---- */
