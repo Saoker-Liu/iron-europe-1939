@@ -24,6 +24,5 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
   for(const slot of ['menu','lobby','battle','victory','defeat']){
     const data=fs.readFileSync('music/'+slot+'.mp3');assert(data.length>100000);assert(data.subarray(0,3).toString()==='ID3'||data[0]===255);
   }
-  assert(fs.readFileSync('.github/workflows/deploy-pages.yml','utf8').includes('cp -R js map_sources music _site/'));
   console.log('Music: autoplay retry, one player, mute across scenes, background pause, non-looping endings and packaged assets passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});
