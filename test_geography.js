@@ -39,7 +39,8 @@ assert.equal(g.cf.it,'neutral'); assert.equal(g.cf.al,'neutral');
 assert.equal(g.cf.sk,'axis'); assert.equal(g.cf.bm,'axis');
 
 // City expansion: requested ports and battle locations are playable city objects.
-assert.equal(D.CITIES.length,329);
+assert.equal(D.CITIES.length,436);
+assert(D.CITIES.length>400,'regional expansion exceeds 400 cities');
 assert.equal(new Set(D.CITIES.map(ci=>ci.k)).size,D.CITIES.length,'unique city keys');
 for (const [k,ct] of Object.entries({genoa:'it',venice:'it',zara:'it',liverpool:'uk',dunkirk:'fr',caen:'fr',cherbourg:'fr',saintlo:'fr',split:'yu',brestlitovsk:'pl'})) {
   assert.equal(g.cityByKey[k].ct,ct,k+' 1939 owner');
@@ -56,6 +57,35 @@ for (const [ct,budget] of Object.entries(D.ECONOMY.countryIncomeBudget)) {
   assert.equal(g.cities.filter(ci=>ci.ct===ct).reduce((sum,ci)=>sum+ci.inc,0),budget,ct+' income budget');
 }
 assert(g.cities.every(ci=>Number.isInteger(ci.inc)&&ci.inc>0),'all cities have positive income');
+
+// v8: all 24 specifically requested regional centres, without changing capitals.
+for(const [ct,keys]of Object.entries({
+ ch:['zurich','geneva','basel'],be:['leuven','namur'],nl:['thehague','utrecht','breda'],
+ dk:['odense','aalborg'],se:['lulea','umea','gavle','uppsala','jonkoping','linkoping','norrkoping'],
+ fi:['vaasa','kuopio','pori'],tr:['gaziantep','malatya','kastamonu','bursa']
+}))for(const k of keys){
+ const ci=g.cityByKey[k];assert(ci,k+' present');assert.equal(ci.ct,ct,k+' 1939 nationality');
+ assert.equal(g.cityAt(...city(k)).k,k,k+' independent playable cell');
+ assert(ci.region&&ci.major,k+' regional search and prominent label');
+}
+assert(g.cityByKey.amsterdam.cap&&!g.cityByKey.thehague.cap,'Dutch seat of government is not the capital');
+assert(g.cityByKey.bern.cap&&!g.cityByKey.zurich.cap&&!g.cityByKey.geneva.cap,'Swiss capital remains Bern');
+assert.deepEqual(city('geneva'),at(6.1432,46.2044),'Geneva retained at southwest border');
+assert(g.cityByKey.geneva.x<g.cityByKey.lausanne.x&&g.cityByKey.geneva.y>g.cityByKey.lausanne.y,'Geneva southwest of Lausanne');
+const displayedLon=k=>geo.hexToGeo(...city(k))[0];
+assert(displayedLon('thehague')<displayedLon('utrecht'),'The Hague stays west of Utrecht');
+assert(g.cityByKey.thehague.y<g.cityByKey.rotterdam.y,'The Hague north of Rotterdam');
+assert(g.cityByKey.breda.y>g.cityByKey.rotterdam.y,'Breda south of Rotterdam');
+assert(g.cityByKey.maastricht.y>g.cityByKey.eindhoven.y,'southern Limburg represented');
+assert.equal(g.homeCountryOf(...city('liege')),'be','Limburg correction preserves Liege');
+assert.deepEqual(city('odense'),at(10.3883,55.4038),'Odense on Funen');
+assert.equal(route(city('odense'),city('copenhagen')),Infinity,'Funen and Zealand separated by water');
+assert(Number.isFinite(route(city('odense'),city('copenhagen'),true)),'Odense has ferry access');
+for(const k of ['luck','rowno','pinsk','tarnopol'])assert.equal(g.cityByKey[k].ct,'pl','eastern Polish border in August 1939');
+assert.equal(g.cityByKey.olomouc.ct,'bm');
+assert.equal(route(city('reggiocalabria'),city('messina')),Infinity,'new port does not bridge Strait of Messina');
+assert(Number.isFinite(route(city('reggiocalabria'),city('messina'),true)));
+assert(new Set(g.cities.map(ci=>key(ci.x,ci.y))).size===g.cities.length,'no city shares a cell');
 
 // Small strategic ports/bases must stay on their islands and retain 1939 owners.
 for(const [k,ct,lon,lat] of [
@@ -84,7 +114,7 @@ for(const [a,b]of [['palma','barca'],['scapaflow','aberdeen'],['ronne','copenhag
 // v7: named 1939 places, including a separate Novgorod rather than modern Nizhny Novgorod.
 for(const k of ['sukhumi','kerch','sochi','novgorod','kazan','nikolaev','cherkassy','pskov','tikhvin','petrozavodsk','kalinin','yaroslavl','ryazan','tambov','penza','kuibyshev','ulyanovsk','kirov','vinnytsia','poltava','sumy','kherson','kremenchug','simferopol','maikop'])
  assert.equal(g.cityByKey[k].ct,'su',k+' 1939 USSR');
-assert.equal(g.cities.filter(ci=>ci.ct==='su').length,64);
+assert.equal(g.cities.filter(ci=>ci.ct==='su').length,74);
 assert.equal(g.cityByKey.gorky.n,'高尔基');
 assert(hexDist(...city('novgorod'),...city('gorky'))>15,'two different Novgorods');
 for(const [k,ct]of Object.entries({kuressaare:'ee',tartu:'ee',narva:'ee',liepaja:'lv',daugavpils:'lv',siauliai:'lt'}))
@@ -162,7 +192,7 @@ for(const ci of D.CITIES) {
   assert(g.landPassable(ci.x,ci.y),ci.k+' on passable land');
   assert.equal(g.homeCountryOf(ci.x,ci.y),ci.ct,ci.k+' national border');
   const a=geo.project(ci.lon,ci.lat),b=geo.project(...geo.hexToGeo(ci.x,ci.y));
-  assert(Math.hypot(a[0]-b[0],a[1]-b[1]) < 80,ci.k+' displacement');
+  assert(Math.hypot(a[0]-b[0],a[1]-b[1]) < 60,ci.k+' displacement');
 }
 for(const u of D.INITIAL_UNITS) assert.equal(g.homeCountryOf(u.x,u.y),u.ct,'deployment '+u.ct);
 assert(g.cityByKey.staling.x < D.MAP_W-10,'Stalingrad east-bank room');
@@ -221,5 +251,6 @@ assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-g
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v4'})),/旧地图/);
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v5'})),/旧地图/);
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v6'})),/旧地图/);
+assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v7'})),/旧地图/);
 assert.equal(Game.deserialize(g.serialize()).units.length,g.units.length);
 console.log('Geography: historical checkpoints, projection, coastline, transport, river and save tests passed.');

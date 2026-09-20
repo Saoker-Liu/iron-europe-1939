@@ -3070,6 +3070,1087 @@
       "region": "安纳托利亚东部",
       "note": "土耳其东部山地交通中心",
       "major": true
+    },
+    {
+      "k": "zurich",
+      "n": "苏黎世",
+      "lon": 8.5417,
+      "lat": 47.3769,
+      "ct": "ch",
+      "region": "瑞士东北部",
+      "note": "瑞士工业、金融与铁路中心",
+      "major": true
+    },
+    {
+      "k": "geneva",
+      "n": "日内瓦",
+      "lon": 6.1432,
+      "lat": 46.2044,
+      "ct": "ch",
+      "region": "日内瓦湖西端",
+      "note": "瑞士西南城市，1939年国际联盟所在地",
+      "major": true
+    },
+    {
+      "k": "basel",
+      "n": "巴塞尔",
+      "lon": 7.5886,
+      "lat": 47.5596,
+      "ct": "ch",
+      "region": "瑞士西北部",
+      "note": "莱茵河港口与工业城市",
+      "major": true
+    },
+    {
+      "k": "lausanne",
+      "n": "洛桑",
+      "lon": 6.6323,
+      "lat": 46.5197,
+      "ct": "ch",
+      "region": "沃州",
+      "note": "日内瓦湖北岸地区中心",
+      "major": true
+    },
+    {
+      "k": "lucerne",
+      "n": "卢塞恩",
+      "lon": 8.3093,
+      "lat": 47.0502,
+      "ct": "ch",
+      "region": "瑞士中部",
+      "note": "瑞士中部湖区交通节点",
+      "major": true
+    },
+    {
+      "k": "lugano",
+      "n": "卢加诺",
+      "lon": 8.9511,
+      "lat": 46.0037,
+      "ct": "ch",
+      "region": "提契诺",
+      "note": "瑞士意大利语区代表城市",
+      "major": true
+    },
+    {
+      "k": "chur",
+      "n": "库尔",
+      "lon": 9.5319,
+      "lat": 46.8508,
+      "ct": "ch",
+      "region": "格劳宾登",
+      "note": "瑞士东南阿尔卑斯交通节点",
+      "major": true
+    },
+    {
+      "k": "leuven",
+      "n": "鲁汶",
+      "lon": 4.7005,
+      "lat": 50.8798,
+      "ct": "be",
+      "region": "布拉班特",
+      "note": "Leuven，比利时大学与铁路城市",
+      "major": true
+    },
+    {
+      "k": "namur",
+      "n": "那慕尔",
+      "lon": 4.8674,
+      "lat": 50.4674,
+      "ct": "be",
+      "region": "瓦隆／默兹河",
+      "note": "默兹河与桑布尔河交汇处的要塞城市",
+      "major": true
+    },
+    {
+      "k": "bruges",
+      "n": "布鲁日",
+      "lon": 3.2247,
+      "lat": 51.2093,
+      "ct": "be",
+      "region": "西佛兰德",
+      "note": "比利时西北地区中心；包括泽布吕赫港的腹地",
+      "major": true
+    },
+    {
+      "k": "thehague",
+      "n": "海牙",
+      "lon": 4.3007,
+      "lat": 52.0705,
+      "ct": "nl",
+      "region": "南荷兰",
+      "note": "Den Haag，荷兰政府所在地；法定首都仍为阿姆斯特丹",
+      "major": true
+    },
+    {
+      "k": "utrecht",
+      "n": "乌德勒支",
+      "lon": 5.1214,
+      "lat": 52.0907,
+      "ct": "nl",
+      "region": "荷兰中部",
+      "note": "荷兰铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "breda",
+      "n": "布雷达",
+      "lon": 4.776,
+      "lat": 51.5719,
+      "ct": "nl",
+      "region": "北布拉班特",
+      "note": "荷兰南部交通节点",
+      "major": true
+    },
+    {
+      "k": "groningen",
+      "n": "格罗宁根",
+      "lon": 6.5665,
+      "lat": 53.2194,
+      "ct": "nl",
+      "region": "荷兰东北部",
+      "note": "北部地区中心",
+      "major": true
+    },
+    {
+      "k": "maastricht",
+      "n": "马斯特里赫特",
+      "lon": 5.6909,
+      "lat": 50.8514,
+      "ct": "nl",
+      "region": "林堡",
+      "note": "荷兰东南默兹河交通节点",
+      "major": true
+    },
+    {
+      "k": "odense",
+      "n": "欧登塞",
+      "lon": 10.3883,
+      "lat": 55.4038,
+      "ct": "dk",
+      "region": "菲英岛",
+      "note": "Odense，菲英岛地区中心",
+      "major": true
+    },
+    {
+      "k": "aalborg",
+      "n": "奥尔堡",
+      "lon": 9.9217,
+      "lat": 57.0488,
+      "ct": "dk",
+      "region": "北日德兰",
+      "note": "Aalborg，利姆水道港口和北日德兰交通节点",
+      "major": true
+    },
+    {
+      "k": "esbjerg",
+      "n": "埃斯比约",
+      "lon": 8.4519,
+      "lat": 55.4765,
+      "ct": "dk",
+      "region": "西日德兰",
+      "note": "丹麦北海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "lulea",
+      "n": "吕勒奥",
+      "lon": 22.1567,
+      "lat": 65.5848,
+      "ct": "se",
+      "region": "北博滕／瑞典北部",
+      "note": "Luleå，波的尼亚湾铁矿出口港",
+      "major": true
+    },
+    {
+      "k": "umea",
+      "n": "于默奥",
+      "lon": 20.263,
+      "lat": 63.8258,
+      "ct": "se",
+      "region": "西博滕／瑞典北部",
+      "note": "Umeå，瑞典北部沿海地区中心",
+      "major": true
+    },
+    {
+      "k": "gavle",
+      "n": "耶夫勒",
+      "lon": 17.1413,
+      "lat": 60.6749,
+      "ct": "se",
+      "region": "耶斯特里克兰",
+      "note": "Gävle，波的尼亚湾沿岸工业与港口城市",
+      "major": true
+    },
+    {
+      "k": "uppsala",
+      "n": "乌普萨拉",
+      "lon": 17.6389,
+      "lat": 59.8586,
+      "ct": "se",
+      "region": "乌普兰",
+      "note": "Uppsala，瑞典中部大学城市",
+      "major": true
+    },
+    {
+      "k": "jonkoping",
+      "n": "延雪平",
+      "lon": 14.1618,
+      "lat": 57.7826,
+      "ct": "se",
+      "region": "斯莫兰／韦特恩湖",
+      "note": "Jönköping，瑞典南部工业与交通中心",
+      "major": true
+    },
+    {
+      "k": "linkoping",
+      "n": "林雪平",
+      "lon": 15.6214,
+      "lat": 58.4108,
+      "ct": "se",
+      "region": "东约特兰",
+      "note": "Linköping，瑞典航空工业与地区中心",
+      "major": true
+    },
+    {
+      "k": "norrkoping",
+      "n": "北雪平",
+      "lon": 16.1924,
+      "lat": 58.5877,
+      "ct": "se",
+      "region": "东约特兰",
+      "note": "Norrköping，瑞典东岸工业港城",
+      "major": true
+    },
+    {
+      "k": "kiruna",
+      "n": "基律纳",
+      "lon": 20.2253,
+      "lat": 67.8558,
+      "ct": "se",
+      "region": "拉普兰／瑞典北部",
+      "note": "Kiruna，铁矿产区；使用旧城位置，非现代搬迁新城",
+      "major": true
+    },
+    {
+      "k": "ostersund",
+      "n": "厄斯特松",
+      "lon": 14.6357,
+      "lat": 63.1792,
+      "ct": "se",
+      "region": "耶姆特兰",
+      "note": "Östersund，瑞典西北内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "sundsvall",
+      "n": "松兹瓦尔",
+      "lon": 17.3069,
+      "lat": 62.3908,
+      "ct": "se",
+      "region": "梅德尔帕德",
+      "note": "Sundsvall，瑞典中北部沿海工业城市",
+      "major": true
+    },
+    {
+      "k": "orebro",
+      "n": "厄勒布鲁",
+      "lon": 15.2134,
+      "lat": 59.2753,
+      "ct": "se",
+      "region": "内尔克",
+      "note": "Örebro，瑞典中部内陆交通节点",
+      "major": true
+    },
+    {
+      "k": "karlstad",
+      "n": "卡尔斯塔德",
+      "lon": 13.5036,
+      "lat": 59.3793,
+      "ct": "se",
+      "region": "韦姆兰／维纳恩湖",
+      "note": "Karlstad，瑞典西部湖区地区中心",
+      "major": true
+    },
+    {
+      "k": "vaasa",
+      "n": "瓦萨",
+      "lon": 21.6158,
+      "lat": 63.0951,
+      "ct": "fi",
+      "region": "博滕区",
+      "note": "Vaasa，芬兰西岸港口",
+      "major": true
+    },
+    {
+      "k": "kuopio",
+      "n": "库奥皮奥",
+      "lon": 27.677,
+      "lat": 62.8924,
+      "ct": "fi",
+      "region": "萨沃",
+      "note": "Kuopio，芬兰东部湖区代表城市",
+      "major": true
+    },
+    {
+      "k": "pori",
+      "n": "波里",
+      "lon": 21.7974,
+      "lat": 61.4851,
+      "ct": "fi",
+      "region": "萨塔昆塔",
+      "note": "Pori，芬兰西部工业与港口城市",
+      "major": true
+    },
+    {
+      "k": "rovaniemi",
+      "n": "罗瓦涅米",
+      "lon": 25.7294,
+      "lat": 66.5039,
+      "ct": "fi",
+      "region": "拉普兰",
+      "note": "Rovaniemi，芬兰北部交通节点",
+      "major": true
+    },
+    {
+      "k": "jyvaskyla",
+      "n": "于韦斯屈莱",
+      "lon": 25.7473,
+      "lat": 62.2426,
+      "ct": "fi",
+      "region": "中芬兰",
+      "note": "Jyväskylä，芬兰内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "joensuu",
+      "n": "约恩苏",
+      "lon": 29.7636,
+      "lat": 62.601,
+      "ct": "fi",
+      "region": "北卡累利阿",
+      "note": "Joensuu，芬兰东部交通节点",
+      "major": true
+    },
+    {
+      "k": "kajaani",
+      "n": "卡亚尼",
+      "lon": 27.7278,
+      "lat": 64.227,
+      "ct": "fi",
+      "region": "凯努",
+      "note": "Kajaani，芬兰东北内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "gaziantep",
+      "n": "加济安泰普",
+      "lon": 37.3781,
+      "lat": 37.0662,
+      "ct": "tr",
+      "region": "安纳托利亚东南部",
+      "note": "Gaziantep，土耳其东南商业与交通城市",
+      "major": true
+    },
+    {
+      "k": "malatya",
+      "n": "马拉蒂亚",
+      "lon": 38.3095,
+      "lat": 38.3552,
+      "ct": "tr",
+      "region": "安纳托利亚东部",
+      "note": "Malatya，土耳其东部铁路节点",
+      "major": true
+    },
+    {
+      "k": "kastamonu",
+      "n": "卡斯塔莫努",
+      "lon": 33.7765,
+      "lat": 41.3887,
+      "ct": "tr",
+      "region": "黑海沿岸腹地",
+      "note": "Kastamonu，土耳其北部内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "bursa",
+      "n": "布尔萨",
+      "lon": 29.061,
+      "lat": 40.195,
+      "ct": "tr",
+      "region": "马尔马拉地区",
+      "note": "Bursa，土耳其西北工业城市",
+      "major": true
+    },
+    {
+      "k": "adana",
+      "n": "阿达纳",
+      "lon": 35.3213,
+      "lat": 37,
+      "ct": "tr",
+      "region": "奇里乞亚",
+      "note": "Adana，土耳其南部平原与铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "antalya",
+      "n": "安塔利亚",
+      "lon": 30.7133,
+      "lat": 36.8969,
+      "ct": "tr",
+      "region": "安纳托利亚西南部",
+      "note": "Antalya，土耳其地中海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "kayseri",
+      "n": "开塞利",
+      "lon": 35.4826,
+      "lat": 38.7225,
+      "ct": "tr",
+      "region": "安纳托利亚中部",
+      "note": "Kayseri，内陆工业与铁路节点",
+      "major": true
+    },
+    {
+      "k": "sivas",
+      "n": "锡瓦斯",
+      "lon": 37.015,
+      "lat": 39.7505,
+      "ct": "tr",
+      "region": "安纳托利亚中东部",
+      "note": "Sivas，土耳其东西向铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "diyarbakir",
+      "n": "迪亚巴克尔",
+      "lon": 40.2306,
+      "lat": 37.9144,
+      "ct": "tr",
+      "region": "安纳托利亚东南部",
+      "note": "Diyarbakır，底格里斯河上游地区中心",
+      "major": true
+    },
+    {
+      "k": "van",
+      "n": "凡城",
+      "lon": 43.373,
+      "lat": 38.5012,
+      "ct": "tr",
+      "region": "凡湖地区",
+      "note": "Van，土耳其东部湖区城市",
+      "major": true
+    },
+    {
+      "k": "stavanger",
+      "n": "斯塔万格",
+      "lon": 5.7331,
+      "lat": 58.97,
+      "ct": "no",
+      "region": "罗加兰",
+      "note": "挪威西南港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "kristiansand",
+      "n": "克里斯蒂安桑",
+      "lon": 7.9956,
+      "lat": 58.1467,
+      "ct": "no",
+      "region": "阿格德",
+      "note": "挪威南岸港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "bodo",
+      "n": "博德",
+      "lon": 14.4049,
+      "lat": 67.2804,
+      "ct": "no",
+      "region": "诺尔兰",
+      "note": "挪威北部沿海港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "alesund",
+      "n": "奥勒松",
+      "lon": 6.1549,
+      "lat": 62.4722,
+      "ct": "no",
+      "region": "默勒海岸",
+      "note": "挪威西岸渔业港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "bydgoszcz",
+      "n": "比得哥什",
+      "lon": 18.0084,
+      "lat": 53.1235,
+      "ct": "pl",
+      "region": "波美拉尼亚",
+      "note": "1939年波兰北部交通城市",
+      "major": true
+    },
+    {
+      "k": "czestochowa",
+      "n": "琴斯托霍瓦",
+      "lon": 19.1203,
+      "lat": 50.8118,
+      "ct": "pl",
+      "region": "波兰中南部",
+      "note": "波兰工业与铁路节点",
+      "major": true
+    },
+    {
+      "k": "kielce",
+      "n": "凯尔采",
+      "lon": 20.6286,
+      "lat": 50.8661,
+      "ct": "pl",
+      "region": "圣十字地区",
+      "note": "波兰中部工业地区中心",
+      "major": true
+    },
+    {
+      "k": "rzeszow",
+      "n": "热舒夫",
+      "lon": 21.9991,
+      "lat": 50.0412,
+      "ct": "pl",
+      "region": "波兰东南部",
+      "note": "波兰东南交通与工业城市",
+      "major": true
+    },
+    {
+      "k": "luck",
+      "n": "卢茨克",
+      "lon": 25.3254,
+      "lat": 50.7472,
+      "ct": "pl",
+      "region": "沃里尼亚",
+      "note": "Łuck，今乌克兰卢茨克；1939年8月属波兰",
+      "major": true
+    },
+    {
+      "k": "rowno",
+      "n": "罗夫诺",
+      "lon": 26.2516,
+      "lat": 50.6199,
+      "ct": "pl",
+      "region": "沃里尼亚",
+      "note": "Równe，今里夫内；1939年8月属波兰",
+      "major": true
+    },
+    {
+      "k": "pinsk",
+      "n": "平斯克",
+      "lon": 26.0728,
+      "lat": 52.1229,
+      "ct": "pl",
+      "region": "波列西耶",
+      "note": "今白俄罗斯境内；1939年8月属波兰",
+      "major": true
+    },
+    {
+      "k": "tarnopol",
+      "n": "塔尔诺波尔",
+      "lon": 25.5948,
+      "lat": 49.5535,
+      "ct": "pl",
+      "region": "波兰东南部",
+      "note": "Tarnopol，今捷尔诺波尔；1939年8月属波兰",
+      "major": true
+    },
+    {
+      "k": "vologda",
+      "n": "沃洛格达",
+      "lon": 39.8915,
+      "lat": 59.2205,
+      "ct": "su",
+      "region": "苏联北部",
+      "note": "通往白海与东北地区的铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "cherepovets",
+      "n": "切列波韦茨",
+      "lon": 37.9069,
+      "lat": 59.1269,
+      "ct": "su",
+      "region": "舍克斯纳河",
+      "note": "苏联北部河运与铁路节点；不提前标注战后大型钢铁联合企业",
+      "major": true
+    },
+    {
+      "k": "ivanovo",
+      "n": "伊万诺沃",
+      "lon": 40.9737,
+      "lat": 56.9995,
+      "ct": "su",
+      "region": "苏联中部",
+      "note": "纺织工业中心",
+      "major": true
+    },
+    {
+      "k": "vladimir",
+      "n": "弗拉基米尔",
+      "lon": 40.4066,
+      "lat": 56.1291,
+      "ct": "su",
+      "region": "苏联中部",
+      "note": "莫斯科以东交通节点",
+      "major": true
+    },
+    {
+      "k": "bologoye",
+      "n": "博洛戈耶",
+      "lon": 34.1058,
+      "lat": 57.8859,
+      "ct": "su",
+      "region": "瓦尔代地区",
+      "note": "莫斯科—列宁格勒铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "velizh",
+      "n": "韦利日",
+      "lon": 31.1969,
+      "lat": 55.6058,
+      "ct": "su",
+      "region": "苏联西部",
+      "note": "西德维纳河上游地区节点",
+      "major": true
+    },
+    {
+      "k": "roslavl",
+      "n": "罗斯拉夫尔",
+      "lon": 32.8639,
+      "lat": 53.9474,
+      "ct": "su",
+      "region": "苏联西部",
+      "note": "斯摩棱斯克以南铁路节点",
+      "major": true
+    },
+    {
+      "k": "vyazma",
+      "n": "维亚济马",
+      "lon": 34.298,
+      "lat": 55.2104,
+      "ct": "su",
+      "region": "苏联西部",
+      "note": "莫斯科西侧铁路与战役节点",
+      "major": true
+    },
+    {
+      "k": "belgorod",
+      "n": "别尔哥罗德",
+      "lon": 36.5872,
+      "lat": 50.5997,
+      "ct": "su",
+      "region": "苏联西南部",
+      "note": "库尔斯克—哈尔科夫之间的交通节点",
+      "major": true
+    },
+    {
+      "k": "mariupol",
+      "n": "马里乌波尔",
+      "lon": 37.5434,
+      "lat": 47.0971,
+      "ct": "su",
+      "region": "乌克兰／亚速海",
+      "note": "1939年苏联港口与冶金工业城市",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "nice",
+      "n": "尼斯",
+      "lon": 7.262,
+      "lat": 43.7102,
+      "ct": "fr",
+      "region": "普罗旺斯东部",
+      "note": "法国地中海沿岸城市",
+      "major": true
+    },
+    {
+      "k": "besancon",
+      "n": "贝桑松",
+      "lon": 6.0241,
+      "lat": 47.2378,
+      "ct": "fr",
+      "region": "弗朗什孔泰",
+      "note": "法国东部地区中心",
+      "major": true
+    },
+    {
+      "k": "lemans",
+      "n": "勒芒",
+      "lon": 0.1996,
+      "lat": 48.0061,
+      "ct": "fr",
+      "region": "曼恩",
+      "note": "法国西部铁路与工业节点",
+      "major": true
+    },
+    {
+      "k": "angers",
+      "n": "昂热",
+      "lon": -0.5632,
+      "lat": 47.4784,
+      "ct": "fr",
+      "region": "安茹",
+      "note": "卢瓦尔河流域地区中心",
+      "major": true
+    },
+    {
+      "k": "pau",
+      "n": "波城",
+      "lon": -0.3708,
+      "lat": 43.2951,
+      "ct": "fr",
+      "region": "贝阿恩",
+      "note": "比利牛斯北麓地区中心",
+      "major": true
+    },
+    {
+      "k": "parma",
+      "n": "帕尔马",
+      "lon": 10.3279,
+      "lat": 44.8015,
+      "ct": "it",
+      "region": "艾米利亚",
+      "note": "Parma，意大利内陆城市；区别于西班牙马略卡岛Palma",
+      "major": true
+    },
+    {
+      "k": "udine",
+      "n": "乌迪内",
+      "lon": 13.2346,
+      "lat": 46.0711,
+      "ct": "it",
+      "region": "弗留利",
+      "note": "1939年意大利东北地区中心",
+      "major": true
+    },
+    {
+      "k": "lecce",
+      "n": "莱切",
+      "lon": 18.1718,
+      "lat": 40.3515,
+      "ct": "it",
+      "region": "萨伦托",
+      "note": "意大利东南半岛地区中心",
+      "major": true
+    },
+    {
+      "k": "reggiocalabria",
+      "n": "雷焦卡拉布里亚",
+      "lon": 15.65,
+      "lat": 38.1113,
+      "ct": "it",
+      "region": "卡拉布里亚",
+      "note": "墨西拿海峡东岸港城，与西西里隔海",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "leon",
+      "n": "莱昂",
+      "lon": -5.5718,
+      "lat": 42.5987,
+      "ct": "es",
+      "region": "莱昂",
+      "note": "西班牙西北内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "badajoz",
+      "n": "巴达霍斯",
+      "lon": -6.9707,
+      "lat": 38.8794,
+      "ct": "es",
+      "region": "埃斯特雷马杜拉",
+      "note": "西班牙西部边境城市",
+      "major": true
+    },
+    {
+      "k": "albacete",
+      "n": "阿尔瓦塞特",
+      "lon": -1.8585,
+      "lat": 38.9943,
+      "ct": "es",
+      "region": "拉曼恰",
+      "note": "西班牙东南内陆交通节点",
+      "major": true
+    },
+    {
+      "k": "braga",
+      "n": "布拉加",
+      "lon": -8.4265,
+      "lat": 41.5454,
+      "ct": "pt",
+      "region": "米尼奥",
+      "note": "葡萄牙北部地区中心",
+      "major": true
+    },
+    {
+      "k": "evora",
+      "n": "埃武拉",
+      "lon": -7.9097,
+      "lat": 38.5714,
+      "ct": "pt",
+      "region": "阿连特茹",
+      "note": "葡萄牙中南部内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "oxford",
+      "n": "牛津",
+      "lon": -1.2577,
+      "lat": 51.752,
+      "ct": "uk",
+      "region": "英格兰中南部",
+      "note": "英国大学与工业城市",
+      "major": true
+    },
+    {
+      "k": "cambridge",
+      "n": "剑桥",
+      "lon": 0.1218,
+      "lat": 52.2053,
+      "ct": "uk",
+      "region": "东安格利亚西部",
+      "note": "英国大学与科研城市",
+      "major": true
+    },
+    {
+      "k": "carlisle",
+      "n": "卡莱尔",
+      "lon": -2.9382,
+      "lat": 54.8925,
+      "ct": "uk",
+      "region": "坎布里亚",
+      "note": "英格兰西北与苏格兰之间交通节点",
+      "major": true
+    },
+    {
+      "k": "dundee",
+      "n": "邓迪",
+      "lon": -2.9707,
+      "lat": 56.462,
+      "ct": "uk",
+      "region": "苏格兰东岸",
+      "note": "泰河口港城与工业中心",
+      "major": true
+    },
+    {
+      "k": "sligo",
+      "n": "斯莱戈",
+      "lon": -8.4761,
+      "lat": 54.2766,
+      "ct": "ie",
+      "region": "爱尔兰西北部",
+      "note": "爱尔兰西北港城与地区中心",
+      "major": true
+    },
+    {
+      "k": "bacau",
+      "n": "巴克乌",
+      "lon": 26.9146,
+      "lat": 46.567,
+      "ct": "ro",
+      "region": "摩尔达维亚",
+      "note": "罗马尼亚东部地区中心",
+      "major": true
+    },
+    {
+      "k": "suceava",
+      "n": "苏恰瓦",
+      "lon": 26.2556,
+      "lat": 47.6514,
+      "ct": "ro",
+      "region": "布科维纳南部",
+      "note": "1939年罗马尼亚北部地区城市",
+      "major": true
+    },
+    {
+      "k": "szolnok",
+      "n": "索尔诺克",
+      "lon": 20.194,
+      "lat": 47.1621,
+      "ct": "hu",
+      "region": "匈牙利中东部",
+      "note": "蒂萨河铁路与渡河节点",
+      "major": true
+    },
+    {
+      "k": "kecskemet",
+      "n": "凯奇凯梅特",
+      "lon": 19.6913,
+      "lat": 46.8964,
+      "ct": "hu",
+      "region": "匈牙利大平原",
+      "note": "多瑙河与蒂萨河之间的地区中心",
+      "major": true
+    },
+    {
+      "k": "kragujevac",
+      "n": "克拉古耶瓦茨",
+      "lon": 20.9114,
+      "lat": 44.0128,
+      "ct": "yu",
+      "region": "舒马迪亚",
+      "note": "南斯拉夫军工城市",
+      "major": true
+    },
+    {
+      "k": "pristina",
+      "n": "普里什蒂纳",
+      "lon": 21.1655,
+      "lat": 42.6629,
+      "ct": "yu",
+      "region": "科索沃",
+      "note": "1939年南斯拉夫境内地区中心",
+      "major": true
+    },
+    {
+      "k": "pleven",
+      "n": "普列文",
+      "lon": 24.6067,
+      "lat": 43.417,
+      "ct": "bg",
+      "region": "保加利亚北部",
+      "note": "保加利亚北部交通节点",
+      "major": true
+    },
+    {
+      "k": "vidin",
+      "n": "维丁",
+      "lon": 22.8725,
+      "lat": 43.9962,
+      "ct": "bg",
+      "region": "保加利亚西北部",
+      "note": "多瑙河港口",
+      "major": true
+    },
+    {
+      "k": "larissa",
+      "n": "拉里萨",
+      "lon": 22.4191,
+      "lat": 39.639,
+      "ct": "gr",
+      "region": "色萨利",
+      "note": "希腊中部平原与铁路中心",
+      "major": true
+    },
+    {
+      "k": "kalamata",
+      "n": "卡拉马塔",
+      "lon": 22.1142,
+      "lat": 37.0389,
+      "ct": "gr",
+      "region": "伯罗奔尼撒南部",
+      "note": "希腊南部港口",
+      "major": true
+    },
+    {
+      "k": "zilina",
+      "n": "日利纳",
+      "lon": 18.7408,
+      "lat": 49.2231,
+      "ct": "sk",
+      "region": "斯洛伐克西北部",
+      "note": "1939年斯洛伐克铁路枢纽",
+      "major": true
+    },
+    {
+      "k": "banskabystrica",
+      "n": "班斯卡比斯特里察",
+      "lon": 19.1462,
+      "lat": 48.7363,
+      "ct": "sk",
+      "region": "斯洛伐克中部",
+      "note": "1944年斯洛伐克民族起义中心；地图仍为1939年",
+      "major": true
+    },
+    {
+      "k": "durres",
+      "n": "都拉斯",
+      "lon": 19.4565,
+      "lat": 41.3231,
+      "ct": "al",
+      "region": "阿尔巴尼亚沿海",
+      "note": "1939年意大利占领下的阿尔巴尼亚港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "korce",
+      "n": "科尔察",
+      "lon": 20.7808,
+      "lat": 40.6186,
+      "ct": "al",
+      "region": "阿尔巴尼亚东南部",
+      "note": "1939年意占阿尔巴尼亚内陆地区中心",
+      "major": true
+    },
+    {
+      "k": "akureyri",
+      "n": "阿克雷里",
+      "lon": -18.0878,
+      "lat": 65.6885,
+      "ct": "is",
+      "region": "冰岛北部",
+      "note": "冰岛北岸港城",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "parnu",
+      "n": "派尔努",
+      "lon": 24.4971,
+      "lat": 58.3859,
+      "ct": "ee",
+      "region": "爱沙尼亚西南部",
+      "note": "1939年独立爱沙尼亚港城",
+      "major": true
+    },
+    {
+      "k": "ventspils",
+      "n": "文茨皮尔斯",
+      "lon": 21.558,
+      "lat": 57.3937,
+      "ct": "lv",
+      "region": "库尔兰北部",
+      "note": "1939年独立拉脱维亚港口",
+      "major": true,
+      "port": true
+    },
+    {
+      "k": "panevezys",
+      "n": "帕内韦日斯",
+      "lon": 24.351,
+      "lat": 55.7348,
+      "ct": "lt",
+      "region": "立陶宛东北部",
+      "note": "1939年独立立陶宛地区中心",
+      "major": true
+    },
+    {
+      "k": "olomouc",
+      "n": "奥洛穆茨",
+      "lon": 17.2509,
+      "lat": 49.5938,
+      "ct": "bm",
+      "region": "摩拉维亚",
+      "note": "1939年波希米亚和摩拉维亚保护国内的城市",
+      "major": true
     }
   ]
 };

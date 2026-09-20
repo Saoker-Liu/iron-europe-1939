@@ -2,6 +2,7 @@
 /* Reproducible offline geography builder. See MAP_NOTES.md for provenance,
  * snapshot date and the 45 km generalisation limit. No network needed. */
 const fs = require('fs'), path = require('path');
+const {assignCells}=require('./map-placement');
 const G = require('./js/core/geography.js');
 require('./js/core/hex.js'); require('./js/data/nations.js'); require('./js/data/military.js');
 const N = globalThis.GameData.modules.nations, military = globalThis.GameData.modules.military;
@@ -163,23 +164,34 @@ for(const [a,b]of [[[-5.55,50.12],[-4.7,50.4]],[[-4.7,50.4],[-3.8,50.65]]])
 for(const [c,r]of lineHexes([-4.2,51.35],[-3.15,51.43])){rows[r][c]='~';homes[r][c]=null;}
 // Retain tiny but strategically relevant islands and states at one-hex resolution.
 // Only these explicit anchors can promote a sea cell to land; never arbitrary units.
-const anchors={valletta:'uk',gibraltar:'uk',luxembourg:'lu',danzig:'dz',rhodes:'it',bratislava:'sk',kosice:'hu',zara:'it',dunkirk:'fr',fiume:'it',scapaflow:'uk',ronne:'dk',torshavn:'dk',jersey:'uk',janmayen:'no',douglas:'uk',visby:'se',mariehamn:'fi',plymouth:'uk',kuressaare:'ee',brunsbuettel:'de'};
+const anchors={valletta:'uk',gibraltar:'uk',luxembourg:'lu',danzig:'dz',rhodes:'it',bratislava:'sk',kosice:'hu',zara:'it',dunkirk:'fr',fiume:'it',scapaflow:'uk',ronne:'dk',torshavn:'dk',jersey:'uk',janmayen:'no',douglas:'uk',visby:'se',mariehamn:'fi',plymouth:'uk',kuressaare:'ee',brunsbuettel:'de',geneva:'ch',thehague:'nl',odense:'dk'};
+const anchorLocations=Object.fromEntries(N.CITIES.filter(ci=>anchors[ci.k]).map(ci=>[ci.k,G.geoToHex(ci.lon,ci.lat)]));
+// Southern Dutch Limburg is narrower than one cell. Preserve a connected cell
+// north of Maastricht rather than overwrite Liege's cell or move it 69 km away.
+anchorLocations.maastricht=G.geoToHex(5.7,51.1);
+anchors.maastricht='nl';
 for(const ci of N.CITIES.filter(ci=>anchors[ci.k])){
- const [c,r]=G.geoToHex(ci.lon,ci.lat);rows[r][c]='.';homes[r][c]=ci.ct;
+ const [c,r]=anchorLocations[ci.k];rows[r][c]='.';homes[r][c]=ci.ct;
 }
 const cityLocations={},used=new Set();
-const reserved=new Map(N.CITIES.filter(ci=>anchors[ci.k]).map(ci=>[G.geoToHex(ci.lon,ci.lat).join(','),ci.k]));
-for(const ci of N.CITIES) {
- const target=G.project(ci.lon,ci.lat); let best=null,bd=Infinity;
- for(let r=0;r<H;r++)for(let c=0;c<W;c++) {
-  if(homes[r][c]!==ci.ct||used.has(c+','+r))continue;
-  if(reserved.has(c+','+r)&&reserved.get(c+','+r)!==ci.k)continue;
-  if(ci.port&&!neigh(c,r).some(([x,y])=>rows[y][x]==='~'))continue;
-  const p=G.project(...G.hexToGeo(c,r)); const d=Math.hypot(p[0]-target[0],p[1]-target[1]);
-  if(d<bd){bd=d;best=[c,r];}
+for(const [k,p]of Object.entries(anchorLocations)){
+ if(used.has(p.join(',')))throw Error('Overlapping city anchors: '+k);
+ cityLocations[k]=p;used.add(p.join(','));
+}
+for(const ct of [...new Set(N.CITIES.map(ci=>ci.ct))].sort()){
+ const cities=N.CITIES.filter(ci=>ci.ct===ct&&!cityLocations[ci.k]).sort((a,b)=>a.k<b.k?-1:1);
+ const targets=cities.map(ci=>G.project(ci.lon,ci.lat)),cells=[];
+ for(let r=0;r<H;r++)for(let c=0;c<W;c++)if(homes[r][c]===ct&&!used.has(c+','+r)){
+  const xy=G.project(...G.hexToGeo(c,r));
+  if(targets.some(p=>Math.hypot(p[0]-xy[0],p[1]-xy[1])<60))
+   cells.push({p:[c,r],xy,coastal:neigh(c,r).some(([x,y])=>rows[y][x]==='~')});
  }
- if(!best||bd>105)throw Error('City too far from historical location: '+ci.k+' '+bd);
- cityLocations[ci.k]=best;used.add(best.join(','));
+ const costs=cities.map((ci,i)=>cells.map(cell=>{
+  const d=Math.hypot(targets[i][0]-cell.xy[0],targets[i][1]-cell.xy[1]);
+  return d<60&&(!ci.port||cell.coastal)?Math.round(d*d*1000):Infinity;
+ }));
+ let assigned;try{assigned=assignCells(costs);}catch(e){throw Error(ct+' city placement: '+e.message);}
+ assigned.forEach((j,i)=>{const p=cells[j].p;cityLocations[cities[i].k]=p;used.add(p.join(','));});
 }
 // Perekop is narrower than a hex: preserve its genuine north-south land connection.
 function lineHexes(a,b) {
@@ -230,6 +242,8 @@ for(const [name,a,b]of [
  ['布里斯托尔湾海运','bristol','cork'],['威尔士—爱尔兰','cardiff','waterford'],
  ['斯旺西—科克','swansea','cork']
 ])routes.push({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]});
+for(const [name,a,b]of [['菲英岛—西兰岛','odense','copenhagen'],['菲英岛—日德兰','odense','aarhus'],['墨西拿海峡渡运','reggiocalabria','messina']])
+ routes.push({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]});
 routes.push({name:'萨列马岛航线',a:cityLocations.kuressaare,b:cityLocations.tallinn,cities:['kuressaare','tallinn']});
 // Istanbul has a ferry to Asian shore even though there is no separate city there.
 const ist=cityLocations.istanbul; const asian=lineHexes([29.15,40.95],[29.5,40.8]).find(p=>landAt(...p)&&p.join(',')!==ist.join(','));
