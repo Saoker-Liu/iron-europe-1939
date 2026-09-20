@@ -55,7 +55,7 @@ const SFX = (() => {
 })();
 
 /* ============================ 全局 UI 状态 ============================ */
-const SAVE_KEY = 'iron-europe-1939-geographic-v7-save';
+const SAVE_KEY = 'iron-europe-1939-geographic-v8-save';
 const UI = {
   game: null,
   sel: null,            // 选中的己方单位

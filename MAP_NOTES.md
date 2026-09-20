@@ -8,7 +8,7 @@
 - 天然湖泊：Natural Earth `ne_50m_lakes`，筛选拉多加、奥涅加、楚德、维纳恩、维特恩等天然湖泊，避免把大型战后水库引入1939地图。
 - 河流：Natural Earth `ne_50m_rivers_lake_centerlines` 的莱茵、多瑙、塞纳、卢瓦尔、罗讷、波、易北、奥得、维斯瓦、第聂伯、顿、伏尔加等河系。
 - [Natural Earth 1:50m 数据](https://www.naturalearthdata.com/downloads/50m-physical-vectors/)，公共领域。
-- 城市保存WGS84经纬度，统一投影后落到本国最近未占用陆地格；不再混用经纬度列号和画面坐标。相邻城市可能错开一格，自动检查位移小于80公里。
+- 城市保存WGS84经纬度，统一投影后按国家统筹分配独立陆地格，海港要求邻海，并先保留小岛和狭窄领土锚点；不再混用经纬度列号和画面坐标。相邻城市可能错开一格，自动检查位移小于60公里。
 
 使用球面兰伯特等角圆锥投影（中央经线18°E，标准纬线43°N/62°N）。128×112格，格心间距45公里；修复原版经纬度等宽铺格导致的东西向拉伸。范围包括冰岛、北欧、欧洲俄罗斯、地中海岛屿与安纳托利亚；北非和近东部分只显示灰色背景陆地，不虚构可交战国家。微型国家低于格网尺度，未全部单列。
 
@@ -52,7 +52,9 @@
 ```text
 node build_map.js --write
 node build_map.js --check
+node test_placement.js
 node test_geography.js
+node test_render.js
 node test_logic.js
 ```
 
@@ -142,3 +144,24 @@ node test_logic.js
 - [爱沙尼亚旅游机构：萨列马岛与库雷萨雷](https://visitestonia.com/en/where-to-go/top-islands-to-visit-in-estonia)
 - [诺夫哥罗德博物馆：1941—1944年当地战争历史](https://novgorodmuseum.ru/visit/sobytiya/put-k-pobede.-raznye-sudby-odnoj-vojny)
 - [喀山市政府：城市历史与鞑靼自治共和国](https://kzn.ru/o-kazani/istoriya-kazani/?lang=ru)
+
+## 地区代表城市加密（地图v8，436处节点）
+
+新增107处城市，补齐用户指定的24座城市，并扩展北欧沿海与内陆、西欧地区中心、波兰东部、苏联西部、巴尔干和安纳托利亚。完整城市、地区与1939归属见CITY_CATALOG.md。此处“地区”用于地理覆盖和搜索，并非声称欧洲每个历史行政区均有独立城市格。
+
+瑞士苏黎世、日内瓦、巴塞尔等不替代伯尔尼的全国首都标记；海牙说明政府所在地，荷兰首都仍为阿姆斯特丹。日内瓦在法国边界内的狭窄瑞士领土低于格网精度，固定其经纬度对应的一格；马斯特里赫特所在的南林堡同样狭窄，概化为城市北侧约26公里处、与荷兰相连的一格，保留比利时列日。两处边界为45公里级表达，不能视为测绘边界。
+
+海牙固定在乌德勒支以西，欧登塞固定在菲英岛。城市落格改用全局最小平方距离分配，避免按列表顺序向外挤压城市，所有436处城市偏移均小于60公里，当前最大约41公里。欧登塞—哥本哈根、欧登塞—奥胡斯、雷焦卡拉布里亚—墨西拿为游戏抽象渡运；菲英岛与西兰岛、意大利大陆与西西里保持隔水，不能直接步行。
+
+卢茨克、罗夫诺、平斯克、塔尔诺波尔按1939年8月31日归波兰，不能直接使用现代乌克兰／白俄罗斯或1939年9月后的边界。奥洛穆茨归波希米亚和摩拉维亚保护国。苏联城市仍使用1939时期名称，例如马里乌波尔不提前改称1948年后的日丹诺夫；吕勒奥描述为铁矿出口港，不把1940年代兴建的钢铁厂提前加入1939背景。
+
+各国总收入预算保持不变，但更多招募和占领地点会改变战局；此次验证为程序与地理回归，并非完整游戏平衡测试。地图与独立存档槽更新至v8，旧存档保留但不能跨地图读取。
+
+补充核对资料（地区中心与自然地理，历史国界仍以上述1939资料为准）：
+
+- [瑞士旅游机构：苏黎世、日内瓦、巴塞尔等城市](https://help.myswitzerland.com/hc/en-us/articles/213795065-Which-cities-must-I-not-miss-during-my-stay)
+- [丹麦旅游机构：欧登塞位于菲英岛](https://www.visitdenmark.com/travel-trade/sales-and-marketing-tools/itinerary-odense-funen)
+- [吕勒奥市政府：港口、铁路及城市历史](https://www.lulea.se/kommun--politik/fakta-och-statistik/fakta-om-lulea-kommun.html)
+- [土耳其官方旅游机构：卡斯塔莫努](https://kastamonu.goturkiye.com/)
+- [土耳其官方旅游机构：加济安泰普](https://goturkiye.com/tr/gaziantep)
+- [土耳其官方旅游机构：布尔萨](https://goturkiye.com/bursa/routes)
