@@ -1,5 +1,10 @@
 /* National budgets preserved when adding cities; income distributed by strategic weight. */
 (function(){const root=typeof window!=='undefined'?window:globalThis;root.GameData=root.GameData||{modules:{}};root.GameData.modules.economy={
+  "transports": [
+    {"id":"transport","name":"运输船","year":1939,"cost":25,"move":5,"defense":6,"attackMultiplier":0.2},
+    {"id":"amphibious","name":"两栖运输舰","year":1942,"cost":55,"move":5,"defense":12,"attackMultiplier":0.45},
+    {"id":"assault","name":"两栖突击舰","year":1944,"cost":90,"move":5,"defense":18,"attackMultiplier":0.7}
+  ],
   "startGold": {
     "axis": 120,
     "west": 120,

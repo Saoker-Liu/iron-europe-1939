@@ -107,4 +107,16 @@ assert.equal(h.frames.length,1,'frame scheduled even after an exception');
 assert.doesNotThrow(()=>h.frame(8016));
 h.run('UI.game=null');h.frame(8032);
 assert.equal(h.frames.length,1,'no-game screen has a single animation loop');
+// Exercise the purchase command and embarked status through the production UI.
+h.run(`UI.game=new Game('axis');UI.game.units=[];UI.busy=false;UI.sel=null;
+  {const port=UI.game.cityByKey.dover;
+   UI.sel=UI.game.spawnUnit('de','de:inf:0',port.x,port.y,{});}
+  showUnitPanel(UI.sel);document.getElementById('pb-ship-0').onclick();`);
+assert.equal(h.run('UI.sel.transport'),'transport','purchase button equips selected army');
+assert.equal(h.run('UI.game.gold.axis'),95,'purchase button charges correct amount');
+h.run(`{const p=UI.game.neighbors(UI.sel.c,UI.sel.r).find(p=>UI.game.ocean(...p));
+  UI.game.moveUnit(UI.sel,...p);showUnitPanel(UI.sel);}`);
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('航行中')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('海上攻击保留20%')"));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('id=\"pb-dug\"')"),'no sea entrenchment button');
 console.log('Render: first-frame timing, delayed movement, camera panning, cache reuse and frame recovery passed.');

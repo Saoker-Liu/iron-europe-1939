@@ -11,7 +11,7 @@ function route(a, b, ferry = false) {
   for (let i = 0; i < q.length; i++) {
     const [c, r, d] = q[i];
     if (c === b[0] && r === b[1]) return d;
-    for (const p of [...g.landNeighbors(c, r), ...(ferry ? g.ferryDestinations(c, r) : [])]) {
+    for (const p of (ferry ? g.transportNeighbors(c,r) : g.landNeighbors(c,r))) {
       if (!seen.has(key(...p))) { seen.add(key(...p)); q.push([...p, d + 1]); }
     }
   }
@@ -97,7 +97,7 @@ for(const [k,ct,lon,lat] of [
  assert.equal(g.cityByKey[k].ct,ct,k+' 1939 owner');
  assert.deepEqual(city(k),at(lon,lat),k+' stays on intended island/enclave');
  assert(g.neighbors(...city(k)).some(p=>g.tile(...p)==='~'),k+' coastal access');
- assert(D.MAP_META.routes.some(rt=>rt.cities.includes(k)),k+' supply connection');
+ assert(g.neighbors(...city(k)).some(p=>g.ocean(...p)),k+' sea access');
 }
 assert.equal(g.homeCountryOf(67,52),'de','East Prussian coastal gap must not inherit modern Russian ownership');
 for(let r=0;r<D.MAP_H;r++)for(let c=0;c<D.MAP_W;c++) {
@@ -229,9 +229,11 @@ const tank=g.spawnUnit('de','de:tank:0',dc,dr,{});
 g.gold.axis=0;
 assert(!g.moveRange(tank).cost.has(key(cc,cr)),'no free land crossing');
 g.gold.axis=100;
-assert(g.moveRange(tank).cost.has(key(cc,cr)),'port sea transport available');
-g.moveUnit(tank,cc,cr);
-assert.equal(g.gold.axis,75);assert(tank.attacked&&tank.moved);
+assert(!g.moveRange(tank).cost.has(key(cc,cr)),'gold does not teleport units across Channel');
+assert(g.equipTransport(tank,'transport'));
+const water=g.neighbors(dc,dr).find(p=>g.ocean(...p));
+assert(g.moveUnit(tank,...water));
+assert.equal(g.gold.axis,75);assert(tank.embarked&&tank.attacked&&tank.moved);
 g.units=[];
 const air=g.spawnUnit('de','de:air:0',dc,dr,{});
 assert(g.moveRange(air).cost.has(key(cc,cr)),'air crosses Channel');
