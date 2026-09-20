@@ -137,3 +137,17 @@ const count=h.run('UI.game.units.length');h.run("document.getElementById('naval-
 assert.equal(h.run('UI.game.units.length'),count,'stale occupied-berth click cannot duplicate ships');
 h.texts.length=0;h.frame(9000);assert(h.texts.includes('⚓'),'harbor marker painted');assert(h.texts.includes('驱'),'naval unit painted');
 console.log('Naval UI: harbor click, production, blocked berth, unit panel and markers passed.');
+
+// Named ships expose nation, type, class and personal name in production UI.
+h.run(`UI.game=new Game('axis','normal',{initialFleet:false});UI.game.units=[];UI.sel=null;
+ const named1=UI.game.spawnUnit('de','de:bb:1',10,1,{});
+ const named2=UI.game.spawnUnit('de','de:bb:1',11,1,{});
+ showUnitPanel(named2);`);
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('德国 · 战列舰 · 俾斯麦级 · 提尔皮茨号')"));
+h.run('centerOn(named2.c,named2.r);updateTooltip(...hexToPix(named2.c,named2.r))');
+assert(h.run("document.getElementById('tooltip').innerHTML.includes('俾斯麦级 · 提尔皮茨号')"));
+h.run("UI.game.turn=16;showHarborPanel(UI.game.harbors.find(h=>h.cityKey==='kiel'))");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('下艘舰名：战列舰1')"));
+h.run('UI.cam.z=1.3;centerOn(named2.c,named2.r)');h.texts.length=0;h.frame(10000);
+assert(h.texts.includes('提尔皮茨号'),'zoomed map paints personal ship name');
+console.log('Naval identity UI: panel, tooltip, next-name preview and map label passed.');

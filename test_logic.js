@@ -99,6 +99,14 @@ for (const pf of ['axis', 'west', 'sov']) {
           assert(tk && (g.isNaval(u) ? tk === '~' && !u.embarked && !u.transport : u.embarked ? tk === '~' && !!g.transportOf(u) && u.eq.cls!=='air' : D.TERRAIN[tk].pass), `[${pf}] 单位 ${u.eq.n} 站在海上 (${u.c},${u.r}) 回合${g.turn}`);
         }
         const unitsAt = {};
+        const navalNames = new Set();
+        for(const u of g.units.filter(u=>g.isNaval(u))){
+          const nameKey=u.ct+':'+u.shipName;
+          assert(typeof u.shipName==='string'&&u.shipName.length>0,`[${pf}] 海军缺少舰名`);
+          assert(!navalNames.has(nameKey),`[${pf}] 舰名重复 ${nameKey}`);
+          assert(g.usedShipNames.has(nameKey),`[${pf}] 舰名未登记 ${nameKey}`);
+          navalNames.add(nameKey);
+        }
         for (const u of g.units) { const k = key(u.c, u.r); unitsAt[k] = (unitsAt[k] || 0) + 1; }
         for (const k in unitsAt) assert(unitsAt[k] === 1, `[${pf}] 单位叠格 ${k} 回合${g.turn}`);
         for (const f of ['axis', 'west', 'sov']) assert(g.gold[f] >= 0, `[${pf}] ${f} 金币为负 回合${g.turn}`);
