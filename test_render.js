@@ -334,3 +334,14 @@ console.log('Tutorial UI: guided selection, small-map rendering, save protection
 h.run("globalThis.localStorage={getItem(){return 'existing-campaign';}};showStart()");
 assert(h.run("modalRoot.innerHTML.includes('id=\"m-continue\"')&&modalRoot.innerHTML.includes('id=\"m-tutorial\"')"));
 console.log('Start menu: continue and tutorial coexist with a saved campaign.');
+
+h.run("let menuSave=null;globalThis.localStorage={setItem(k,v){menuSave=v;},getItem(){return menuSave;}};closeModal();UI.game=new Game('axis');UI.game.gold.axis=987;UI.busy=true");
+assert.equal(h.run('returnToMainMenu()'),false);assert.equal(h.run('menuSave'),null);
+h.run('UI.busy=false');assert(h.run('returnToMainMenu()'));
+assert.equal(h.run('UI.game'),null);assert.equal(h.run('JSON.parse(menuSave).gold.axis'),987);
+h.run("document.getElementById('m-continue').onclick()");assert.equal(h.run('UI.game.gold.axis'),987);
+h.run("localStorage.setItem=()=>{throw Error('quota');}");assert.equal(h.run('returnToMainMenu()'),false);
+assert(h.run("UI.game!==null&&modalRoot.innerHTML.includes('暂时无法保存')"));
+h.run("document.getElementById('menu-save-back').onclick();startTutorial()");
+assert(h.run('returnToMainMenu()'));assert.equal(h.run('JSON.parse(menuSave).gold.axis'),987);
+console.log('Main menu: waits for actions, saves and resumes campaign, preserves play on storage failure, tutorial does not overwrite save.');

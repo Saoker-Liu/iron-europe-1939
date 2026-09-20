@@ -1439,6 +1439,22 @@ document.getElementById('btn-units').onclick = () => { UI.showUnits = !UI.showUn
 document.getElementById('btn-end').onclick = endTurnFlow;
 document.getElementById('btn-gen').onclick = () => UI.game && showGenerals();
 document.getElementById('btn-help').onclick = showHelp;
+function returnToMainMenu() {
+  // Never leave midway through movement, combat, AI playback or a pending event dialog.
+  if(UI.busy||modalOpen()) { if(UI.busy)banner('请等待当前行动结束后返回主菜单'); return false; }
+  if(UI.game&&!UI.game.tutorial&&!autoSave()) {
+    openModal(`<div class="modal"><h1>暂时无法保存</h1><div class="help-body">存档写入失败，已保留当前战役。请检查浏览器存储空间或隐私设置后重试。</div><div class="actions"><button class="btn" id="menu-save-back">返回游戏</button></div></div>`);
+    document.getElementById('menu-save-back').onclick=closeModal;return false;
+  }
+  tutorialMode(false);deselect();UI.game=null;UI.anims=[];UI.moveAnim=null;UI.pendingAttack=null;
+  drag=null;UI.hover=null;terrainCache.key='';
+  document.getElementById('tooltip').style.display='none';
+  document.getElementById('log-body').innerHTML='';
+  document.getElementById('banner').style.opacity=0;
+  updatePanel();showStart();return true;
+}
+document.getElementById('btn-menu').onclick=returnToMainMenu;
+
 document.getElementById('btn-save').onclick = () => { if (autoSave()) banner('已保存'); };
 function toggleSound() { const on = SFX.toggle(); Music.setEnabled(on); document.getElementById('btn-sound').textContent = on ? '🔊' : '🔇'; }
 document.getElementById('btn-sound').onclick = toggleSound;
