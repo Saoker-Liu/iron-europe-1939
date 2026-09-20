@@ -35,6 +35,7 @@ jobs:
           node test_air_scenario.js
           node test_construction.js
           node test_infantry.js
+          node test_artillery.js
           node test_naval.js
           node test_naval_names.js
           node test_logic.js

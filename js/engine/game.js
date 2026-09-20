@@ -451,7 +451,7 @@ class Game {
     if (CLASSES[u.eq.cls].fly && (t === '~' || t === 'l')) return 1;
     if (!T || !T.pass) return Infinity;
     const cost=T.cost ? T.cost[u.eq.cls] : 1;
-    const specialist=u.eq.infRole==='mountain'&&['h','m'].includes(t)||u.eq.infRole==='ranger'&&t==='f';
+    const specialist=u.eq.infRole==='mountain'&&['h','m'].includes(t)||u.eq.infRole==='ranger'&&t==='f'||u.eq.mountainGun&&t==='m';
     return specialist?Math.max(1,cost-1):cost;
   }
   /* 迪杰斯特拉：可达格成本表 + 前驱(用于还原路径) */
@@ -558,7 +558,10 @@ class Game {
     if(target&&this.isAir(u)){
       const rule=AIR.roles[this.airRole(u)];
       m*=this.isAir(target)?rule.air:this.isSeagoing(target)?rule.sea:target.eq.cls==='inf'?rule.inf:rule.ground;
+    } else if(target&&u.eq.artRole&&!this.isEmbarked(u)){
+      m*=this.isAir(target)?(u.eq.artRole==='aa'?3:.15):this.isSeagoing(target)?.5:target.eq.cls==='tank'||target.eq.infRole==='mechanized'?u.eq.armor:u.eq.soft;
     } else if (target && !this.isEmbarked(u)) m *= ATK_MOD[u.eq.cls][this.isEmbarked(target)?'inf':target.eq.cls];     // 兵种克制
+    if(u.eq.mountainGun&&!this.isEmbarked(u)&&target&&(this.tile(u.c,u.r)==='m'||this.tile(target.c,target.r)==='m'))m*=1.15;
     const vs = this.genSkill(u, 'vs');
     if (vs && target && target.eq.cls === vs.tgt) m *= 1 + vs.m;
     if (this.genSkill(u, 'rage') && u.hp < 50) m *= 1.15;
@@ -607,8 +610,16 @@ class Game {
     if (cd && this.cityAt(def.c, def.r)) dm *= 1 + cd.m;
     const d = this.effDef(def) * dm;
     let dmg = 42 * a / (a + d);
+    if(this.isAir(att)&&this.aaCover(def).length)dmg*=.5;
     if (!opt || !opt.preview) dmg *= 0.85 + Math.random() * 0.3;
     return Math.max(3, Math.round(dmg));
+  }
+  aaCover(target) {
+    return this.units.filter(u=>u.eq.artRole==='aa'&&!this.isEmbarked(u)&&!u.carrierId&&u.hp>0&&this.unitFaction(u)===this.unitFaction(target)&&hexDist(u.c,u.r,target.c,target.r)<=1);
+  }
+  rocketRearTargets(att,def) {
+    const distance=hexDist(att.c,att.r,def.c,def.r);
+    return this.units.filter(u=>u!==def&&!this.isAir(u)&&!u.carrierId&&this.atWar(this.unitFaction(att),this.unitFaction(u))&&hexDist(def.c,def.r,u.c,u.r)===1&&hexDist(att.c,att.r,u.c,u.r)>distance);
   }
   canAttackNow(u) { return !u.carrierId && !(this.isAir(u)&&this.airRole(u)==='transport') && !u.attacked && u.hp > 0; }
   canStrikeFrom(u,c,r,e) {
@@ -629,9 +640,10 @@ class Game {
   }
   canCounter(def,att) {
     // Incoming sorties reach the target: naval AA can respond even when the base is distant.
+    if(this.isAir(att)&&def.eq.artRole==='aa'&&!this.isEmbarked(def))return true;
     if(this.isAir(att))return this.isAir(def)?this.airRole(def)!=='transport'&&!!this.airBase(def):this.isNaval(def)&&def.eq.cls!=='sub';
     if(!this.canStrikeFrom(def,def.c,def.r,att))return false;
-    return this.isNaval(def) || (hexDist(att.c,att.r,def.c,def.r)===1 && (this.isEmbarked(def)||['inf','tank'].includes(def.eq.cls)));
+    return !!def.eq.artRole&&!this.isEmbarked(def) || this.isNaval(def) || (hexDist(att.c,att.r,def.c,def.r)===1 && (this.isEmbarked(def)||['inf','tank'].includes(def.eq.cls)));
   }
   targetsOf(u) {
     if(!this.canAttackNow(u))return [];
@@ -643,6 +655,10 @@ class Game {
     const fA = this.unitFaction(att), fD = this.unitFaction(def);
     // 中立国被攻击 → 倒向攻击者的敌对阵营
     if (fD === 'neutral') this.neutralDefect(def.ct, fA);
+    // Snapshot interception before impact: suppressing a battery does not erase its outgoing fire.
+    const aa=this.isAir(att)?this.aaCover(def).sort((a,b)=>this.effAtk(b,att)-this.effAtk(a,att))[0]:null;
+    const aaDamage=aa?Math.round(50*this.effAtk(aa,att)/(this.effAtk(aa,att)+this.effDef(att))):0;
+    const splash=att.eq.artRole==='rocket'&&!this.isEmbarked(att)?this.rocketRearTargets(att,def).map(u=>({u,dmg:Math.max(1,Math.round(this.computeDamage(att,u,{preview:true})*att.eq.splash))})):[];
     const dmg = this.computeDamage(att, def);
     def.hp -= dmg; rec.dmg = dmg;
     att.attacked = true; att.dug = false; att.moved = true;
@@ -654,8 +670,8 @@ class Game {
     } else {
       // 反击：近战 & 防守方为步兵/装甲
       const dist = hexDist(att.c, att.r, def.c, def.r);
-      if (this.canCounter(def,att)) {
-        let cm = 0.55;
+      if (this.canCounter(def,att)&&!(this.isAir(att)&&def.eq.artRole==='aa')) {
+        let cm = def.eq.counterMultiplier||0.55;
         const cs = this.genSkill(def, 'counter'); if (cs) cm += cs.m;
         const a2 = this.effAtk(def, att);
         const d2 = this.effDef(att) * (1 + ((att.eq.cls === 'art' || att.eq.cls === 'air') ? 0 : this.terrainDefBonus(att.c, att.r)));
@@ -664,6 +680,19 @@ class Game {
         def.xp += 15;
         if (att.hp <= 0) { rec.attDied = true; this.killUnit(att); }
       }
+    }
+    if(aaDamage&&this.units.includes(att)){
+      att.hp-=aaDamage;rec.counter+=aaDamage;rec.aa={id:aa.id,c:aa.c,r:aa.r,dmg:aaDamage};
+      if(this.units.includes(aa)){aa.xp+=15;this.updateVet(aa);}
+      this.pushLog(`${aa.eq.n}防空拦截，空袭伤害减半，并对${att.eq.n}造成${aaDamage}伤害。`,'battle');
+      if(att.hp<=0){rec.attDied=true;this.killUnit(att);this.stats.kills[fD]=(this.stats.kills[fD]||0)+1;if(aa.gen)this.genKills[aa.gen]=(this.genKills[aa.gen]||0)+1;}
+    }
+    rec.splash=[];
+    for(const {u,dmg:damage}of splash){
+      if(!this.units.includes(u))continue;
+      u.hp-=damage;const killed=u.hp<=0;rec.splash.push({c:u.c,r:u.r,dmg:damage,killed});
+      if(killed){this.killUnit(u);att.xp+=30;this.stats.kills[fA]=(this.stats.kills[fA]||0)+1;if(att.gen)this.genKills[att.gen]=(this.genKills[att.gen]||0)+1;}
+      this.pushLog(`${att.eq.n}溅射${u.eq.n}，造成${damage}伤害${killed?'，将其歼灭':''}。`,'battle');
     }
     this.updateVet(att);
     const an = this.unitName(att) + (att.gen ? `(${this.genOf(att).name})` : '');
@@ -1194,8 +1223,9 @@ class Game {
     return EQUIP[ct]?.infantry?ct:'neutral';
   }
   latestGroundRoster(city,roles) {
-    const native=this.groundCountry(city),ct=roles.includes('art')&&!EQUIP[native].art?'neutral':native;
+    const native=this.groundCountry(city);
     return roles.map(role=>{
+      const ct=EQUIP[native][role]?native:'neutral';
       const list=EQUIP[ct][role]||[],available=list.map((eq,i)=>({eq,eqKey:`${ct}:${role}:${i}`})).filter(o=>o.eq.yr<=this.year());
       return available.at(-1)||null;
     }).filter(Boolean).map(o=>({...o,locked:false}));
@@ -1203,7 +1233,7 @@ class Game {
   rosterFor(city) {
     return this.latestGroundRoster(city,['militia','garrison','irregular','infantry','mountain','marine','ranger','airborne','cavalry','motorized','mechanized']);
   }
-  factoryRoster(city) { return city.factory?this.latestGroundRoster(city,['art','tank']):[]; }
+  factoryRoster(city) { return city.factory?this.latestGroundRoster(city,['gun_gun','gun_aa','gun_at','gun_field','gun_rocket','tank']):[]; }
 
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {

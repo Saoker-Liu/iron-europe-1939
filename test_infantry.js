@@ -10,7 +10,7 @@ for(const turn of [0,16,40]){
  if(tier)assert.equal(g.recruit('berlin','de:militia:0'),null);
 }
 g.turn=0;assert(g.startConstruction('berlin','factory'));g.advanceConstruction();g.advanceConstruction();assert.equal(g.factoryRoster(city).length,0);g.advanceConstruction();
-assert.equal(g.factoryRoster(city).length,2);assert.equal(g.recruit('berlin','de:art:0'),null);
+assert.equal(g.factoryRoster(city).length,6);assert.equal(g.recruit('berlin','de:art:0'),null);
 const gun=g.recruitFactory('berlin',g.factoryRoster(city)[0].eqKey);assert(gun);assert.equal(g.recruitFactory('berlin','de:tank:0'),null);g.killUnit(gun);
 for(const [ct,role]of [['de','motorized'],['su','infantry'],['uk','airborne'],['fr','mountain'],['it','militia']])for(let i=0;i<3;i++){
  const e=D.EQUIP[ct][role][i],n=D.EQUIP.neutral[role][i];assert.equal(e.cost,n.cost);assert(e.atk>n.atk&&e.def>n.def);assert.equal(e.mov,n.mov);
