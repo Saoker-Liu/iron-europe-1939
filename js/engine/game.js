@@ -90,8 +90,40 @@ class Game {
     if(options.initialGround!==false)this.deployInitialGroundForces();
     if(options.initialFleet!==false)this.deployInitialFleets();
     if(options.initialAir!==false)this.deployInitialAirForces();
+    if(options.initialGenerals!==false)this.deployInitialGenerals();
     this.pushLog(`1939年9月，德国入侵波兰，英法对德宣战——第二次世界大战爆发！`, 'war');
     this.checkVictory();
+  }
+
+  // Assign the roster to existing national units; never add units or overwrite a commander.
+  deployInitialGenerals() {
+    const preferences = {
+      student:['airborne'],dietl:['mountain'],ringel:['mountain'],meretskov:['mountain','ranger'],
+      juin:['mountain'],anders:['mountain'],sosabowski:['airborne'],siilasvuo:['ranger'],
+      avramescu:['mountain'],keyaerts:['ranger','cavalry'],kocha:['irregular'],
+      dowding:['fighter','heavy'],park:['fighter','heavy'],harris:['strategic'],
+      richthofen:['cas','tactical'],coningham:['cas','tactical'],golovanov:['strategic']
+    };
+    const pending = GENERALS.filter(g=>!g.initialReserve && this.genUnit[g.id]===null);
+    // Place specialists first so general-purpose commanders cannot consume their units.
+    const priority = g => g.skills.some(s=>s.cls) ? 1 : 0;
+    pending.sort((a,b)=>priority(b)-priority(a));
+    for(const g of pending){
+      const classes=[...new Set(g.skills.map(s=>s.cls).filter(Boolean))];
+      const candidates=this.units.filter(u=>u.ct===g.ct && !u.gen && !this.isNaval(u) &&
+        !this.isEmbarked(u) && !u.carrierId && (classes.length?classes.includes(u.eq.cls):!this.isAir(u)));
+      const score=u=>{
+        let n=g.skills.filter(s=>s.cls===u.eq.cls).length*100;
+        if(preferences[g.id]?.includes(u.eq.infRole||u.eq.airRole))n+=50;
+        if(g.skills.some(s=>s.k==='rng')&&u.eq.cls==='art')n+=40;
+        if(g.skills.some(s=>s.k==='citydef')&&this.cityAt(u.c,u.r))n+=40;
+        // Prefer field formations to militia when either can use the same skills.
+        if(u.eq.cls==='inf'&&['militia','garrison','irregular'].includes(u.eq.infRole))n-=10;
+        return n;
+      };
+      candidates.sort((a,b)=>score(b)-score(a)||a.id-b.id);
+      if(candidates.length)this.assignGeneral(g.id,candidates[0]);
+    }
   }
 
   /* ------------------------------ 基础查询 ------------------------------ */
@@ -1349,7 +1381,7 @@ class Game {
   static deserialize(str) {
     const d = JSON.parse(str);
     if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
-    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false,initialFactories:false,initialGround:false});
+    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false,initialFactories:false,initialGround:false,initialGenerals:false});
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;
     g.wars = new Set(d.wars); g.cf = d.cf;

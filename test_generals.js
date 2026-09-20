@@ -4,6 +4,7 @@ const added=D.GENERALS.map(g=>g.id).filter(id=>!D.INITIAL_UNITS.some(u=>u.gen===
 assert.equal(D.GENERALS.length,116);assert.equal(new Set(D.GENERALS.map(g=>g.id)).size,116);
 const g=new Game('west');const save=JSON.parse(g.serialize());
 for(const id of added){delete save.genUnit[id];delete save.genKills[id];}
+for(const u of save.units)if(added.includes(u.gen))u.gen=null;
 const loaded=Game.deserialize(JSON.stringify(save));
 for(const id of added)assert.equal(loaded.genUnit[id],null,'new commander available in old save');
 assert(loaded.assignGeneral('tedder',loaded.units.find(u=>u.ct==='uk'&&loaded.isAir(u))));
@@ -45,3 +46,24 @@ for(const general of D.GENERALS){
  assert.equal(Game.deserialize(trial.serialize()).units.find(u=>u.id===unit.id).gen,general.id);
 }
 console.log('All 116 identities, skill schemas, country codes, assignment and save roundtrips passed');
+
+const opening=new Game('axis');
+assert.equal(opening.units.filter(u=>u.gen).length,92);
+assert.equal(D.GENERALS.filter(g=>opening.genUnit[g.id]===null).length,24);
+assert.equal(opening.units.length,new Game('axis','normal',{initialGenerals:false}).units.length);
+const original=new Set(D.INITIAL_UNITS.filter(u=>u.gen).map(u=>u.gen));
+for(const unit of opening.units.filter(u=>u.gen)){
+ const general=D.GENERALS.find(g=>g.id===unit.gen);
+ assert.equal(general.ct,unit.ct);assert.equal(opening.genUnit[general.id],unit.id);
+ assert(!opening.isNaval(unit));
+ const classes=general.skills.map(s=>s.cls).filter(Boolean);
+ if(!original.has(general.id)&&classes.length)assert(classes.includes(unit.eq.cls),general.id+' skill compatibility');
+}
+assert.equal(new Set(opening.units.filter(u=>u.gen).map(u=>u.gen)).size,92);
+const assignments=g=>g.units.filter(u=>u.gen).map(u=>[u.id,u.gen]);
+const before=assignments(opening);opening.deployInitialGenerals();assert.deepEqual(assignments(opening),before);
+assert.deepEqual(assignments(new Game('west')),before,'player faction does not alter deployment');
+assert.deepEqual(assignments(Game.deserialize(opening.serialize())),before,'new save preserves assignments');
+const legacy=new Game('axis','normal',{initialGenerals:false});
+assert.deepEqual(assignments(Game.deserialize(legacy.serialize())),assignments(legacy),'old saves do not gain commanders');
+console.log('Initial generals: 92 assigned, 24 reserve; national/skill matching, unique assignments, no extra units, deterministic deployment and old/new saves passed.');
