@@ -82,9 +82,11 @@ class Game {
     this.units = [];
     this.usedShipNames = new Set();
     for (const d of INITIAL_UNITS) {
+      if(this.equipOf(d.eq).cls==='air')continue; // Replaced by the national air scenario.
       this.spawnUnit(d.ct, d.eq, d.x, d.y, { gen: d.gen, silent: true });
     }
     if(options.initialFleet!==false)this.deployInitialFleets();
+    if(options.initialAir!==false)this.deployInitialAirForces();
     this.pushLog(`1939年9月，德国入侵波兰，英法对德宣战——第二次世界大战爆发！`, 'war');
     this.checkVictory();
   }
@@ -240,6 +242,16 @@ class Game {
   }
   shipNameInfo(u) {
     return this.shipNamePool(u.ct,u.eqKey).find(e=>e.n===u.shipName)||{n:u.shipName,kind:'generic'};
+  }
+  deployInitialAirForces() {
+    for(const d of AIR.initialUnits){
+      const city=this.cityByKey[d.base],ct=AIR.equipment[d.ct]?d.ct:'neutral';
+      const index=EQUIP[ct].air.findIndex(e=>e.airRole===d.role&&e.tier===d.tier);
+      const eq=EQUIP[ct].air[index];
+      if(!city||city.ct!==d.ct||city.owner!==this.cf[d.ct]||!this.airfields.includes(city)||!eq||eq.yr>this.year())throw Error('无效的初始空军部署：'+d.ct+' / '+d.base+' / '+d.role);
+      // Explicit bases avoid accidentally assigning neutral aircraft to another country.
+      this.spawnUnit(d.ct,`${ct}:air:${index}`,city.x,city.y,{gen:d.gen,silent:true});
+    }
   }
   deployInitialFleets() {
     const reserved=new Set(this.harbors.map(h=>key(h.c,h.r)));
@@ -1231,7 +1243,7 @@ class Game {
   static deserialize(str) {
     const d = JSON.parse(str);
     if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
-    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false});
+    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false});
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;
     g.wars = new Set(d.wars); g.cf = d.cf;
