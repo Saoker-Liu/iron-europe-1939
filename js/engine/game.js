@@ -721,12 +721,16 @@ class Game {
     if(!this.canStrikeFrom(def,def.c,def.r,att))return false;
     return !!def.eq.artRole&&!this.isEmbarked(def) || this.isNaval(def) || (hexDist(att.c,att.r,def.c,def.r)===1 && (this.isEmbarked(def)||['inf','tank'].includes(def.eq.cls)));
   }
-  targetsOf(u) {
+  canTargetFaction(u, target, includeNeutral=false) {
+    const attacker=this.unitFaction(u), defender=this.unitFaction(target);
+    return this.atWar(attacker,defender) || (includeNeutral && attacker===this.playerFaction && attacker!=='neutral' && defender==='neutral' && !COUNTRIES[target.ct]?.context && !COUNTRIES[target.ct]?.controller);
+  }
+  targetsOf(u, includeNeutral=false) {
     if(!this.canAttackNow(u))return [];
-    return this.units.filter(e=>this.atWar(this.unitFaction(u),this.unitFaction(e))&&this.canStrikeFrom(u,u.c,u.r,e));
+    return this.units.filter(e=>this.canTargetFaction(u,e,includeNeutral)&&this.canStrikeFrom(u,u.c,u.r,e));
   }
   attack(att, def) {
-    if(!this.units.includes(att)||!this.units.includes(def)||!this.targetsOf(att).includes(def))return null;
+    if(!this.units.includes(att)||!this.units.includes(def)||!this.targetsOf(att,true).includes(def))return null;
     const rec = { type: 'battle', aC: att.c, aR: att.r, c: def.c, r: def.r, killed: false, counter: 0 };
     const fA = this.unitFaction(att), fD = this.unitFaction(def);
     // 中立国被攻击 → 倒向攻击者的敌对阵营

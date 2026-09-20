@@ -29,3 +29,14 @@ const open=production.landNeighbors(berlin.x,berlin.y).find(p=>production.territ
 const occupying=production.unitAt(...open);if(occupying)production.killUnit(occupying);production.gold.axis=10000;
 const fresh=production.recruitFactory('berlin','de:armor_car:0');assert(fresh);assert.equal(production.unitAt(berlin.x,berlin.y),guard);assert.equal(production.territoryOwner(fresh.c,fresh.r),'axis');assert.notDeepEqual([fresh.c,fresh.r],[berlin.x,berlin.y]);
 console.log('Guarded cities can recruit without moving their defending unit');
+
+// Neutral guards remain attackable explicitly by the player, without AI declaring wars automatically.
+const diplomacy=new Game('axis');
+const neutral=diplomacy.units.find(u=>u.ct==='lu'&&u.guardCity);assert(neutral);
+const adj=diplomacy.landNeighbors(neutral.c,neutral.r)[0];assert(adj);
+const oldOccupant=diplomacy.unitAt(...adj);if(oldOccupant)diplomacy.killUnit(oldOccupant);
+const invader=diplomacy.spawnUnit('de','de:infantry:0',...adj,{});
+assert(!diplomacy.targetsOf(invader).includes(neutral));
+assert(diplomacy.targetsOf(invader,true).includes(neutral));
+assert(diplomacy.attack(invader,neutral));assert.notEqual(diplomacy.cf.lu,'neutral');
+console.log('Neutral guards can be attacked by the player and trigger national entry into the war');

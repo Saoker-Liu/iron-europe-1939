@@ -717,7 +717,7 @@ function handleClick(sx, sy) {
   const myF = g.playerFaction;
 
   // 1) 选中部队攻击敌人
-  if (UI.sel && u && g.unitFaction(u) !== myF && g.atWar(myF, g.unitFaction(u))) {
+  if (UI.sel && u && g.canTargetFaction(UI.sel,u,true)) {
     if (UI.targets.has(u.id)) { doAttack(u); return; }
   }
   // 2) 选中部队移动
@@ -759,7 +759,7 @@ function computeTargets() {
     spots.push({ c, r, plan: [c, r], score: g.terrainDefBonus(c, r) - cost * 0.01 });
   }
   for (const e of g.units) {
-    if (!g.atWar(g.playerFaction, g.unitFaction(e))) continue;
+    if (!g.canTargetFaction(u,e,true)) continue;
     let chosen;                    // undefined=不可及; null=原地可攻
     let bs = -1;
     for (const sp of spots) {
@@ -815,7 +815,7 @@ function doAttack(enemy) {
 }
 function execAttack(enemy) {
   const g = UI.game, u = UI.sel;
-  if (!g.targetsOf(u).includes(enemy)) return;
+  if (!g.targetsOf(u,true).includes(enemy)) return;
   UI.busy = true;
   const rec = g.attack(u, enemy);
   SFX.shot();
