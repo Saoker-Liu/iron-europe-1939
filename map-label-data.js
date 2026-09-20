@@ -7,6 +7,7 @@ module.exports=function labelData(G,N){
  function add(level,kind,entries){
   for(const [name,lon,lat]of entries)labels.push({name,lon,lat,grid:G.geoToGrid(lon,lat),level,kind});
  }
+ add(2,'sea',[['艾瑟尔湖',5.24,52.49],['乌拉尔河',51.65,49.7]]);
  const countries={de:[10,51.5],uk:[-2,53],fr:[2,46.7],es:[-3.2,39.6],pt:[-8,39.5],it:[12,43],su:[42,58],pl:[21.5,52.3],se:[16,63],no:[8,62],fi:[27,64],ro:[25,46],hu:[19,47],yu:[19,44],gr:[22,39],tr:[33,39],ie:[-8,53],dk:[9.2,56.3],ee:[25.5,58.6],lv:[25,57],lt:[23.7,55.5],bg:[25,42.5],is:[-19,65],ch:[8.2,46.8],be:[4.6,50.6],nl:[5.5,52.3],sk:[19.3,48.8],bm:[15.2,49.8],al:[20,41],lu:[6.13,49.61],dz:[18.65,54.35]};
  for(const [ct,p]of Object.entries(countries)){
   add(0,'country',[[ct==='bm'?'捷克保护国':ct==='al'?'阿尔巴尼亚':N.COUNTRIES[ct].name,...p]]);

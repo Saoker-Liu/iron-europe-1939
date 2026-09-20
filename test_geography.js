@@ -215,6 +215,38 @@ for(const p of D.MAP_META.landingCells) {
 assert(D.MAP_META.landingCells.length>=3);
 assert(D.MAP_META.riverEdges.length>100,'real river crossings');
 
+// Regression: continuous Crete, open Norwegian fjords, and a freshwater IJsselmeer.
+for(const p of [[75,107],[76,107],[78,107],[79,107],[80,107],[77,108],[78,108],[79,108]]) {
+  assert(Number.isFinite(route(city('heraklion'),p)), 'Crete continuous '+p);
+  assert.equal(g.homeCountryOf(...p),'gr');
+}
+const oceanSeen=new Set(['0,1']),oceanQueue=[[0,1]];
+for(let i=0;i<oceanQueue.length;i++)for(const p of g.neighbors(...oceanQueue[i]))
+  if(g.ocean(...p)&&!oceanSeen.has(key(...p))){oceanSeen.add(key(...p));oceanQueue.push(p);}
+for(const p of [[56,26],[48,37]])assert(oceanSeen.has(key(...p)),'fjord connects to open ocean '+p);
+assert.equal(g.tile(44,57),'l','IJsselmeer was closed off in 1932');
+assert(!g.ocean(44,57));assert(!g.landPassable(44,57));
+assert(D.MAP_META.rivers.some(r=>r.name==='乌拉尔河'&&r.path.length>100),'Ural river geometry');
+
+// Old coastline saves preserve units, names, equipment and movement state.
+const legacy=new Game('axis','normal',{initialFleet:false});legacy.units=[];
+legacy.spawnUnit('de','de:bb:0',76,107,{});
+legacy.spawnUnit('de','de:dd:0',44,57,{});
+legacy.spawnUnit('de','de:inf:0',54,27,{});
+const embarked=legacy.spawnUnit('de','de:inf:0',79,107,{});embarked.transport='transport';embarked.embarked=true;
+const oldCoast=JSON.parse(legacy.serialize());delete oldCoast.terrainRevision;
+const restored=Game.deserialize(JSON.stringify(oldCoast));
+assert.equal(new Set(restored.units.map(u=>key(u.c,u.r))).size,4);
+for(let i=0;i<restored.units.length;i++){
+ const a=legacy.units[i],b=restored.units[i];
+ assert(restored.isSeagoing(b)?restored.ocean(b.c,b.r):restored.landPassable(b.c,b.r));
+ assert(hexDist(a.c,a.r,b.c,b.r)<=4);
+ for(const field of ['id','ct','eqKey','hp','mp','shipName','transport','embarked','attacked','moved'])assert.equal(b[field],a[field],field);
+}
+assert.equal(JSON.parse(restored.serialize()).terrainRevision,1);
+assert.deepEqual(Game.deserialize(restored.serialize()).units.map(u=>[u.c,u.r]),restored.units.map(u=>[u.c,u.r]));
+oldCoast.terrainRevision=1;assert.throws(()=>Game.deserialize(JSON.stringify(oldCoast)),/位置或状态无效/);
+
 // Capture may never redraw the national boundary or absorb another country.
 const borderBefore=home(25.28,54.69);
 g.captureCity(g.cityByKey.minsk,'axis');
