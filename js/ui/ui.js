@@ -1024,20 +1024,29 @@ function showUnitPanel(u) {
 
 function showUnitInfo(u) { showUnitPanel(u); }
 
+function recruitmentTabsHTML(prefix, labels, selected) {
+  return `<div class="recruit-tabs" role="group" aria-label="招募类别">${labels.map((label,i)=>`<button class="btn" id="${prefix}-tab-${i}" aria-pressed="${label===selected}">${label}</button>`).join('')}</div>`;
+}
 function showFactoryPanel(city) {
   const g=UI.game,body=document.getElementById('panel-body');if(!city.factory)return;
-  const offers=g.factoryRoster(city),blocked=city.owner!==g.playerFaction||city.demilitarized||!g.recruitmentSite(city)||UI.busy;
+  const groups=['炮兵','装甲部队'];
+  const category=groups.includes(UI.factoryCategory)?UI.factoryCategory:groups[0];
+  const offers=g.factoryRoster(city).map((o,i)=>({...o,index:i})).filter(o=>o.eq.cls===(category==='炮兵'?'art':'tank')),blocked=city.owner!==g.playerFaction||city.demilitarized||!g.recruitmentSite(city)||UI.busy;
   body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，仅部署到空闲城市格，新部队当回合不能行动，需在城内停留至下回合。</div>
     <button class="btn" id="factory-city">返回城市</button>
-    ${offers.map((o,i)=>`<div class="shop-item"><div>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${i}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
+    ${recruitmentTabsHTML('factory',groups,category)}
+    ${offers.map(o=>`<div class="shop-item"><div>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${o.index}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
   document.getElementById('factory-city').onclick=()=>showCityPanel(city);
-  offers.forEach((o,i)=>document.getElementById('factory-build-'+i).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
+  groups.forEach((label,i)=>document.getElementById('factory-tab-'+i).onclick=()=>{UI.factoryCategory=label;showFactoryPanel(city);});
+  offers.forEach(o=>document.getElementById('factory-build-'+o.index).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
 }
 function showCityPanel(city) {
   const g = UI.game;
   const body = document.getElementById('panel-body');
   const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy;
-  const roster = canRecruit ? g.rosterFor(city) : [];
+  const groups=['民兵','徒步步兵','机动步兵'];
+  const category=groups.includes(UI.cityRecruitCategory)?UI.cityRecruitCategory:groups[0];
+  const roster = canRecruit ? g.rosterFor(city).filter(it=>it.eq.group===category) : [];
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
     <div class="p-sub">🛡 ${cityDefenseText(city)}<br>守军自动获得，无需点击驻防；驻防另加30%防御。</div>
@@ -1048,6 +1057,7 @@ function showCityPanel(city) {
     ${constructionHTML(city)}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
     <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方城市且有可用部署格可招募'}</div>
+    ${recruitmentTabsHTML('city-recruit',groups,category)}
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
         <div><div class="s-name">${CLASSES[it.eq.cls].glyph}·${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
@@ -1055,6 +1065,7 @@ function showCityPanel(city) {
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;
   for(const kind of Object.keys(ECONOMY.construction)){const button=document.getElementById('city-build-'+kind);if(button)button.onclick=()=>{if(UI.busy)return;kind==='harbor'?chooseHarborSite(city):beginConstruction(city,kind);};}
+  groups.forEach((label,i)=>document.getElementById('city-recruit-tab-'+i).onclick=()=>{UI.cityRecruitCategory=label;showCityPanel(city);});
   const factoryButton=document.getElementById('city-factory');if(factoryButton)factoryButton.onclick=()=>showFactoryPanel(city);
   const airportButton=document.getElementById('city-airfield');if(airportButton)airportButton.onclick=()=>showAirfieldPanel(city);
   const harborButton=document.getElementById('city-harbor');
