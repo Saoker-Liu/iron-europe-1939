@@ -24,7 +24,7 @@ assert.equal(g.computeDamage(transport,target,{preview:true}),0);assert.equal(g.
 const oldOffer=g.airRoster(berlin).find(o=>o.eq.airRole==='fighter');g.turn=28;const newOffer=g.airRoster(berlin).find(o=>o.eq.airRole==='fighter');assert.notEqual(oldOffer.eqKey,newOffer.eqKey);assert.equal(g.recruitAir('berlin',oldOffer.eqKey),null);assert(g.recruitAir('berlin',newOffer.eqKey));
 // Cargo never blocks land, cannot act independently, follows rebasing, and retains identity on landing.
 g=fresh();berlin=g.cityByKey.berlin;
-const plane=g.spawnUnit('de',eqKey('de','transport'),berlin.x,berlin.y,{}),para=g.recruit('berlin','de:para:0');assert(para);assert(!g.loadParatrooper(plane,para));
+const plane=g.spawnUnit('de',eqKey('de','transport'),berlin.x,berlin.y,{}),para=g.recruit('berlin',g.rosterFor(berlin).find(o=>o.eq.para).eqKey);assert(para);assert(!g.loadParatrooper(plane,para));
 g.startTurnFor('axis');assert(g.loadParatrooper(plane,para));assert.equal(g.unitAt(berlin.x,berlin.y),null);assert(!g.playerUnits().includes(para));assert.equal(g.moveRange(para).cost.size,0);assert.equal(g.targetsOf(para).length,0);
 assert(!g.loadParatrooper(plane,para));assert(!g.paradrop(plane,0,1));
 const land=g.landNeighbors(berlin.x,berlin.y)[0];const blocker=g.spawnUnit('de','de:inf:0',...land,{});assert(!g.paradrop(plane,...land));g.killUnit(blocker);

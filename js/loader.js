@@ -10,7 +10,7 @@
     { label: '加载六边形地图',     files: ['js/core/hex.js', 'js/core/geography.js', 'js/data/map.js'] },
     { label: '加载地形与河流',     files: ['js/data/terrain.js'] },
     { label: '加载国家与城市',     files: ['js/data/nations.js'] },
-    { label: '加载经济与军事部署', files: ['js/data/economy.js', 'js/data/military.js', 'js/data/air.js', 'js/data/air-scenario.js', 'js/data/naval.js', 'js/data/naval-names.js', 'js/data/naval-scenario.js'] },
+    { label: '加载经济与军事部署', files: ['js/data/economy.js', 'js/data/military.js', 'js/data/infantry.js', 'js/data/air.js', 'js/data/air-scenario.js', 'js/data/naval.js', 'js/data/naval-names.js', 'js/data/naval-scenario.js'] },
     { label: '加载将领与历史事件', files: ['js/data/generals.js', 'js/data/events.js'] },
     { label: '装配地图与数据',     files: ['js/core/assemble.js'] },
     { label: '初始化引擎',         files: ['js/engine/game.js'] },
