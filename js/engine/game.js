@@ -562,6 +562,10 @@ class Game {
       m*=this.isAir(target)?(u.eq.artRole==='aa'?3:.15):this.isSeagoing(target)?.5:target.eq.cls==='tank'||target.eq.infRole==='mechanized'?u.eq.armor:u.eq.soft;
     } else if (target && !this.isEmbarked(u)) m *= ATK_MOD[u.eq.cls][this.isEmbarked(target)?'inf':target.eq.cls];     // 兵种克制
     if(u.eq.mountainGun&&!this.isEmbarked(u)&&target&&(this.tile(u.c,u.r)==='m'||this.tile(target.c,target.r)==='m'))m*=1.15;
+    if(target&&!this.isEmbarked(u)&&!this.isSeagoing(target)){
+      if(u.eq.antiInfantry&&target.eq.cls==='inf')m*=u.eq.antiInfantry;
+      if(u.eq.antiArmor&&(target.eq.cls==='tank'||target.eq.infRole==='mechanized'))m*=u.eq.antiArmor;
+    }
     const vs = this.genSkill(u, 'vs');
     if (vs && target && target.eq.cls === vs.tgt) m *= 1 + vs.m;
     if (this.genSkill(u, 'rage') && u.hp < 50) m *= 1.15;
@@ -671,7 +675,7 @@ class Game {
       // 反击：近战 & 防守方为步兵/装甲
       const dist = hexDist(att.c, att.r, def.c, def.r);
       if (this.canCounter(def,att)&&!(this.isAir(att)&&def.eq.artRole==='aa')) {
-        let cm = def.eq.counterMultiplier||0.55;
+        let cm = !this.isEmbarked(def)&&def.eq.counterMultiplier||0.55;
         const cs = this.genSkill(def, 'counter'); if (cs) cm += cs.m;
         const a2 = this.effAtk(def, att);
         const d2 = this.effDef(att) * (1 + ((att.eq.cls === 'art' || att.eq.cls === 'air') ? 0 : this.terrainDefBonus(att.c, att.r)));
@@ -823,6 +827,12 @@ class Game {
       }
       if (city && city.owner === f) heal = 25;
       else if (this.territoryOwner(u.c, u.r) === f) heal = 12;
+      if(u.eq.fastRecovery){
+        const owner=this.territoryOwner(u.c,u.r);
+        if(city&&city.owner===f)heal=35;
+        else if(owner===f)heal=20;
+        else if(owner&&this.atWar(f,owner))heal=10;
+      }
       if (heal) u.hp = Math.min(100, u.hp + heal);
     }
   }
@@ -1233,7 +1243,7 @@ class Game {
   rosterFor(city) {
     return this.latestGroundRoster(city,['militia','garrison','irregular','infantry','mountain','marine','ranger','airborne','cavalry','motorized','mechanized']);
   }
-  factoryRoster(city) { return city.factory?this.latestGroundRoster(city,['gun_gun','gun_aa','gun_at','gun_field','gun_rocket','tank']):[]; }
+  factoryRoster(city) { return city.factory?this.latestGroundRoster(city,['gun_gun','gun_aa','gun_at','gun_field','gun_rocket','armor_car','armor_light','armor_medium','armor_heavy','armor_superheavy']):[]; }
 
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {

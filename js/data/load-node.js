@@ -15,6 +15,7 @@ require('./economy.js');
 require('./military.js');
 require('./infantry.js');
 require('./artillery.js');
+require('./armor.js');
 require('./air.js');
 require('./air-scenario.js');
 require('./naval.js');

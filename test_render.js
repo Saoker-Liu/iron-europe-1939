@@ -255,3 +255,9 @@ assert(h.run("document.getElementById('panel-body').innerHTML.includes('40%溅�
 h.run("document.getElementById('factory-build-1').onclick()");
 assert(h.run("UI.sel.eq.artRole==='aa'"));
 console.log('Artillery UI: factory roles, national AA, range and special descriptions passed.');
+h.run("UI.game=new Game('axis');UI.game.units=[];UI.game.gold.axis=10000;UI.game.cityByKey.berlin.factory=true;UI.sel=null;UI.busy=false;showFactoryPanel(UI.game.cityByKey.berlin)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('1939型虎式坦克')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('超重型坦克')"));
+h.run("document.getElementById('factory-build-8').onclick()");
+assert(h.run("UI.sel.eq.armorRole==='heavy'&&UI.sel.eq.counterMultiplier===.8"));
+console.log('Armor UI: five factory categories, Tiger replacement and recruitment passed.');
