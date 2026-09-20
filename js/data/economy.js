@@ -1,5 +1,10 @@
 /* National budgets preserved when adding cities; income distributed by strategic weight. */
 (function(){const root=typeof window!=='undefined'?window:globalThis;root.GameData=root.GameData||{modules:{}};root.GameData.modules.economy={
+  "construction": {
+    "factory": {"name":"工厂","cost":150,"turns":3},
+    "airfield": {"name":"机场","cost":120,"turns":2},
+    "harbor": {"name":"港口","cost":180,"turns":3}
+  },
   "transports": [
     {"id":"transport","name":"运输船","year":1939,"cost":25,"move":5,"defense":6,"attackMultiplier":0.2},
     {"id":"amphibious","name":"两栖运输舰","year":1942,"cost":55,"move":5,"defense":12,"attackMultiplier":0.45},
