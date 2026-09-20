@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>钢铁欧陆 1939 · IRON EUROPE 1939-1945 — 六边形回合制二战战棋</title>
+<meta name="description" content="钢铁欧陆 1939（IRON EUROPE 1939-1945）：128×112 六边形真实欧洲，436 座城市，33 个国家，91 艘史实名舰，16 位史实将领。一回合一个月，改写 1939–1945 的欧洲命运。浏览器免费开战。">
+<meta property="og:title" content="钢铁欧陆 1939 · IRON EUROPE 1939-1945">
+<meta property="og:description" content="一回合 · 一个月 · 一场大战。128×112 六边形真实欧洲，91 艘史实名舰，16 位史实将领。改写 1939–1945 的欧洲命运。">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 4 L92 28 V72 L50 96 L8 72 V28 Z' fill='%2310141a' stroke='%23d8b24a' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23d8b24a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   IRON EUROPE 1939 — LANDING
+   palette lifted from the game UI:
+   bg #10141a · text #e8e4d8 · gold #d8b24a · line #2e3947
+   factions: axis steel · allied blue · soviet red
+   ============================================================ */
+:root{
+  --bg:#0b0e13;
+  --bg2:#10141a;
+  --panel:#12171f;
+  --panel2:#151b24;
+  --line:#2e3947;
+  --line-soft:#1d2530;
+  --text:#e8e4d8;
+  --muted:#98a1ac;
+  --dim:#6b7480;
+  --gold:#d8b24a;
+  --gold-hi:#f2dd9e;
+  --gold-lo:#a9822e;
+  --red:#c05038;
+  --axis:#9aa3ab;
+  --west:#5b8ac9;
+  --sov:#cf5340;
+  --f-disp:'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --f-serif:'Noto Serif SC', 'Songti SC', serif;
+  --f-body:'Noto Sans SC', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --f-mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px;overflow-x:clip}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--f-body);
+  font-size:16px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::selection{background:var(--gold);color:#10141a}
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:#242e3a;border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#33404f}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;height:auto;display:block}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+/* ---------- textures ---------- */
+.grain{
+  position:fixed;inset:-50%;z-index:2000;pointer-events:none;opacity:.055;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 9s steps(6) infinite;
+}
+@keyframes grain{
+  0%,100%{transform:translate(0,0)} 17%{transform:translate(-2%,1%)} 34%{transform:translate(1%,-2%)}
+  51%{transform:translate(-1%,2%)} 68%{transform:translate(2%,1%)} 85%{transform:translate(1%,1%)}
+}
+.hexpat{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='62.4' height='108' viewBox='0 0 62.4 108'%3E%3Cpath d='M31.2 2 L59.6 18.2 V50.8 L31.2 67 L2.8 50.8 V18.2 Z M31.2 67 L59.6 83.2 V108 M31.2 67 L2.8 83.2 V108 M31.2 -14 L59.6 2.2 M31.2 -14 L2.8 2.2 M31.2 121 L59.6 104.8 M31.2 121 L2.8 104.8' fill='none' stroke='%232e3947' stroke-width='1.1' opacity='.5'/%3E%3C/svg%3E");
+}
+
+/* ---------- progress + nav ---------- */
+.progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:1600;background:transparent}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-lo),var(--gold),var(--gold-hi));transform:scaleX(0);transform-origin:0 50%}
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:1500;
+  display:flex;align-items:center;gap:32px;
+  padding:14px clamp(18px,4vw,44px);
+  transition:background .35s,border-color .35s,padding .35s;
+  border-bottom:1px solid transparent;
+}
+.nav.solid{
+  background:rgba(11,14,19,.82);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-bottom-color:var(--line-soft);
+  padding-block:10px;
+}
+.brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.brand svg{width:34px;height:34px;flex-shrink:0}
+.brand .bt{display:flex;flex-direction:column;line-height:1.15}
+.brand .bt b{font-family:var(--f-serif);font-weight:900;font-size:17px;letter-spacing:.14em}
+.brand .bt span{font-family:var(--f-disp);font-size:11px;letter-spacing:.34em;color:var(--gold)}
+.nav-links{display:flex;gap:clamp(14px,2.4vw,30px);margin-left:auto}
+.nav-links a{
+  font-size:14px;font-weight:500;color:var(--muted);letter-spacing:.06em;
+  padding:6px 2px;position:relative;transition:color .25s;
+}
+.nav-links a::after{
+  content:"";position:absolute;left:0;right:100%;bottom:0;height:1px;
+  background:var(--gold);transition:right .3s;
+}
+.nav-links a:hover{color:var(--text)}
+.nav-links a:hover::after{right:0}
+.nav .btn{margin-left:8px}
+@media(max-width:920px){.nav-links{display:none}.nav .btn{margin-left:auto}}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--f-body);font-weight:700;font-size:15px;letter-spacing:.14em;
+  padding:15px 30px;border-radius:3px;cursor:pointer;
+  transition:transform .25s,box-shadow .25s,background .25s,border-color .25s,color .25s;
+  white-space:nowrap;
+}
+.btn-gold{
+  background:linear-gradient(160deg,var(--gold-hi) -20%,var(--gold) 45%,var(--gold-lo) 130%);
+  color:#14120a;
+  box-shadow:0 0 0 1px rgba(216,178,74,.55),0 10px 34px -10px rgba(216,178,74,.45);
+}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(216,178,74,.8),0 16px 44px -10px rgba(216,178,74,.6)}
+.btn-ghost{border:1px solid var(--line);color:var(--text);background:rgba(16,20,26,.4)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold-hi);transform:translateY(-2px)}
+.btn-small{padding:9px 20px;font-size:13px}
+.btn .arr{font-family:var(--f-disp);font-size:1.1em;transform:translateY(1px)}
+
+/* ---------- hero ---------- */
+.hero{
+  position:relative;min-height:100svh;display:flex;flex-direction:column;
+  justify-content:flex-end;overflow:hidden;isolation:isolate;
+}
+.hero-bg{position:absolute;inset:0;z-index:-2}
+.hero-bg img{
+  width:100%;height:100%;object-fit:cover;object-position:center 42%;
+  transform:scale(1.12);will-change:transform;
+  filter:saturate(.86) brightness(.9);
+}
+.hero-veil{
+  position:absolute;inset:0;z-index:-1;
+  background:
+    radial-gradient(120% 90% at 50% 108%, rgba(11,14,19,.55) 0%, rgba(11,14,19,.28) 34%, rgba(11,14,19,0) 62%),
+    linear-gradient(180deg, rgba(11,14,19,.78) 0%, rgba(11,14,19,.36) 26%, rgba(11,14,19,.16) 48%, rgba(11,14,19,.88) 88%, var(--bg) 100%),
+    linear-gradient(100deg, rgba(11,14,19,.72) 0%, rgba(11,14,19,.1) 42%, rgba(11,14,19,.55) 100%);
+}
+.hero-veil::after{
+  content:"";position:absolute;inset:0;opacity:.5;
+  background:radial-gradient(90% 70% at 50% 45%, rgba(216,178,74,.06), transparent 60%);
+}
+.hero-hex{
+  position:absolute;inset:0;z-index:-1;opacity:.5;
+  -webkit-mask-image:radial-gradient(75% 62% at 50% 44%, #000 0%, transparent 100%);
+  mask-image:radial-gradient(75% 62% at 50% 44%, #000 0%, transparent 100%);
+}
+.hero-inner{
+  width:min(1180px,92vw);margin:0 auto;
+  padding:clamp(96px,15vh,170px) 0 36px;text-align:center;flex:1;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+}
+.chip{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--f-mono);font-size:12px;letter-spacing:.28em;color:var(--gold);
+  border:1px solid rgba(216,178,74,.4);border-radius:2px;
+  padding:8px 18px;margin-bottom:34px;
+  background:rgba(16,20,26,.55);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.h1-zh{
+  font-family:var(--f-serif);font-weight:900;
+  font-size:clamp(58px,11.5vw,148px);
+  line-height:1.04;letter-spacing:.1em;text-indent:.1em;
+  text-shadow:0 6px 60px rgba(0,0,0,.65);
+}
+.h1-en{
+  display:block;margin-top:10px;
+  font-family:var(--f-disp);font-weight:400;
+  font-size:clamp(22px,4.8vw,62px);
+  letter-spacing:.3em;text-indent:.3em;
+  background:linear-gradient(180deg,var(--gold-hi) 0%,var(--gold) 52%,var(--gold-lo) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 4px 22px rgba(216,178,74,.28));
+}
+.h1-en .nb{white-space:nowrap;font-weight:400}
+.hero-tag{
+  margin-top:30px;font-size:clamp(15px,1.6vw,19px);color:var(--text);
+  text-shadow:0 2px 14px rgba(0,0,0,.7);
+}
+.hero-tag em{font-style:normal;color:var(--gold-hi);font-weight:700}
+.hero-tag .en{
+  display:block;margin-top:6px;
+  font-family:var(--f-mono);font-size:11.5px;letter-spacing:.34em;color:var(--muted);
+}
+.hero-sub{
+  margin-top:14px;color:var(--muted);font-size:14.5px;
+  text-shadow:0 2px 12px rgba(0,0,0,.7);
+}
+.hero-sub b{color:var(--text);font-weight:500}
+.hero-cta{display:flex;gap:18px;justify-content:center;margin-top:40px;flex-wrap:wrap}
+.hero-corner{
+  position:absolute;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.22em;
+  color:rgba(232,228,216,.4);z-index:1;line-height:2;text-align:left;
+}
+.hc-tl{top:86px;left:clamp(18px,4vw,44px)}
+.hc-tr{top:86px;right:clamp(18px,4vw,44px);text-align:right}
+@media(max-width:760px){.hero-corner{display:none}}
+
+/* hero stats */
+.hero-stats{
+  position:relative;z-index:2;
+  border-top:1px solid rgba(46,57,71,.9);
+  background:rgba(11,14,19,.72);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+}
+.hero-stats .in{
+  width:min(1180px,94vw);margin:0 auto;
+  display:grid;grid-template-columns:repeat(6,1fr);
+}
+.stat{
+  padding:22px 10px 20px;text-align:center;position:relative;
+}
+.stat + .stat::before{content:"";position:absolute;left:0;top:22%;bottom:22%;width:1px;background:var(--line-soft)}
+.stat .n{
+  font-family:var(--f-disp);font-size:clamp(26px,3.2vw,44px);line-height:1;
+  color:var(--gold);letter-spacing:.04em;
+}
+.stat .l{margin-top:8px;font-size:12.5px;color:var(--text);font-weight:500;letter-spacing:.08em}
+.stat .e{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.2em;color:var(--dim);margin-top:3px}
+@media(max-width:900px){
+  .hero-stats .in{grid-template-columns:repeat(3,1fr)}
+  .stat:nth-child(4)::before{display:none}
+  .stat{border-top:1px solid var(--line-soft)}
+  .stat:nth-child(-n+3){border-top:none}
+}
+
+/* scroll cue */
+.scroll-cue{
+  position:absolute;bottom:110px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  font-family:var(--f-mono);font-size:10px;letter-spacing:.4em;color:var(--muted);
+  z-index:2;opacity:.8;
+}
+.scroll-cue i{width:1px;height:44px;background:linear-gradient(180deg,var(--gold),transparent);display:block;animation:cue 1.8s ease-in-out infinite}
+@keyframes cue{0%{transform:scaleY(0);transform-origin:top}45%{transform:scaleY(1);transform-origin:top}55%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@media(max-height:760px){.scroll-cue{display:none}}
+
+/* ---------- marquee ---------- */
+.marquee{
+  overflow:hidden;border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(180deg,#0d1117,#0b0e13);
+  padding:16px 0;position:relative;
+}
+.mq-track{display:flex;width:max-content;animation:mq 52s linear infinite}
+.marquee:hover .mq-track{animation-play-state:paused}
+@keyframes mq{to{transform:translateX(-50%)}}
+.mq-group{display:flex;align-items:center;flex-shrink:0}
+.mq-group span{
+  font-family:var(--f-serif);font-weight:600;font-size:15px;letter-spacing:.18em;
+  color:var(--muted);padding:0 14px;white-space:nowrap;
+}
+.mq-group b{font-family:var(--f-mono);font-weight:400;font-size:11px;letter-spacing:.3em;color:var(--dim);padding-right:26px}
+.mq-group i{color:var(--gold);font-style:normal;font-size:11px}
+
+/* ---------- sections ---------- */
+.sec{padding:clamp(84px,10vw,150px) clamp(18px,4vw,40px);position:relative}
+.wrap{max-width:1180px;margin:0 auto;position:relative}
+.sec + .sec{border-top:1px solid var(--line-soft)}
+.sec-head{display:flex;align-items:flex-end;gap:clamp(18px,3vw,34px);margin-bottom:clamp(40px,5vw,64px)}
+.sec-no{
+  font-family:var(--f-disp);font-size:clamp(84px,10vw,148px);line-height:.78;
+  color:transparent;-webkit-text-stroke:1px #33404f;letter-spacing:.02em;
+  transform:translateY(6px);user-select:none;flex-shrink:0;
+}
+.sec-head h2{
+  font-family:var(--f-serif);font-weight:900;
+  font-size:clamp(28px,4.2vw,50px);line-height:1.22;letter-spacing:.04em;
+}
+.sec-en{
+  display:block;font-family:var(--f-disp);font-weight:400;
+  font-size:clamp(13px,1.5vw,19px);letter-spacing:.34em;color:var(--gold);
+  margin-top:10px;
+}
+.sec-lede{max-width:720px;color:var(--muted);font-size:clamp(15px,1.5vw,17px)}
+.sec-lede b{color:var(--text);font-weight:500}
+
+/* framed screenshot */
+.frame{
+  position:relative;background:#0d1117;border:1px solid var(--line);
+  border-radius:4px;padding:0;overflow:hidden;cursor:zoom-in;
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.8);
+  transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s,border-color .5s;
+}
+.frame:hover{transform:translateY(-5px);border-color:#3d4c5f;box-shadow:0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(216,178,74,.14)}
+.frame::before,.frame::after{
+  content:"";position:absolute;width:20px;height:20px;z-index:3;pointer-events:none;
+}
+.frame::before{top:-1px;left:-1px;border-top:2px solid var(--gold);border-left:2px solid var(--gold)}
+.frame::after{bottom:-1px;right:-1px;border-bottom:2px solid var(--gold);border-right:2px solid var(--gold)}
+.frame img{width:100%;height:auto}
+.frame .cap{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:10px 16px;border-top:1px solid var(--line-soft);
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.18em;color:var(--dim);
+}
+.frame .cap b{color:var(--muted);font-weight:500}
+
+/* ---------- 01 map ---------- */
+.map-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:clamp(28px,4vw,54px);align-items:start}
+.facts{display:flex;flex-direction:column}
+.fact{
+  display:grid;grid-template-columns:auto 1fr;gap:20px;
+  padding:24px 0;border-bottom:1px solid var(--line-soft);
+}
+.fact:first-child{padding-top:6px}
+.fact .idx{font-family:var(--f-disp);font-size:30px;color:var(--gold);line-height:1;opacity:.9}
+.fact h3{font-family:var(--f-mono);font-size:12px;font-weight:500;letter-spacing:.3em;color:var(--gold-hi);margin-bottom:8px}
+.fact p{font-size:14.5px;color:var(--muted)}
+.fact p b{color:var(--text);font-weight:500}
+.thumb-row{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,22px);margin-top:clamp(28px,4vw,44px)}
+.thumb{position:relative;border:1px solid var(--line);border-radius:3px;overflow:hidden;cursor:zoom-in;background:#0d1117}
+.thumb img{aspect-ratio:16/10;object-fit:cover;width:100%;transition:transform .6s cubic-bezier(.16,1,.3,1);filter:saturate(.9)}
+.thumb:hover img{transform:scale(1.05)}
+.thumb figcaption{
+  position:absolute;left:0;right:0;bottom:0;
+  padding:26px 14px 10px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;color:#cfd5dc;
+  background:linear-gradient(180deg,transparent,rgba(11,14,19,.92));
+}
+.thumb::after{
+  content:"⤢";position:absolute;top:10px;right:12px;font-size:14px;color:var(--gold);
+  opacity:0;transition:opacity .3s;text-shadow:0 1px 6px #000;
+}
+.thumb:hover::after{opacity:1}
+@media(max-width:920px){.map-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.thumb-row{grid-template-columns:1fr}.thumb img{aspect-ratio:16/9}}
+
+/* ---------- 02 arms ---------- */
+.arms-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(28px,4vw,54px);align-items:start}
+.ctype{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.ctype th,.ctype td{border:1px solid var(--line-soft);text-align:center;padding:0}
+.ctype thead th{
+  font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.2em;
+  color:var(--dim);padding:14px 6px;background:var(--panel);
+}
+.ctype tbody th{
+  background:var(--panel);padding:12px 10px;width:132px;
+}
+.ctype tbody th .rlab{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  font-size:14px;font-weight:700;color:var(--text);letter-spacing:.1em;
+}
+.ctype tbody th .ren{font-family:var(--f-mono);font-size:9px;letter-spacing:.22em;color:var(--dim);font-weight:400}
+.uicon{width:34px;height:34px;color:var(--gold)}
+.ctype td{height:64px;position:relative;transition:filter .2s}
+.ctype td .v{font-family:var(--f-disp);font-size:23px;letter-spacing:.05em;color:var(--muted)}
+.ctype tbody tr{transition:background .2s}
+.ctype tbody tr:hover{background:rgba(216,178,74,.045)}
+.c100 .v{color:#5b6570;font-size:18px}
+.c110{background:rgba(216,178,74,.09)} .c110 .v{color:#d8c58c}
+.c115{background:rgba(216,178,74,.16)} .c115 .v{color:#e3cf94}
+.c130{background:rgba(216,178,74,.3)}  .c130 .v{color:var(--gold-hi)}
+.c140{background:rgba(216,178,74,.48)} .c140 .v{color:#f6e3a8;text-shadow:0 0 18px rgba(216,178,74,.5)}
+.c60{background:rgba(192,80,56,.2)}  .c60 .v{color:#c98b78}
+.c65{background:rgba(192,80,56,.3)}  .c65 .v{color:#d09682}
+.c50{background:rgba(192,80,56,.16)} .c50 .v{color:#b97f6e}
+.c40{background:rgba(192,80,56,.12)} .c40 .v{color:#a97a6c}
+.cna{background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(46,57,71,.25) 6px 7px)}
+.cna .v{color:#4a5561;font-size:17px}
+.tnote{
+  margin-top:14px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--dim);display:flex;gap:18px;flex-wrap:wrap;
+}
+.tnote i{font-style:normal;display:inline-flex;align-items:center;gap:7px}
+.tnote .sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.mechs{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:26px;border:1px solid var(--line-soft);border-radius:3px;overflow:hidden}
+.mech{background:var(--panel);padding:20px 18px;transition:background .3s}
+.mech:hover{background:var(--panel2)}
+.mech .mn{font-family:var(--f-disp);font-size:15px;color:var(--gold);letter-spacing:.14em}
+.mech h4{font-size:15px;font-weight:700;margin:6px 0 5px;letter-spacing:.06em}
+.mech h4 span{font-family:var(--f-mono);font-weight:400;font-size:9.5px;letter-spacing:.2em;color:var(--dim);display:block;margin-top:2px}
+.mech p{font-size:12.8px;color:var(--muted);line-height:1.65}
+@media(max-width:920px){.arms-grid{grid-template-columns:1fr}}
+
+/* ---------- 03 navy ---------- */
+.navy{background:
+  radial-gradient(70% 60% at 82% 12%, rgba(91,138,201,.07), transparent 60%),
+  linear-gradient(180deg,var(--bg) 0%, #0c1118 50%, var(--bg) 100%);}
+.navy-grid{display:grid;grid-template-columns:1fr 1.35fr;gap:clamp(28px,4vw,54px);align-items:start}
+.classes{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 30px}
+.classes span{
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;color:var(--muted);
+  border:1px solid var(--line);border-radius:2px;padding:7px 12px;
+  transition:color .25s,border-color .25s;
+}
+.classes span:hover{color:var(--gold-hi);border-color:rgba(216,178,74,.5)}
+.ncards{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:1px solid var(--line-soft);border-radius:3px;overflow:hidden}
+.navy-foot{margin-top:18px;font-size:12.5px;color:var(--dim);border-left:2px solid rgba(216,178,74,.4);padding-left:14px;line-height:1.8}
+.navy-foot b{color:var(--muted);font-weight:500}
+@media(max-width:920px){.navy-grid{grid-template-columns:1fr}}
+
+/* ---------- 04 generals ---------- */
+.gen-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,1.8vw,22px)}
+.gen{
+  --fc:var(--axis);
+  position:relative;background:var(--panel);border:1px solid var(--line-soft);
+  border-top:2px solid var(--fc);border-radius:3px;padding:26px 24px 22px;
+  transition:transform .4s cubic-bezier(.16,1,.3,1),border-color .4s,box-shadow .4s;
+  overflow:hidden;
+}
+.gen::after{
+  content:"";position:absolute;inset:0;opacity:0;transition:opacity .4s;pointer-events:none;
+  background:radial-gradient(90% 60% at 50% -10%, color-mix(in srgb, var(--fc) 16%, transparent), transparent 70%);
+}
+.gen:hover{transform:translateY(-6px);border-color:#33404f;box-shadow:0 24px 50px -22px rgba(0,0,0,.85)}
+.gen:hover::after{opacity:1}
+.gen .gfac{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.26em;color:var(--fc);
+}
+.gen .gfac::before{content:"";width:7px;height:7px;background:var(--fc);border-radius:1px;transform:rotate(45deg)}
+.gen h3{font-family:var(--f-serif);font-weight:900;font-size:24px;letter-spacing:.08em;margin:12px 0 2px}
+.gen .gen-en{font-family:var(--f-disp);font-size:14px;letter-spacing:.3em;color:var(--dim)}
+.gen .skill{margin-top:14px;font-size:13.5px;color:var(--gold-hi);line-height:1.7}
+.gen .bio{margin-top:8px;font-size:12.8px;color:var(--muted);line-height:1.7}
+.promo{
+  margin-top:clamp(26px,3vw,40px);
+  border:1px solid var(--line);border-radius:3px;background:var(--panel);
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding:18px 26px;
+}
+.promo .stars{font-size:17px;letter-spacing:.35em;color:var(--gold);text-shadow:0 0 14px rgba(216,178,74,.4)}
+.promo p{font-size:13.5px;color:var(--muted)}
+.promo p b{color:var(--text);font-weight:500}
+@media(max-width:920px){.gen-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.gen-grid{grid-template-columns:1fr}}
+
+/* ---------- 05 sides ---------- */
+.side-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,24px)}
+.side{
+  --fc:var(--axis);
+  position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;
+  background:linear-gradient(180deg,var(--panel) 0%,#0e1218 100%);
+  transition:transform .45s cubic-bezier(.16,1,.3,1),box-shadow .45s,border-color .45s;
+}
+.side:hover{transform:translateY(-8px);border-color:var(--fc);box-shadow:0 30px 60px -24px rgba(0,0,0,.9)}
+.side .band{height:5px;background:linear-gradient(90deg,var(--fc),transparent 85%)}
+.side .in{padding:30px 28px 28px}
+.side .s-en{font-family:var(--f-disp);font-size:15px;letter-spacing:.36em;color:var(--fc)}
+.side h3{font-family:var(--f-serif);font-weight:900;font-size:32px;letter-spacing:.1em;margin:8px 0 16px}
+.side p{font-size:14px;color:var(--muted)}
+.side p b{color:var(--text);font-weight:500}
+.side .gens{
+  margin-top:20px;padding-top:16px;border-top:1px dashed var(--line);
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--dim);line-height:2.1;
+}
+.side .gens b{color:var(--fc);font-weight:500;letter-spacing:.2em}
+.diff{margin-top:clamp(26px,3vw,40px);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.diff .dl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.28em;color:var(--dim)}
+.diff span{
+  font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:2px;padding:8px 16px;
+  transition:color .25s,border-color .25s;
+}
+.diff span:hover{color:var(--gold-hi);border-color:rgba(216,178,74,.5)}
+.diff span b{color:var(--text);font-weight:500}
+@media(max-width:920px){.side-grid{grid-template-columns:1fr}}
+
+/* ---------- 06 timeline ---------- */
+.tl{position:relative;max-width:820px;margin:0 auto;padding-left:38px}
+.tl::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:1px;background:linear-gradient(180deg,transparent,var(--line) 6%,var(--line) 94%,transparent)}
+.tle{position:relative;padding:0 0 40px}
+.tle::before{
+  content:"";position:absolute;left:-36px;top:9px;width:11px;height:11px;transform:rotate(45deg);
+  background:var(--bg);border:1.5px solid var(--gold);transition:background .3s;
+}
+.tle:hover::before{background:var(--gold)}
+.tle .tm{font-family:var(--f-mono);font-size:12px;letter-spacing:.3em;color:var(--gold)}
+.tle h3{font-family:var(--f-serif);font-weight:700;font-size:clamp(19px,2.2vw,24px);letter-spacing:.06em;margin:7px 0 6px}
+.tle h3 .ten{font-family:var(--f-disp);font-weight:400;font-size:.72em;letter-spacing:.22em;color:var(--dim);margin-left:12px}
+.tle p{font-size:14px;color:var(--muted);max-width:640px}
+.tle p b{color:var(--text);font-weight:500}
+.tle.key h3{color:var(--gold-hi)}
+.tle .wtag{
+  display:inline-block;margin-left:12px;font-family:var(--f-mono);font-size:9.5px;letter-spacing:.2em;
+  color:#9fc3e8;border:1px solid rgba(159,195,232,.35);border-radius:2px;padding:3px 9px;vertical-align:3px;
+}
+
+/* ---------- 07 play ---------- */
+.play-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,54px);align-items:start}
+.play-grid>*{min-width:0}
+.keys{display:flex;flex-wrap:wrap;gap:12px 26px}
+.keyrow{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--muted)}
+kbd{
+  font-family:var(--f-mono);font-size:12px;color:var(--text);
+  background:var(--panel2);border:1px solid var(--line);border-bottom-width:2.5px;
+  border-radius:4px;padding:5px 11px;letter-spacing:.08em;min-width:34px;text-align:center;
+}
+.keyrow b{color:var(--text);font-weight:500}
+.runbox{
+  margin-top:30px;border:1px solid var(--line);border-radius:4px;background:#0d1117;overflow:hidden;
+}
+.runbox .rb-t{
+  padding:10px 18px;border-bottom:1px solid var(--line-soft);
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.26em;color:var(--dim);
+  display:flex;gap:8px;align-items:center;
+}
+.runbox .rb-t i{width:9px;height:9px;border-radius:50%;background:#2e3947;font-style:normal}
+.runbox .rb-t i:first-child{background:var(--gold)}
+.runbox pre{
+  padding:20px;font-family:var(--f-mono);font-size:13px;line-height:2;color:var(--muted);overflow-x:auto;
+}
+.runbox pre .c{color:#56616d}
+.runbox pre .g{color:var(--gold)}
+.tech{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:1px solid var(--line-soft);border-radius:3px;overflow:hidden;margin-top:26px}
+.tech span{
+  background:var(--panel);padding:16px 18px;font-size:13px;color:var(--muted);letter-spacing:.04em;
+  transition:background .3s,color .3s;
+}
+.tech span:hover{background:var(--panel2);color:var(--text)}
+.tech span b{display:block;font-family:var(--f-mono);font-weight:400;font-size:9.5px;letter-spacing:.22em;color:var(--dim);margin-top:4px}
+.tech span:hover b{color:var(--gold)}
+@media(max-width:920px){.play-grid{grid-template-columns:1fr}.tech{grid-template-columns:1fr 1fr}}
+
+/* ---------- finale ---------- */
+.finale{position:relative;overflow:hidden;isolation:isolate;padding:clamp(110px,14vw,190px) 24px;text-align:center;border-top:1px solid var(--line-soft)}
+.finale .fbg{position:absolute;inset:0;z-index:-2}
+.finale .fbg img{width:100%;height:100%;object-fit:cover;object-position:center 30%;filter:saturate(.75) brightness(.72)}
+.finale .fveil{position:absolute;inset:0;z-index:-1;background:
+  radial-gradient(80% 80% at 50% 50%, rgba(11,14,19,.55), rgba(11,14,19,.92) 78%),
+  linear-gradient(180deg,var(--bg) 0%,transparent 18%,transparent 82%,var(--bg) 100%)}
+.finale h2{
+  font-family:var(--f-serif);font-weight:900;
+  font-size:clamp(34px,5.6vw,68px);letter-spacing:.08em;line-height:1.3;
+}
+.finale h2 em{
+  font-style:normal;
+  background:linear-gradient(180deg,var(--gold-hi),var(--gold) 55%,var(--gold-lo));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.finale .fen{font-family:var(--f-disp);font-size:clamp(14px,1.8vw,21px);letter-spacing:.4em;color:var(--muted);margin-top:16px}
+.finale .cta{display:flex;gap:18px;justify-content:center;margin-top:46px;flex-wrap:wrap}
+.finale .fmono{margin-top:30px;font-family:var(--f-mono);font-size:11px;letter-spacing:.3em;color:var(--dim)}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line-soft);background:#0a0d12;padding:54px 24px 44px}
+footer .fin{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.3fr 1fr;gap:40px}
+footer p{font-size:12.5px;color:var(--dim);line-height:2}
+footer p b{color:var(--muted);font-weight:500}
+footer .fbrand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+footer .fbrand b{font-family:var(--f-serif);font-weight:900;letter-spacing:.12em;font-size:16px}
+footer .fbrand span{font-family:var(--f-mono);font-size:10px;letter-spacing:.3em;color:var(--gold)}
+footer .fmeta{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.2em;color:#4a5561;line-height:2.4;text-align:right}
+footer .fmeta a{color:var(--muted);border-bottom:1px solid var(--line)}
+footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
+@media(max-width:820px){footer .fin{grid-template-columns:1fr}footer .fmeta{text-align:left}}
+
+/* ---------- lightbox ---------- */
+.lightbox{
+  position:fixed;inset:0;z-index:3000;background:rgba(7,9,12,.92);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;padding:4vmin;
+  opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s;
+}
+.lightbox.open{opacity:1;visibility:visible}
+.lightbox img{
+  max-width:100%;max-height:88vh;border:1px solid var(--line);border-radius:4px;
+  box-shadow:0 40px 120px -30px rgba(0,0,0,.9);
+  transform:scale(.96);transition:transform .35s cubic-bezier(.16,1,.3,1);
+}
+.lightbox.open img{transform:scale(1)}
+.lb-close{
+  position:absolute;top:18px;right:22px;width:46px;height:46px;border-radius:50%;
+  background:transparent;border:1px solid var(--line);color:var(--text);
+  font-size:20px;cursor:pointer;transition:border-color .25s,color .25s,transform .25s;
+}
+.lb-close:hover{border-color:var(--gold);color:var(--gold-hi);transform:rotate(90deg)}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0;transform:translateY(30px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--d,0)*90ms)}
+.rv.on{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+  .rv{opacity:1;transform:none}
+}
+
+/* ---------- hero load-in ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
+.hero .chip,.hero .h1-zh,.hero .h1-en,.hero .hero-tag,.hero .hero-sub,.hero .hero-cta{
+  opacity:0;animation:rise 1s cubic-bezier(.16,1,.3,1) forwards;
+}
+.hero .chip{animation-delay:.15s}
+.hero .h1-zh{animation-delay:.3s}
+.hero .h1-en{animation-delay:.48s}
+.hero .hero-tag{animation-delay:.66s}
+.hero .hero-sub{animation-delay:.78s}
+.hero .hero-cta{animation-delay:.92s}
+@media(prefers-reduced-motion:reduce){.hero .chip,.hero .h1-zh,.hero .h1-en,.hero .hero-tag,.hero .hero-sub,.hero .hero-cta{animation:none;opacity:1}}
+</style>
+<noscript><style>.rv{opacity:1;transform:none}.hero .chip,.hero .h1-zh,.hero .h1-en,.hero .hero-tag,.hero .hero-sub,.hero .hero-cta{opacity:1;animation:none}</style></noscript>
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><i id="pbar"></i></div>
+
+<!-- ======================= NAV ======================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="回到顶部">
+    <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L92 28 V72 L50 96 L8 72 V28 Z" fill="#10141a" stroke="#d8b24a" stroke-width="5"/><path d="M28 62 V44 L50 30 L72 44 V62 L50 76 Z" fill="none" stroke="#d8b24a" stroke-width="4"/><circle cx="50" cy="53" r="6" fill="#d8b24a"/></svg>
+    <span class="bt"><b>钢铁欧陆 1939</b><span>IRON EUROPE</span></span>
+  </a>
+  <nav class="nav-links" aria-label="页面导航">
+    <a href="#map">战场</a>
+    <a href="#arms">兵种</a>
+    <a href="#navy">海战</a>
+    <a href="#generals">将领</a>
+    <a href="#sides">阵营</a>
+    <a href="#timeline">战史</a>
+  </nav>
+  <a class="btn btn-gold btn-small" href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">开战 <span class="arr">▸</span></a>
+</header>
+
+<main id="top">
+
+<!-- ======================= HERO ======================= -->
+<section class="hero">
+  <div class="hero-bg" aria-hidden="true"><img src="img/03-campaign-fullmap.jpg" alt="" width="1600" height="1000"></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="hero-hex hexpat" aria-hidden="true"></div>
+
+  <div class="hero-corner hc-tl" aria-hidden="true">THEATER FILE · EUROPE<br>GRID 128 × 112 · v8</div>
+  <div class="hero-corner hc-tr" aria-hidden="true">LAMBERT CONFORMAL CONIC<br>1 HEX ≈ 45 KM</div>
+
+  <div class="hero-inner">
+    <p class="chip"><span class="dot"></span>1939.09 — 1945 · 一回合 = 一个月 · TURN = ONE MONTH</p>
+    <h1>
+      <span class="h1-zh">钢铁欧陆</span>
+      <span class="h1-en">IRON EUROPE <b class="nb">1939–1945</b></span>
+    </h1>
+    <p class="hero-tag">六边形回合制二战战棋 —— <em>改写 1939–1945 的欧洲命运</em>
+      <span class="en">A HEX-GRID TURN-BASED WWII WARGAME · REWRITE THE FATE OF EUROPE</span>
+    </p>
+    <p class="hero-sub"><b>占领敌方首都，令其全国崩溃。</b>Take a capital, and a nation falls.</p>
+    <div class="hero-cta">
+      <a class="btn btn-gold" href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">免费开战 · PLAY FREE <span class="arr">▸</span></a>
+      <a class="btn btn-ghost" href="#map">检阅战场 <span class="arr">↓</span></a>
+    </div>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">SCROLL<i></i></div>
+
+  <div class="hero-stats">
+    <div class="in">
+      <div class="stat"><div class="n"><span data-count="128">0</span>×<span data-count="112">0</span></div><div class="l">六边形战区</div><div class="e">HEX BATTLEFIELD</div></div>
+      <div class="stat"><div class="n"><span data-count="436">0</span></div><div class="l">城市与港口</div><div class="e">CITIES &amp; PORTS</div></div>
+      <div class="stat"><div class="n"><span data-count="33">0</span></div><div class="l">国家政权</div><div class="e">NATIONS</div></div>
+      <div class="stat"><div class="n"><span data-count="91">0</span></div><div class="l">史实名舰</div><div class="e">HISTORIC WARSHIPS</div></div>
+      <div class="stat"><div class="n"><span data-count="16">0</span></div><div class="l">史实将领</div><div class="e">LEGENDARY GENERALS</div></div>
+      <div class="stat"><div class="n"><span data-count="10">0</span></div><div class="l">历史事件脚本</div><div class="e">HISTORIC EVENTS</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= MARQUEE ======================= -->
+<div class="marquee" aria-hidden="true">
+  <div class="mq-track">
+    <div class="mq-group">
+      <span>俾斯麦</span><b>BISMARCK</b><i>✦</i><span>胡德</span><b>HOOD</b><i>✦</i><span>U-47</span><b>U-47</b><i>✦</i><span>贝尔法斯特</span><b>BELFAST</b><i>✦</i><span>德意志</span><b>DEUTSCHLAND</b><i>✦</i><span>虎式</span><b>TIGER</b><i>✦</i><span>T-34</span><b>T-34</b><i>✦</i><span>喀秋莎</span><b>KATYUSHA</b><i>✦</i><span>古斯塔夫列车炮</span><b>SCHWERER GUSTAV</b><i>✦</i><span>谢尔曼</span><b>SHERMAN</b><i>✦</i><span>兰开斯特</span><b>LANCASTER</b><i>✦</i><span>B-17 空中堡垒</span><b>B-17 FLYING FORTRESS</b><i>✦</i>
+    </div>
+    <div class="mq-group">
+      <span>俾斯麦</span><b>BISMARCK</b><i>✦</i><span>胡德</span><b>HOOD</b><i>✦</i><span>U-47</span><b>U-47</b><i>✦</i><span>贝尔法斯特</span><b>BELFAST</b><i>✦</i><span>德意志</span><b>DEUTSCHLAND</b><i>✦</i><span>虎式</span><b>TIGER</b><i>✦</i><span>T-34</span><b>T-34</b><i>✦</i><span>喀秋莎</span><b>KATYUSHA</b><i>✦</i><span>古斯塔夫列车炮</span><b>SCHWERER GUSTAV</b><i>✦</i><span>谢尔曼</span><b>SHERMAN</b><i>✦</i><span>兰开斯特</span><b>LANCASTER</b><i>✦</i><span>B-17 空中堡垒</span><b>B-17 FLYING FORTRESS</b><i>✦</i>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= 01 MAP ======================= -->
+<section class="sec" id="map">
+  <div class="wrap">
+    <header class="sec-head rv">
+      <span class="sec-no" aria-hidden="true">01</span>
+      <h2>一张考据到公里的欧洲
+        <span class="sec-en">A EUROPE MEASURED IN KILOMETERS</span>
+      </h2>
+    </header>
+    <p class="sec-lede rv" style="--d:1">128×112 六边形，每格约 45 公里，兰伯特等角圆锥投影。
+      海岸河流来自 Natural Earth，<b>国界定格在 1939 年 8 月 31 日——开战前夜</b>。
+      128×112 hexes at ~45 km each. Coastlines from Natural Earth; borders frozen on the eve of war, Aug 31, 1939.</p>
+
+    <div class="map-grid" style="margin-top:clamp(36px,5vw,56px)">
+      <figure class="frame rv" style="--d:1" data-full="img/03-campaign-fullmap.jpg" data-alt="战役地图全景实机截图" role="button" tabindex="0" aria-label="放大查看战役地图全景">
+        <img src="img/03-campaign-fullmap.jpg" alt="钢铁欧陆 1939 战役地图全景实机截图：从伦敦到莫斯科的完整欧洲战场" width="1600" height="1000" loading="lazy">
+        <figcaption class="cap"><b>实机截图 · CAMPAIGN MAP, FULL THEATER</b><span>europe-1939-geographic-v8</span></figcaption>
+      </figure>
+      <div class="facts">
+        <div class="fact rv" style="--d:2">
+          <span class="idx">01</span>
+          <div><h3>45 KM / HEX</h3>
+          <p>每格约 <b>45 公里</b>，兰伯特等角圆锥投影。距离即战略：一格的得失，就是一个师的行军日。</p></div>
+        </div>
+        <div class="fact rv" style="--d:3">
+          <span class="idx">02</span>
+          <div><h3>NATURAL EARTH · 1939.08.31</h3>
+          <p>海岸线、湖泊、河流源自 Natural Earth 公共数据；国界是<b>开战前夕的历史快照</b>——但泽自由市、波希米亚-摩拉维亚保护国、意占阿尔巴尼亚，原样呈现。</p></div>
+        </div>
+        <div class="fact rv" style="--d:4">
+          <span class="idx">03</span>
+          <div><h3>436 CAPTURABLE NODES</h3>
+          <p>436 座城市 / 港口 / 基地<b>全部独立可占领</b>，位置经穷举对照验证，最大偏移约 41 公里。</p></div>
+        </div>
+        <div class="fact rv" style="--d:5">
+          <span class="idx">04</span>
+          <div><h3>REAL WATERS, REAL STRATEGY</h3>
+          <p>彼列科普地峡、刻赤海峡、厄勒海峡、多佛尔、基尔运河——<b>真实水道塑造真实战略</b>。英国没有虚构的陆桥。</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="thumb-row">
+      <figure class="thumb rv" style="--d:1" data-full="img/01-start-screen.jpg" data-alt="开始界面实机截图" role="button" tabindex="0" aria-label="放大查看开始界面">
+        <img src="img/01-start-screen.jpg" alt="开始界面：三阵营选择" width="1600" height="1000" loading="lazy">
+        <figcaption>开始界面 · 阵营与难度 START SCREEN</figcaption>
+      </figure>
+      <figure class="thumb rv" style="--d:2" data-full="img/06-berlin-maxzoom.jpg" data-alt="柏林最大缩放实机截图" role="button" tabindex="0" aria-label="放大查看柏林细节">
+        <img src="img/06-berlin-maxzoom.jpg" alt="柏林，最大缩放下的城市与单位细节" width="1600" height="1000" loading="lazy">
+        <figcaption>柏林 · 最大缩放 BERLIN, MAX ZOOM</figcaption>
+      </figure>
+      <figure class="thumb rv" style="--d:3" data-full="img/04-unit-selected-panzer.jpg" data-alt="选中III号坦克的实机截图" role="button" tabindex="0" aria-label="放大查看选中部队画面">
+        <img src="img/04-unit-selected-panzer.jpg" alt="选中III号坦克，金色高亮显示 79 格机动范围" width="1600" height="1000" loading="lazy">
+        <figcaption>选中部队 · III号坦克，机动范围 79 格 UNIT SELECTED</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 02 ARMS ======================= -->
+<section class="sec" id="arms">
+  <div class="wrap">
+    <header class="sec-head rv">
+      <span class="sec-no" aria-hidden="true">02</span>
+      <h2>兵种相克，谋定后动
+        <span class="sec-en">ROCK, PAPER, SIEGE</span>
+      </h2>
+    </header>
+    <p class="sec-lede rv" style="--d:1">步兵、炮兵、装甲、空军——<b>四种兵种，一张克制表</b>。
+      山地固守、装甲突穿、炮兵覆盖、空军越顶，胜负全在你的排兵布阵。
+      INFANTRY, ARTILLERY, ARMOR, AIR — four unit types, one counter table.</p>
+
+    <div class="arms-grid" style="margin-top:clamp(36px,5vw,56px)">
+      <div class="rv" style="--d:2">
+        <table class="ctype" aria-label="兵种克制表：攻击方对防守方的伤害修正">
+          <thead>
+            <tr>
+              <th scope="col">攻 ↓ 防守 →</th>
+              <th scope="col">步兵</th><th scope="col">炮兵</th><th scope="col">装甲</th><th scope="col">空军</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -15 -27 A 14 13 0 0 1 11 -27 Z  M 9 -30 L 20 -26 L 9 -21 Z  M -8 -30 L 3 -30 L 3 -20 L -8 -20 Z  M -13 -22 L 12 -22 L 15 -2 L 12 8 L -11 8 L -13 -2 Z  M -9.4 -4.4 L 35.4 -28.4 L 32.6 -23.6 L -6.6 0.4 Z  M 0 6 L 10 6 L 17 41 L 6 43 Z  M -11 6 L -2 6 L -9 41 L -20 39 Z  M 5 40 L 18 40 L 19 46 L 5 46 Z  M -21 38 L -8 38 L -7 44 L -21 44 Z" fill="currentColor"/><path d="M -13 -24 L 10 -24 L 10 -21 L -13 -21 Z M -12 0 L 14 0 L 14 3 L -12 3 Z" fill="#10141a" fill-opacity=".55"/></svg>步兵<span class="ren">INFANTRY</span></span></th>
+              <td class="c100"><span class="v">100</span></td>
+              <td class="c130"><span class="v">130</span></td>
+              <td class="c65"><span class="v">65</span></td>
+              <td class="c50"><span class="v">50</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -6 -16 L 46 -32 L 49 -25 L -3 -9 Z  M -22 -17 L -2 -17 L -2 1 L -22 1 Z  M -16 -10 L 2 -10 L 7 6 L -20 6 Z  M -15 15 A 16 16 0 1 0 17 15 A 16 16 0 1 0 -15 15 Z M -4.5 15 A 5.5 5.5 0 1 1 6.5 15 A 5.5 5.5 0 1 1 -4.5 15 Z  M 2 27 L -46 41 L -46 34 L -4 19 Z" fill="currentColor"/><path d="M 0.3843637420137964 16.691446717414635 L 15.419445674588331 22.163769010625334 L 16.650718190560738 18.780875575796063 L 1.6156362579862036 13.308553282585365 Z M -0.1570176974357711 13.62112000238584 L -12.413728787339418 23.905721757370472 L -10.099693392467875 26.66348175259879 L 2.157017697435771 16.37887999761416 Z M 2.7726539554219745 14.687433280199524 L -0.005716887248910618 -1.069490767995803 L -3.55102479809286 -0.44435732839485365 L -0.7726539554219747 15.312566719800476 Z M 41.9085896873365 -25.634358749346006 L 47.9085896873365 -24.134358749346006 L 50.0914103126635 -32.865641250653994 L 44.0914103126635 -34.365641250653994 Z" fill="#10141a" fill-opacity=".55"/></svg>炮兵<span class="ren">ARTILLERY</span></span></th>
+              <td class="c100"><span class="v">100</span></td>
+              <td class="c110"><span class="v">110</span></td>
+              <td class="c115"><span class="v">115</span></td>
+              <td class="c60"><span class="v">60</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -40 -7 L 26 -7 L 38 6 L -40 6 Z  M -19 -7 L -13 -27 L 9 -27 L 15 -7 Z  M 6 -24 L 48 -24 L 48 -17 L 6 -17 Z  M -34 6 L 32 6 A 9 9 0 0 1 41 15 A 9 9 0 0 1 32 24 L -34 24 A 9 9 0 0 1 -43 15 A 9 9 0 0 1 -34 6 Z" fill="currentColor"/><path d="M -36 15 A 6 6 0 1 0 -24 15 A 6 6 0 1 0 -36 15 Z M -21 15 A 6 6 0 1 0 -9 15 A 6 6 0 1 0 -21 15 Z M -6 15 A 6 6 0 1 0 6 15 A 6 6 0 1 0 -6 15 Z M 9 15 A 6 6 0 1 0 21 15 A 6 6 0 1 0 9 15 Z M 24 15 A 6 6 0 1 0 36 15 A 6 6 0 1 0 24 15 Z" fill="#10141a" fill-opacity=".55"/></svg>装甲<span class="ren">ARMOR</span></span></th>
+              <td class="c115"><span class="v">115</span></td>
+              <td class="c140"><span class="v">140</span></td>
+              <td class="c100"><span class="v">100</span></td>
+              <td class="c40"><span class="v">40</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -9 -16 C -9 -34 -6 -46 0 -46 C 6 -46 9 -34 9 -16 L 9 20 L 13 34 L 4 44 L -4 44 L -13 34 L -9 20 Z  M -9 10 L -48 23 L -48 16 L -9 -6 Z M 9 -6 L 48 16 L 48 23 L 9 10 Z  M -7 33 L -25 42 L -25 37 L -7 26 Z M 7 26 L 25 37 L 25 42 L 7 33 Z" fill="currentColor"/><path d="M -5 -28 A 5 5 0 1 0 5 -28 A 5 5 0 1 0 -5 -28 ZM 10.5 4.75 A 4.5 4.5 0 1 0 19.5 4.75 A 4.5 4.5 0 1 0 10.5 4.75 Z M 26.5 11.95 A 4.5 4.5 0 1 0 35.5 11.95 A 4.5 4.5 0 1 0 26.5 11.95 ZM -19.5 4.75 A 4.5 4.5 0 1 0 -10.5 4.75 A 4.5 4.5 0 1 0 -19.5 4.75 Z M -35.5 11.95 A 4.5 4.5 0 1 0 -26.5 11.95 A 4.5 4.5 0 1 0 -35.5 11.95 Z" fill="#10141a" fill-opacity=".55"/></svg>空军<span class="ren">AIR</span></span></th>
+              <td class="c115"><span class="v">115</span></td>
+              <td class="c130"><span class="v">130</span></td>
+              <td class="c110"><span class="v">110</span></td>
+              <td class="cna"><span class="v">—</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tnote">
+          <i><span class="sw" style="background:rgba(216,178,74,.48)"></span>强克制 COUNTER</i>
+          <i><span class="sw" style="background:rgba(216,178,74,.14)"></span>优势 EDGE</i>
+          <i><span class="sw" style="background:rgba(192,80,56,.3)"></span>劣势 WEAK</i>
+          <i>攻击方 → 防守方 · 伤害修正 %</i>
+        </div>
+        <div class="mechs">
+          <div class="mech"><span class="mn">①</span><h4>控制区 ZOC<span>ZONES OF CONTROL</span></h4><p>装甲集群与空军可无视封锁——复现 1940 年的纵深穿插。</p></div>
+          <div class="mech"><span class="mn">②</span><h4>驻防工事<span>ENTRENCHMENT</span></h4><p>城市固守 +30%，首都 +60%，山地 +60%。地形不是背景板，是武器。</p></div>
+          <div class="mech"><span class="mn">③</span><h4>老练度<span>VETERANCY</span></h4><p>部队越战越强，最高 +24% 攻防——老兵营值得守护。</p></div>
+          <div class="mech"><span class="mn">④</span><h4>将领技能<span>GENERALS</span></h4><p>16 位史实名将各怀绝技，击杀晋升，最高五星。</p></div>
+        </div>
+      </div>
+      <figure class="frame rv" style="--d:3" data-full="img/02-help-countertable.jpg" data-alt="游戏内帮助面板：兵种克制表" role="button" tabindex="0" aria-label="放大查看游戏内帮助面板">
+        <img src="img/02-help-countertable.jpg" alt="游戏内帮助面板，展示兵种克制表与地形加成" width="1600" height="1000" loading="lazy">
+        <figcaption class="cap"><b>实机截图 · IN-GAME HELP</b><span>按 H 随时查阅</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 03 NAVY ======================= -->
+<section class="sec navy" id="navy">
+  <div class="wrap">
+    <header class="sec-head rv">
+      <span class="sec-no" aria-hidden="true">03</span>
+      <h2>连大海也是棋盘
+        <span class="sec-en">THE SEA IS A HEX TOO</span>
+      </h2>
+    </header>
+
+    <div class="navy-grid">
+      <div>
+        <p class="sec-lede rv" style="--d:1"><b>91 艘有名有姓的史实军舰</b>已就位于 1939 年的锚地。
+          俾斯麦、胡德、贝尔法斯特、U-47——建造它们、指挥它们、击沉它们。
+          91 individually named warships sit in their 1939 anchorages. Build them, command them, sink them.</p>
+        <div class="classes rv" style="--d:2" aria-label="八种舰型">
+          <span>潜艇 SUBS</span><span>驱逐舰 DESTROYERS</span><span>轻巡洋舰 LIGHT CRUISERS</span><span>重巡洋舰 HEAVY CRUISERS</span><span>战列巡洋舰 BATTLECRUISERS</span><span>战列舰 BATTLESHIPS</span><span>护航航母 ESCORT CARRIERS</span><span>航空母舰 FLEET CARRIERS</span>
+        </div>
+        <div class="ncards rv" style="--d:3">
+          <div class="mech"><span class="mn">⚓ ①</span><h4>军港建造<span>SHIPYARDS</span></h4><p>点击军港 ⚓ 造舰，泊位与城市易手实时联动；六国舰型逐年解锁：1939 德意志级 → 1941 俾斯麦级 → 1943 H 级计划。</p></div>
+          <div class="mech"><span class="mn">②</span><h4>反潜博弈<span>ASW WARFARE</span></h4><p>只有驱逐舰、潜艇、航母与陆基航空兵能猎杀水下目标——护航驱逐舰不是装饰品。</p></div>
+          <div class="mech"><span class="mn">③</span><h4>舰炮岸轰<span>SHORE BOMBARDMENT</span></h4><p>水面舰压制海岸守军，航母舰载机打击纵深；大舰巨炮重新有了意义。</p></div>
+          <div class="mech"><span class="mn">④</span><h4>两栖登陆<span>AMPHIBIOUS ASSAULT</span></h4><p>运输船队载陆军跨海抢滩——1944 年的登陆日，可以由你重演，也可以让它不再发生。</p></div>
+        </div>
+        <p class="navy-foot rv" style="--d:4"><b>考据彩蛋：</b>每艘开局军舰标注舰名来源——史实舰名 / 计划舰名 / 游戏拟名，分级呈现，绝不张冠李戴。AI 与你使用同一套造舰与海战规则，无作弊。</p>
+      </div>
+      <figure class="frame rv" style="--d:2" data-full="img/05-naval-fleet-deutschland.jpg" data-alt="军港与舰队实机截图：德意志号" role="button" tabindex="0" aria-label="放大查看舰队画面">
+        <img src="img/05-naval-fleet-deutschland.jpg" alt="实机截图：选中德意志号装甲舰，舰队停泊于军港，海上六边形战场清晰可见" width="1600" height="1000" loading="lazy">
+        <figcaption class="cap"><b>实机截图 · FLEET AT ANCHOR</b><span>德意志号 DEUTSCHLAND · ⚓ 军港</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 04 GENERALS ======================= -->
+<section class="sec" id="generals">
+  <div class="wrap">
+    <header class="sec-head rv">
+      <span class="sec-no" aria-hidden="true">04</span>
+      <h2>名将如云，各怀绝技
+        <span class="sec-en">COMMANDERS OF HISTORY</span>
+      </h2>
+    </header>
+    <p class="sec-lede rv" style="--d:1">16 位史实将领全部实装。每个人的技能都译自他的战绩——<b>技能表就是一页微缩战史</b>。</p>
+
+    <div class="gen-grid" style="margin-top:clamp(32px,4vw,48px)">
+      <article class="gen rv" style="--d:1;--fc:#9aa3ab">
+        <span class="gfac">德国 GERMANY</span>
+        <h3>古德里安</h3><span class="gen-en">HEINZ GUDERIAN</span>
+        <p class="skill">装甲攻 +25% · 移动力 +2 · 无视控制区</p>
+        <p class="bio">闪电战之父——「纵深穿插」这一技能，就是他本人。</p>
+      </article>
+      <article class="gen rv" style="--d:2;--fc:#9aa3ab">
+        <span class="gfac">德国 GERMANY</span>
+        <h3>隆美尔</h3><span class="gen-en">ERWIN ROMMEL</span>
+        <p class="skill">装甲攻 +20% · 对炮兵 +40%</p>
+        <p class="bio">第 7 装甲师「魔鬼之师」，席卷法军炮群的行家。</p>
+      </article>
+      <article class="gen rv" style="--d:3;--fc:#cf5340">
+        <span class="gfac">苏联 USSR</span>
+        <h3>朱可夫</h3><span class="gen-en">GEORGY ZHUKOV</span>
+        <p class="skill">全体攻防 +20%</p>
+        <p class="bio">从诺门坎打到柏林的「胜利元帅」，均衡即全能。</p>
+      </article>
+      <article class="gen rv" style="--d:4;--fc:#cf5340">
+        <span class="gfac">苏联 USSR</span>
+        <h3>崔可夫</h3><span class="gen-en">VASYLY CHUIKOV</span>
+        <p class="skill">驻城防御 +50% · 反击 +30%</p>
+        <p class="bio">斯大林格勒第 62 集团军——「贴身紧逼」的城市战之神。</p>
+      </article>
+      <article class="gen rv" style="--d:5;--fc:#5b8ac9">
+        <span class="gfac">英国 BRITAIN</span>
+        <h3>蒙哥马利</h3><span class="gen-en">B. MONTGOMERY</span>
+        <p class="skill">防御 +25% · 反击 +30%</p>
+        <p class="bio">阿拉曼的先胜后战：不打好准备，一步也不动。</p>
+      </article>
+      <article class="gen rv" style="--d:6;--fc:#5b8ac9">
+        <span class="gfac">美国 USA</span>
+        <h3>巴顿</h3><span class="gen-en">G. S. PATTON</span>
+        <p class="skill">装甲攻 +30% · 移动力 +1</p>
+        <p class="bio">第 3 集团军横扫西欧——油门踩到底。</p>
+      </article>
+    </div>
+
+    <div class="promo rv">
+      <span class="stars" aria-hidden="true">★★★★★</span>
+      <p>击杀 3 人晋升一星，<b>最高五星</b>，每星攻防 +4% —— 你的将领和你一起打完整场战争。</p>
+      <span class="stars" aria-hidden="true">KILL ×3 = ★</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 05 SIDES ======================= -->
+<section class="sec" id="sides">
+  <div class="wrap">
+    <header class="sec-head rv">
+      <span class="sec-no" aria-hidden="true">05</span>
+      <h2>选择你的阵营
+        <span class="sec-en">CHOOSE YOUR SIDE</span>
+      </h2>
+    </header>
+    <p class="sec-lede rv" style="--d:1">三种完全不同的战争体验——<b>闪电猎手、困守待变、钢铁洪流</b>。换一个阵营，就是换一款游戏。</p>
+
+    <div class="side-grid" style="margin-top:clamp(32px,4vw,48px)">
+      <article class="side rv" style="--d:1;--fc:#9aa3ab">
+        <div class="band"></div>
+        <div class="in">
+          <span class="s-en">AXIS</span>
+          <h3>轴心国</h3>
+          <p>闪击波兰、横扫法国——<b>黄金窗口只有 21 个月</b>。装备与将领最精良，但 1941 年 6 月之后，你将同时面对三个方向。</p>
+          <p style="margin-top:10px">适合：进攻型指挥官。</p>
+          <p class="gens"><b>将领</b><br>古德里安 · 隆美尔 · 曼施坦因<br>莫德尔 · 凯塞林</p>
+        </div>
+      </article>
+      <article class="side rv" style="--d:2;--fc:#5b8ac9">
+        <div class="band"></div>
+        <div class="in">
+          <span class="s-en">ALLIES</span>
+          <h3>同盟国</h3>
+          <p>守住马奇诺与伦敦，熬过最黑的两年——<b>等美国参战、等诺曼底翻盘</b>。防守反击的艺术。</p>
+          <p style="margin-top:10px">适合：耐心的战略家。</p>
+          <p class="gens"><b>将领</b><br>蒙哥马利 · 巴顿 · 戴高乐<br>艾森豪威尔 · 亚历山大</p>
+        </div>
+      </article>
+      <article class="side rv" style="--d:3;--fc:#cf5340">
+        <div class="band"></div>
+        <div class="in">
+          <span class="s-en">USSR</span>
+          <h3>苏联</h3>
+          <p>1941 年 6 月前和平备战；开战后<b>以空间换时间</b>，让俄罗斯的冬天替你作战，再用钢铁洪流攻克柏林。</p>
+          <p style="margin-top:10px">适合：大兵团作战爱好者。</p>
+          <p class="gens"><b>将领</b><br>朱可夫 · 罗科索夫斯基<br>科涅夫 · 崔可夫</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="diff rv">
+      <span class="dl">难度 DIFFICULTY —</span>
+      <span><b>军校实习</b> CADET · AI −12%</span>
+      <span><b>前线指挥</b> FRONTLINE · 标准</span>
+      <span><b>总参谋部</b> GENERAL STAFF · AI +12%，收入 +20%</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 06 TIMELINE ======================= -->
+<section class="sec" id="timeline">
+  <div class="wrap">
+    <header class="sec-head rv">
+      <span class="sec-no" aria-hidden="true">06</span>
+      <h2>历史会按剧本走，直到你出手
+        <span class="sec-en">HISTORY FOLLOWS THE SCRIPT — UNTIL YOU MOVE</span>
+      </h2>
+    </header>
+    <p class="sec-lede rv" style="--d:1">10 个历史事件脚本按月触发：<b>你读到的事件简报，就是当年将军们读到的战报</b>。复现历史，或者改写它。</p>
+
+    <div class="tl" style="margin-top:clamp(36px,5vw,60px)">
+      <div class="tle rv"><span class="tm">1939 · 09</span><h3>战争爆发<span class="ten">CASE WHITE</span></h3><p>国界定格于 8 月 31 日。从你的第一次移动开始，历史进入<b>你的版本</b>。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 05</span><h3>西线闪击战<span class="ten">FALL GELB</span></h3><p>战报叙事——阿登森林不再是「不可穿越」，只要你的装甲敢走。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 06</span><h3>意大利参战<span class="ten">ITALY JOINS</span></h3><p>意大利领土与军队转入轴心，地中海战线开启。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 09</span><h3>不列颠空战<span class="ten">BATTLE OF BRITAIN</span></h3><p>海峡上空的空权争夺——空军压制与海岸组合的实战课堂。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 11</span><h3>巴尔干加入轴心<span class="ten">BALKAN PACT</span></h3><p>匈牙利、罗马尼亚领土与军队转入轴心——南翼稳固，东进倒计时。</p></div>
+      <div class="tle key rv"><span class="tm">1941 · 06</span><h3>巴巴罗萨行动<span class="ten">BARBAROSSA</span></h3><p>轴心-苏联开战，<b>苏联紧急动员 10 个师开赴西部边境</b>。史上最大的陆地攻势，在一张 128×112 的地图上展开。</p></div>
+      <div class="tle key rv"><span class="tm">1941 · 12</span><h3>美国参战<span class="ten">USA ENTERS THE WAR</span></h3><p>同盟国收入 <b>+40</b>，伦敦出现美军先头部队与美军装备——工业天平开始倾斜。</p></div>
+      <div class="tle rv"><span class="tm">1942 · 07</span><h3>斯大林格勒<span class="ten">STALINGRAD</span></h3><p>战报叙事——城市战与崔可夫的高光时刻。</p></div>
+      <div class="tle rv"><span class="tm">1943 · 07</span><h3>库尔斯克<span class="ten">ZITADELLE</span></h3><p>战报叙事——史上最大坦克会战，装甲克制的终极考卷。</p></div>
+      <div class="tle key rv"><span class="tm">1944 · 06</span><h3>诺曼底登陆<span class="ten">OVERLORD</span></h3><p><b>最多 10 个盟军师在法国海岸抢滩</b>——两栖运输舰队此时就是你的生命线。</p></div>
+      <div class="tle rv"><span class="tm">每年 12–2 月</span><h3>俄罗斯严冬<span class="ten">GENERAL WINTER</span><span class="wtag">❄ RECURRING</span></h3><p>轴心国部队在苏联境内每月 <b>−12 兵力</b>，地图飘雪。拿破仑的教训，每年重放一遍。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 07 PLAY ======================= -->
+<section class="sec" id="play">
+  <div class="wrap">
+    <header class="sec-head rv">
+      <span class="sec-no" aria-hidden="true">07</span>
+      <h2>十秒上手，一眼百年
+        <span class="sec-en">AT THE FRONT IN TEN SECONDS</span>
+      </h2>
+    </header>
+
+    <div class="play-grid">
+      <div class="rv" style="--d:1">
+        <p class="sec-lede" style="margin-bottom:26px">没有教程关。<b>左键点、拖动看、滚轮缩</b>，剩下的交给 H 键的帮助面板。</p>
+        <div class="keys" aria-label="操作方式">
+          <span class="keyrow"><kbd>左键</kbd><b>选择 / 攻击</b></span>
+          <span class="keyrow"><kbd>拖动</kbd><b>平移地图</b></span>
+          <span class="keyrow"><kbd>滚轮</kbd><b>缩放</b></span>
+          <span class="keyrow"><kbd>N</kbd><b>下一支部队</b></span>
+          <span class="keyrow"><kbd>E</kbd><b>结束回合</b></span>
+          <span class="keyrow"><kbd>G</kbd><b>将领</b></span>
+          <span class="keyrow"><kbd>H</kbd><b>帮助</b></span>
+          <span class="keyrow"><kbd>M</kbd><b>静音</b></span>
+        </div>
+        <div class="runbox" aria-label="本地运行方式">
+          <div class="rb-t"><i></i><i></i><i></i>&nbsp;离线运行 OFFLINE</div>
+          <pre><span class="c"># 免安装、零依赖，两条路任选</span>
+<span class="g">①</span> 在线试玩  <span class="c">→</span>  ttdnx2999-cmd.github.io/test_collab
+<span class="g">②</span> 本地离线  <span class="c">→</span>  git clone 后<b>双击 index.html</b></pre>
+        </div>
+      </div>
+      <div class="rv" style="--d:2">
+        <div class="tech" aria-label="技术特性">
+          <span>零依赖 · 零构建<b>ZERO DEPENDENCIES</b></span>
+          <span>纯原生 Canvas 渲染<b>VANILLA CANVAS</b></span>
+          <span>离线可玩 · 单机<b>OFFLINE-READY · SINGLE-PLAYER</b></span>
+          <span>自动存档 · 续玩<b>SAVE &amp; RESUME</b></span>
+          <span>AI 与玩家同一套规则<b>AI PLAYS BY THE RULES</b></span>
+          <span>政区 / 地形双渲染<b>POLITICAL / TERRAIN MODES</b></span>
+        </div>
+        <div class="runbox" style="margin-top:26px" aria-label="工程笔记">
+          <div class="rb-t"><i></i><i></i><i></i>&nbsp;工程笔记 ENGINEERING NOTES</div>
+          <pre><span class="c">// 逻辑与表现完全分离</span>
+game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</span>
+离屏缓存分层渲染 <span class="c">→</span> 单帧 <span class="g">0.65ms</span>（初版 4 FPS 的 45 倍）
+<em id="fpsp">window.__fps</em> <span class="c">控制台可读实时帧率</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FINALE ======================= -->
+<section class="finale">
+  <div class="fbg" aria-hidden="true"><img src="img/01-start-screen.jpg" alt="" width="1600" height="1000" loading="lazy"></div>
+  <div class="fveil" aria-hidden="true"></div>
+  <h2 class="rv">历史已经写好。<br><em>该写你的了。</em></h2>
+  <p class="fen rv" style="--d:1">HISTORY IS WRITTEN. NOW WRITE YOURS.</p>
+  <div class="cta rv" style="--d:2">
+    <a class="btn btn-gold" href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">免费开战 · PLAY FREE <span class="arr">▸</span></a>
+    <a class="btn btn-ghost" href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener">GitHub 仓库</a>
+  </div>
+  <p class="fmono rv" style="--d:3">FREE · PLAYS IN YOUR BROWSER · OFFLINE-READY</p>
+</section>
+
+</main>
+
+<!-- ======================= FOOTER ======================= -->
+<footer>
+  <div class="fin">
+    <div>
+      <div class="fbrand">
+        <svg viewBox="0 0 100 100" width="30" height="30" aria-hidden="true"><path d="M50 4 L92 28 V72 L50 96 L8 72 V28 Z" fill="#10141a" stroke="#d8b24a" stroke-width="5"/><circle cx="50" cy="50" r="12" fill="#d8b24a"/></svg>
+        <b>钢铁欧陆 1939</b><span>IRON EUROPE 1939–1945</span>
+      </div>
+      <p><b>免责声明：</b>地图为战略概化表示，不代表对任何领土主权的立场。地理数据来自 Natural Earth（公有领域）；历史边界经 1939 年事件校订，定格于 1939-08-31。本作致敬《欧陆战争》《将军的荣耀》《世界征服者》系列。</p>
+    </div>
+    <div class="fmeta">
+      MAP europe-1939-geographic-v8<br>
+      TURN = 1 MONTH · SEPT 1939 — 1945<br>
+      <a href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">PLAY ONLINE ↗</a>&nbsp;&nbsp;<a href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener">GITHUB ↗</a><br>
+      © 2026 钢铁欧陆 1939
+    </div>
+  </div>
+</footer>
+
+<!-- ======================= LIGHTBOX ======================= -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="截图放大查看">
+  <button class="lb-close" aria-label="关闭">✕</button>
+  <img src="" alt="">
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $  = function(s){ return document.querySelector(s); };
+  var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* nav + progress */
+  var nav = $("#nav"), pbar = $("#pbar");
+  var doc = document.documentElement;
+  function onScroll(){
+    nav.classList.toggle("solid", window.scrollY > 30);
+    var max = doc.scrollHeight - doc.clientHeight;
+    pbar.style.transform = "scaleX(" + (max > 0 ? window.scrollY / max : 0) + ")";
+  }
+  window.addEventListener("scroll", onScroll, { passive:true });
+  onScroll();
+
+  /* reveals */
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add("on"); io.unobserve(e.target); }
+    });
+  }, { threshold:.12, rootMargin:"0px 0px -36px 0px" });
+  $$(".rv").forEach(function(el){ io.observe(el); });
+
+  /* count-up stats */
+  function fmt(n){ return n.toLocaleString("en-US"); }
+  function animCount(el){
+    var target = +el.getAttribute("data-count"), dur = 1600, t0 = performance.now();
+    (function step(t){
+      var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(Math.round(target * e));
+      if(p < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  var cio = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){
+        var el = e.target;
+        if(reduced){ el.textContent = fmt(+el.getAttribute("data-count")); }
+        else{ animCount(el); }
+        cio.unobserve(el);
+      }
+    });
+  }, { threshold:.6 });
+  $$("[data-count]").forEach(function(el){ cio.observe(el); });
+
+  /* lightbox */
+  var lb = $("#lightbox"), lbImg = lb.querySelector("img");
+  function openLb(src, alt){
+    lbImg.src = src; lbImg.alt = alt || "";
+    lb.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+  function closeLb(){
+    lb.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+  $$("[data-full]").forEach(function(el){
+    el.addEventListener("click", function(){ openLb(el.getAttribute("data-full"), el.getAttribute("data-alt")); });
+    el.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openLb(el.getAttribute("data-full"), el.getAttribute("data-alt")); }
+    });
+  });
+  lb.addEventListener("click", closeLb);
+  window.addEventListener("keydown", function(ev){
+    if(ev.key === "Escape" && lb.classList.contains("open")) closeLb();
+  });
+
+  /* hero parallax */
+  var hb = $(".hero-bg img");
+  if(hb && !reduced){
+    var ticking = false;
+    window.addEventListener("scroll", function(){
+      if(ticking) return;
+      ticking = true;
+      requestAnimationFrame(function(){
+        hb.style.transform = "scale(1.12) translateY(" + window.scrollY * .22 + "px)";
+        ticking = false;
+      });
+    }, { passive:true });
+  }
+})();
+</script>
+</body>
+</html>
