@@ -279,7 +279,7 @@ assert(h.run("UI.sel.eq.artRole==='gun'&&UI.sel.c===occupiedCity.x&&UI.sel.r===o
 console.log('Ground scenario UI: occupied cities block production; new units deploy inside the empty city.');
 
 h.run("showStart()");assert.equal(h.run('Music.current'),'lobby');
-h.run("document.getElementById('m-atlas').onclick()");assert.equal(h.run('Music.current'),'menu');
+assert(!h.run("modalRoot.innerHTML.includes('m-atlas')"));
 h.run("startGame(null,null,new Game('axis'))");assert.equal(h.run('Music.current'),'battle');
 h.run("toggleSound()");assert.equal(h.run('Music.enabled'),false);
 h.run("showEndModal(true)");assert.equal(h.run('Music.current'),'victory');assert.equal(h.run('Music.enabled'),false);

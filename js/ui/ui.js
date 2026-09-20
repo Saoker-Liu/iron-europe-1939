@@ -1165,7 +1165,6 @@ function showStart() {
         <button class="btn primary" id="m-start" style="font-size:16px;padding:10px 34px">开 始 战 役</button>
         ${hasSave ? '<button class="btn gold" id="m-continue">继续上次战役</button>' : ''}
         <button class="btn" id="m-help2">玩法说明</button>
-        <button class="btn gold" id="m-atlas">浏览1939地图</button>
       </div>
     </div>`);
   modalRoot.querySelectorAll('.fac-card').forEach(el => el.onclick = () => {
@@ -1179,11 +1178,6 @@ function showStart() {
     SFX.click();
   });
   document.getElementById('m-start').onclick = () => { closeModal(); startGame(fac, diff); };
-  document.getElementById('m-atlas').onclick = () => {
-    closeModal(); Music.play('menu'); UI.game = new Game('axis', 'normal'); UI.showUnits = false;
-    document.getElementById('btn-units').textContent = '显示部队';
-    updateTopbar(); updatePanel(); renderLog(); fitMap();
-  };
   const c = document.getElementById('m-continue');
   if (c) c.onclick = () => {
     try {
