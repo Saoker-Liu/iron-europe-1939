@@ -103,7 +103,7 @@ canStrikeFrom统一目标合法性，canCounter统一实际反击与AI预估。�
 
 ## 舰名与主剧本舰队（存档v6）
 
-naval-names.js按现有eqKey配置名称池，保持装备键和科技顺序稳定。单位ct、eq.cls、eq.n、shipName分别表示国家、舰种、舰级和舰名；unitName用于单位标题／日志，navalIdentity提供完整身份。名称元信息由受信任的池数据派生，不接受存档自由HTML。usedShipNames记录国家内已用舰名与改装舰体标识；沉没不释放。nextShipName只预览，spawnUnit才登记；编号按国家／舰种跨级连续。
+naval-names.js按现有eqKey配置名称池，保持装备键和科技顺序稳定。单位ct、eq.cls、eq.className、shipName分别表示国家、舰种、舰级和舰名；unitName用于单位标题／日志，navalIdentity提供完整身份。名称元信息由受信任的池数据派生，不接受存档自由HTML。usedShipNames记录国家内已用舰名与改装舰体标识；沉没不释放。nextShipName只预览，spawnUnit才登记；编号按国家／舰种跨级连续。
 
 naval-scenario.js单独定义主剧本91艘舰队，Game在陆空部署后由基地进行水路搜索，避开占用格和全部军港泊位。不会修改生成地图中的陆空deployments，也不设置舰队数量上限。美国舰队开局中立，usa事件将cf.us改为west，现有舰艇随之激活。其它剧本可使用initialFleet:false关闭主剧本注入，再提供自身编制。
 

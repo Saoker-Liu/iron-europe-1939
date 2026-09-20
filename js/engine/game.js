@@ -103,7 +103,7 @@ class Game {
   isNaval(u) { return !!CLASSES[u.eq.cls].naval; }
   unitName(u) { return this.isNaval(u)?u.shipName:u.eq.n; }
   navalIdentity(u) {
-    return `${COUNTRIES[u.ct]?.name||u.ct} · ${CLASSES[u.eq.cls].name} · ${u.eq.n} · ${this.unitName(u)}`;
+    return `${COUNTRIES[u.ct]?.name||u.ct} · ${CLASSES[u.eq.cls].name} · ${u.eq.className||u.eq.n} · ${this.unitName(u)}`;
   }
   shipNamePool(ct,eqKey) { return eqKey.split(':')[0]===ct ? NAVAL.names[eqKey]||[] : []; }
   genericShipName(cls) { return {bc:'战列巡洋舰',cve:'护航航母',cv:'航空母舰'}[cls]||CLASSES[cls].name; }

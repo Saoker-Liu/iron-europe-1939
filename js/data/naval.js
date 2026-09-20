@@ -94,7 +94,7 @@
   equipment[ct]={};
   for(const [cls,list]of Object.entries(roster)){
    const [name,,atk,def,mov,cost,rng,role]=specs[cls];
-   equipment[ct][cls]=list.map(([n,yr,nt='',planned=false],i)=>({n:ct==='neutral'?n+name:n,cls,yr,planned,
+   equipment[ct][cls]=list.map(([n,yr,nt='',planned=false],i)=>({n:ct==='neutral'?n+name:n,className:ct==='neutral'?n+name:n.replace(/号$/,'级'),cls,yr,planned,
     atk:Math.round(atk*(1+i*.22)),def:Math.round(def*(1+i*.22)),mov,cost:Math.round(cost*(1+i*.3)),rng,
     nt:(planned?'【计划／未建成】':'')+nt,role}));
   }
