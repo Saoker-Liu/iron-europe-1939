@@ -53,6 +53,8 @@ class Game {
     for (const ci of this.cities) this.terr[key(ci.x, ci.y)] = 'c';
     this.cityByKey = {}; for (const ci of this.cities) this.cityByKey[ci.k] = ci;
     this.harbors = this.buildHarbors();
+    // Major-city airports are scenario abstractions, not individual historical airfields.
+    this.airfields = this.cities.filter(ci=>!ci.demilitarized && (ci.cap || MAP_META.cityLabelLevels[ci.k]<=1));
     this.terrDirty = true; this._terrCache = null;
     this.blockedEdges = new Set(MAP_META.blockedEdges);
     this.riverEdges = new Set(MAP_META.riverEdges || []);
@@ -101,6 +103,48 @@ class Game {
   }
   transportOf(u) { return (ECONOMY.transports || []).find(t => t.id === u.transport) || null; }
   isNaval(u) { return !!CLASSES[u.eq.cls].naval; }
+  isAir(u) { return u.eq.cls==='air'; }
+  airBase(u) { const ci=this.cityByKey[u.airbase];return ci&&this.airfields.includes(ci)&&ci.owner===this.unitFaction(u)?ci:null; }
+  airRadius(u) { return Math.max(1,this.movOf(u)); }
+  airUnitsAt(cityKey) { return this.units.filter(u=>this.isAir(u)&&u.airbase===cityKey); }
+  nearestAirfield(f,c,r) {
+    return this.airfields.filter(ci=>ci.owner===f).sort((a,b)=>hexDist(c,r,a.x,a.y)-hexDist(c,r,b.x,b.y)||a.k.localeCompare(b.k))[0]||null;
+  }
+  airRoster(city) {
+    const ct=this.cf[city.ct]===city.owner?(EQUIP[city.ct]?.air?city.ct:'neutral'):({axis:'de',west:'uk',sov:'su'}[city.owner]||'neutral');
+    const countries=[ct];if(city.ct==='uk'&&city.owner==='west'&&this.usaIn)countries.push('us');
+    const offers=countries.flatMap(country=>(EQUIP[country]?.air||[]).map((eq,i)=>({eqKey:`${country}:air:${i}`,eq,locked:eq.yr>this.year(),country})));
+    if(!offers.some(o=>!o.locked)&&!countries.includes('neutral'))offers.unshift({eqKey:'neutral:air:0',eq:EQUIP.neutral.air[0],locked:false,country:'neutral'});
+    return offers;
+  }
+  airBuildError(cityKey,eqKey,faction=this.playerFaction) {
+    const ci=this.cityByKey[cityKey];
+    if(!ci||!this.airfields.includes(ci))return '此城市没有机场';
+    if(!['axis','west','sov'].includes(faction)||ci.owner!==faction)return '只能在己方机场组建';
+    if(!this.airRoster(ci).some(o=>o.eqKey===eqKey&&!o.locked))return '机型尚未解锁或不属于此机场的装备列表';
+    if(this.gold[faction]<this.equipOf(eqKey).cost)return '经济不足';
+    return '';
+  }
+  recruitAir(cityKey,eqKey,faction=this.playerFaction) {
+    if(this.airBuildError(cityKey,eqKey,faction))return null;
+    const ci=this.cityByKey[cityKey],country=eqKey.split(':')[0];
+    const ct=country==='neutral'?(this.cf[ci.ct]===faction?ci.ct:{axis:'de',west:'uk',sov:'su'}[faction]):country;
+    const u=this.spawnUnit(ct,eqKey,ci.x,ci.y,{});
+    this.gold[faction]-=u.eq.cost;u.moved=true;u.attacked=true;
+    this.pushLog(`${this.factionName(faction)} 在${ci.n}机场组建${u.eq.n}（-${u.eq.cost}金），下回合可出击。`,'econ');return u;
+  }
+  rebaseAir(u,cityKey) {
+    const base=this.airBase(u),ci=this.cityByKey[cityKey];
+    if(!this.units.includes(u)||!this.isAir(u)||!base||!ci||!this.airfields.includes(ci)||ci===base||ci.owner!==this.unitFaction(u)||u.moved||u.attacked||hexDist(base.x,base.y,ci.x,ci.y)>this.airRadius(u))return false;
+    u.airbase=ci.k;u.c=ci.x;u.r=ci.y;u.moved=true;u.attacked=true;u.dug=false;
+    this.pushLog(`${u.eq.n} 转场至${ci.n}机场，本回合行动结束。`,'info');return true;
+  }
+  removeLostAirfields() {
+    for(const u of [...this.units])if(this.isAir(u)&&!this.airBase(u)){
+      this.pushLog(`${u.eq.n}因驻扎机场失守而损失。`,'war');this.killUnit(u);
+    }
+  }
+
   unitName(u) { return this.isNaval(u)?u.shipName:u.eq.n; }
   navalIdentity(u) {
     return `${COUNTRIES[u.ct]?.name||u.ct} · ${CLASSES[u.eq.cls].name} · ${u.eq.className||u.eq.n} · ${this.unitName(u)}`;
@@ -220,8 +264,8 @@ class Game {
     this.pushLog(`${u.eq.n} 配备${this.transportOf(u).name}（-${price} 金），可选择相邻海格下海。`,'econ');
     return true;
   }
-  movementEndsTurn(u,c,r) { return !this.isNaval(u) && !CLASSES[u.eq.cls].fly && this.isEmbarked(u)!==this.ocean(c,r); }
-  unitAt(c, r) { return this.units.find(u => u.c === c && u.r === r) || null; }
+  movementEndsTurn(u,c,r) { return this.isAir(u) || !this.isNaval(u) && !CLASSES[u.eq.cls].fly && this.isEmbarked(u)!==this.ocean(c,r); }
+  unitAt(c, r) { return this.units.find(u => !this.isAir(u) && u.c === c && u.r === r) || null; }
   cityAt(c, r) { return this.cities.find(ci => ci.x === c && ci.y === r) || null; }
   unitFaction(u) { return this.cf[u.ct]; }
   genOf(u) { return u.gen ? GENERALS.find(g => g.id === u.gen) : null; }
@@ -262,6 +306,7 @@ class Game {
     return false;
   }
   rangeOf(u) {
+    if(this.isAir(u))return this.airRadius(u);
     if (this.isEmbarked(u)) return 1;
     if (this.isNaval(u)) return u.eq.rng;
     let rng = CLASSES.art.ranged && u.eq.cls === 'art' ? (u.eq.rng || 2) : 1;
@@ -280,6 +325,11 @@ class Game {
   /* 迪杰斯特拉：可达格成本表 + 前驱(用于还原路径) */
   moveRange(u) {
     if(u.moved || u.attacked)return {cost:new Map(),prev:new Map()};
+    if(this.isAir(u)){
+      const cost=new Map(),prev=new Map(),base=this.airBase(u);
+      if(base)for(const ci of this.airfields)if(ci!==base&&ci.owner===this.unitFaction(u)&&hexDist(base.x,base.y,ci.x,ci.y)<=this.airRadius(u)){cost.set(key(ci.x,ci.y),hexDist(base.x,base.y,ci.x,ci.y));prev.set(key(ci.x,ci.y),key(u.c,u.r));}
+      return {cost,prev};
+    }
     const start = key(u.c, u.r);
     const cost = new Map([[start, 0]]), prev = new Map(), zocStop = new Set();
     const visited = new Set();
@@ -342,6 +392,7 @@ class Game {
 
   moveUnit(u, c, r, path) {
     if(!this.units.includes(u)||u.moved||u.attacked)return false;
+    if(this.isAir(u))return this.rebaseAir(u,this.cityAt(c,r)?.k);
     const f = this.unitFaction(u);
     // Never trust caller-supplied paths to bypass movement/terrain/occupancy rules.
     path=this.pathTo(u,key(c,r));if(!path)return false;
@@ -421,6 +472,10 @@ class Game {
   }
   canAttackNow(u) { return !u.attacked && u.hp > 0; }
   canStrikeFrom(u,c,r,e) {
+    if(this.isAir(u)){
+      const base=this.airBase(u);
+      return !!base && c===base.x && r===base.y && hexDist(base.x,base.y,e.c,e.r)<=this.airRadius(u);
+    }
     const dist=hexDist(c,r,e.c,e.r);
     if(dist<1||dist>this.rangeOf(u))return false;
     if(u.eq.cls==='sub'&&!this.isSeagoing(e))return false;
@@ -431,6 +486,8 @@ class Game {
     return true;
   }
   canCounter(def,att) {
+    // Incoming sorties reach the target: naval AA can respond even when the base is distant.
+    if(this.isAir(att))return this.isAir(def)?!!this.airBase(def):this.isNaval(def)&&def.eq.cls!=='sub';
     if(!this.canStrikeFrom(def,def.c,def.r,att))return false;
     return this.isNaval(def) || (hexDist(att.c,att.r,def.c,def.r)===1 && (this.isEmbarked(def)||['inf','tank'].includes(def.eq.cls)));
   }
@@ -485,6 +542,7 @@ class Game {
 
   /* ------------------------------ 城市 ------------------------------ */
   captureCity(city, faction, byUnit) {
+    if(byUnit&&this.isAir(byUnit))return false;
     const old = city.owner;
     city.owner = faction; this.terrDirty = true;
     const cn = COUNTRIES[city.ct].name;
@@ -498,6 +556,7 @@ class Game {
       this.terrDirty = true;
       this.pushLog(`${cn}首都 ${city.n} 陷落，${cn}全境沦陷！（${flipped} 座城市易手）`, 'war');
     }
+    this.removeLostAirfields();
     this.checkVictory();
   }
   /* 中立国被攻击：加入攻击者的最强交战敌对阵营 */
@@ -531,7 +590,7 @@ class Game {
     const f = city.owner;
     if (this.unitAt(city.x, city.y)) return null;
     const eq = this.equipOf(eqKey);
-    if (!eq || CLASSES[eq.cls].naval || eq.yr > this.year()) return null;
+    if (!eq || eq.cls==='air' || CLASSES[eq.cls].naval || eq.yr > this.year()) return null;
     if (eq.cls === 'tank' || eq.cls === 'art') {
       const allowUS = city.ct === 'uk' && this.usaIn;
       const rosterCt = (eqKey.startsWith('us:') && !allowUS) ? null : (EQUIP[city.ct] ? city.ct : 'neutral');
@@ -554,6 +613,11 @@ class Game {
       hp: 100, xp: 0, vet: 0, c: x, r: y,
       moved: false, attacked: false, dug: false, gen: null, transport:null, embarked:false,
     };
+    if(this.isAir(u)){
+      const base=this.nearestAirfield(this.unitFaction(u),x,y);
+      if(!base)throw Error('没有己方机场可部署空军');
+      u.airbase=base.k;u.c=base.x;u.r=base.y;
+    }
     if(this.isNaval(u)){
       const entry=this.nextShipName(ct,eqKey);
       u.shipName=entry.n;this.rememberShipName(ct,entry);
@@ -577,6 +641,7 @@ class Game {
 
   /* ------------------------------ 回合推进 ------------------------------ */
   startTurnFor(f) {
+    this.removeLostAirfields();
     // 收入 & 行动权恢复
     const inc = this.factionIncome(f);
     this.gold[f] += inc;
@@ -781,9 +846,26 @@ class Game {
       }
     }
   }
+  aiAir(f,acts,atWar) {
+    const enemies=this.cities.filter(ci=>this.atWar(f,ci.owner));
+    const distance=(c,r)=>Math.min(...enemies.map(ci=>hexDist(c,r,ci.x,ci.y)));
+    for(const u of this.units.filter(u=>this.isAir(u)&&this.unitFaction(u)===f)){
+      if(atWar&&!u.attacked)this.aiTryAttack(u,acts);
+      if(!this.units.includes(u)||u.attacked||u.moved||!enemies.length)continue;
+      const choices=[...this.moveRange(u).cost.keys()].map(k=>k.split(',').map(Number)).sort((a,b)=>distance(...a)-distance(...b));
+      if(choices[0]&&distance(...choices[0])<distance(u.c,u.r)&&this.moveUnit(u,...choices[0]))acts.push({type:'move',unit:u,to:choices[0]});
+    }
+    if(!atWar)return;
+    for(const ci of this.airfields.filter(ci=>ci.owner===f).sort((a,b)=>distance(a.x,a.y)-distance(b.x,b.y))){
+      // AI force composition policy, not a player build/capacity limit.
+      if(this.airUnitsAt(ci.k).length||distance(ci.x,ci.y)>12)continue;
+      const offer=this.airRoster(ci).filter(o=>!o.locked&&o.eq.cost<=this.gold[f]*.25).at(-1);
+      if(offer)this.recruitAir(ci.k,offer.eqKey,f);
+    }
+  }
   aiTurn(f) {
     const acts = [];
-    const units = this.units.filter(u => this.unitFaction(u) === f && !this.isNaval(u));
+    const units = this.units.filter(u => this.unitFaction(u) === f && !this.isNaval(u) && !this.isAir(u));
     const atWar = this.anyWar(f);
     const enemyCities = this.cities.filter(ci => this.atWar(f, ci.owner));
     const ownCities = this.cities.filter(ci => ci.owner === f);
@@ -823,6 +905,7 @@ class Game {
       if (atWar && !u.attacked) this.aiTryAttack(u, acts);
     }
     // 5) 招募
+    this.aiAir(f,acts,atWar);
     this.aiNavy(f,acts,atWar);
     this.aiRecruit(f, atWar);
     return acts;
@@ -923,13 +1006,13 @@ class Game {
       if (this.unitAt(ci.x, ci.y)) continue;
       const rosterCt = EQUIP[ci.ct] ? ci.ct : 'neutral';
       const opts = [];
-      for (const cls of ['inf', 'art', 'tank', 'air']) {
+      for (const cls of ['inf', 'art', 'tank']) {
         (EQUIP[rosterCt][cls] || []).forEach((eq, i) => {
           if (eq.yr <= this.year() && eq.cost <= this.gold[f]) opts.push(`${rosterCt}:${cls}:${i}`);
         });
       }
       if (!opts.length) continue;
-      // 构成偏好：装甲 40% / 炮 25% / 步 25% / 空 10%；首都受威胁时偏好步兵
+      // 地面部队构成偏好：装甲 4 / 炮兵 2.5 / 步兵 2.5；空军由机场逻辑组建。
       const weight = ek => {
         const eq = this.equipOf(ek);
         if (eq.cls === 'tank') return 4;
@@ -963,14 +1046,14 @@ class Game {
   rosterFor(city) {
     const rosterCt = EQUIP[city.ct] ? city.ct : 'neutral';
     const out = [];
-    for (const cls of ['inf', 'art', 'tank', 'air']) {
+    for (const cls of ['inf', 'art', 'tank']) {
       (EQUIP[rosterCt][cls] || []).forEach((eq, i) => {
         out.push({ eqKey: `${rosterCt}:${cls}:${i}`, eq, locked: eq.yr > this.year() });
       });
     }
     // 1942 年后伦敦可招募美军装备
     if (city.ct === 'uk' && this.usaIn) {
-      for (const cls of ['inf', 'art', 'tank', 'air']) {
+      for (const cls of ['inf', 'art', 'tank']) {
         (EQUIP.us[cls] || []).forEach((eq, i) => {
           out.push({ eqKey: `us:${cls}:${i}`, eq, locked: eq.yr > this.year() });
         });
@@ -982,7 +1065,7 @@ class Game {
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {
     return JSON.stringify({
-      v: 6, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
+      v: 7, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
       terrainRevision:MAP_META.terrainRevision||0,
       usedShipNames:[...this.usedShipNames],
       playerFaction: this.playerFaction, difficulty: this.difficulty,
@@ -993,7 +1076,7 @@ class Game {
       genUnit: this.genUnit, genKills: this.genKills,
       units: this.units.map(u => ({
         id: u.id, ct: u.ct, eqKey: u.eqKey, shipName:u.shipName, hp: u.hp, xp: u.xp, vet: u.vet,
-        c: u.c, r: u.r, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
+        c: u.c, r: u.r, airbase:u.airbase, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
       })),
       log: this.log.slice(-80),
     });
@@ -1013,6 +1096,16 @@ class Game {
     g.units = d.units.map(u => {
       const unit={...u,transport:u.transport||null,embarked:!!u.embarked,eq:g.equipOf(u.eqKey)};
       if(!unit.eq)throw Error('存档中的装备无效');
+      if(g.isAir(unit)){
+        if(d.v<7){
+          const base=g.nearestAirfield(g.unitFaction(unit),unit.c,unit.r);
+          if(!base)throw Error('旧存档空军没有己方机场，请使用其它存档');
+          unit.airbase=base.k;unit.c=base.x;unit.r=base.y;unit.dug=false;unit.transport=null;unit.embarked=false;
+        }
+        const base=g.airBase(unit);
+        if(!base||unit.c!==base.x||unit.r!==base.y||unit.embarked||unit.transport)throw Error('存档中的空军机场或位置无效');
+        unit.dug=false;return unit;
+      }
       // Only legacy units on explicitly corrected coastline cells may relocate.
       // Reserve all old and newly assigned cells to prevent migration stacking.
       if((d.terrainRevision||0)<1&&coastCorrections.has(key(unit.c,unit.r))){
@@ -1061,6 +1154,7 @@ class Game {
       const record=g.nextShipName(u.ct,u.eqKey);u.shipName=record.n;g.rememberShipName(u.ct,record);
     }
     g.log = d.log || [];
+    if(d.v<7&&g.units.some(u=>g.isAir(u)))g.pushLog('空军机制升级：原有飞机已转入最近己方机场，兵力、经验与将领保留。','info');
     if(coastMigrations.length)g.pushLog(`地图海岸校正：${coastMigrations.length}支部队已移至最近空闲的同类地形格，兵力与装备保留。`,'info');
     g.terrDirty = true; g.over = null; g.pendingEvents = [];
     g.checkVictory();

@@ -331,6 +331,7 @@ function drawFrame(now) {
   } else terrainCache.pend = 0;
   blitTerrain(z);
   drawHarbors(g);
+  drawAirfields(g);
 
   // ---- 移动范围（批量单路径）----
   if (UI.sel && UI.range && !UI.sel.attacked) {
@@ -362,7 +363,7 @@ function drawFrame(now) {
   const uM = s * 2;
   const simple = s < 11;
   for (const u of g.units) {
-    if (!UI.showUnits) continue;
+    if (!UI.showUnits || g.isAir(u)) continue;
     const isSel = u === UI.sel;
     let [x, y] = hexToPix(u.c, u.r);
     const animating = UI.moveAnim && UI.moveAnim.unit === u && UI.moveAnim.path.length > 0;
@@ -543,6 +544,47 @@ addEventListener('keydown', e => {
   else if (e.key === 'm' || e.key === 'M') toggleSound();
 }, true);
 
+function airfieldScreen(ci) {
+  const [x,y]=hexToPix(ci.x,ci.y),d=Math.max(14,S()*.7);return [x+d,y+d];
+}
+function drawAirfields(g) {
+  cx.save();
+  if(UI.sel&&g.isAir(UI.sel)&&g.airBase(UI.sel)){
+    const base=g.airBase(UI.sel),radius=g.airRadius(UI.sel),area=new Path2D();
+    for(let r=Math.max(0,base.y-radius);r<=Math.min(MAP_H-1,base.y+radius);r++)for(let c=Math.max(0,base.x-radius);c<=Math.min(MAP_W-1,base.x+radius);c++){
+      if(hexDist(base.x,base.y,c,r)>radius)continue;
+      const [x,y]=hexToPix(c,r);hexPathInto(area,x,y,S()*.94);
+    }
+    cx.fillStyle='rgba(100,220,240,.12)';cx.fill(area);cx.strokeStyle='rgba(100,220,240,.3)';cx.lineWidth=1;cx.stroke(area);
+  }
+  if(UI.cam.z>=.24)for(const ci of g.airfields){
+    const [x,y]=airfieldScreen(ci);if(x<-20||x>innerWidth+20||y<-20||y>innerHeight+20)continue;
+    cx.fillStyle='#102535';cx.fillRect(x-10,y-10,20,20);
+    cx.strokeStyle=UI.sel?.airbase===ci.k?'#ffe285':FACTION_COLOR[ci.owner];cx.lineWidth=2;cx.strokeRect(x-10,y-10,20,20);
+    cx.font='16px "Segoe UI Symbol",sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#b9efff';cx.fillText('✈',x,y);
+    const count=g.airUnitsAt(ci.k).length;
+    if(count&&UI.showUnits){cx.font='bold 10px sans-serif';cx.fillStyle='#fff';cx.fillText(String(count),x+12,y-10);}
+  }
+  cx.restore();
+}
+function showAirfieldPanel(ci) {
+  const g=UI.game,body=document.getElementById('panel-body');
+  if(!ci||!g.airfields.includes(ci))return;
+  const offers=g.airRoster(ci),units=g.airUnitsAt(ci.k),selected=UI.sel;
+  const transfer=selected&&g.isAir(selected)&&g.unitFaction(selected)===g.playerFaction&&g.moveRange(selected).cost.has(ci.x+','+ci.y);
+  body.innerHTML=`<div class="p-title"><span>✈ ${ci.n}机场</span><span class="tag">${FACTION_NAME[ci.owner]}</span></div>
+    <div class="p-sub">经济 ${g.gold[g.playerFaction]}金 · 驻扎 ${units.length}支空军<br>飞机在机场驻扎，不占陆军格位。每回合从基地半径内选择目标出击一次，出击后留在原机场；转场消耗整回合。新编部队下回合可行动。</div>
+    <button class="btn" id="airfield-city">查看所属城市</button>
+    ${transfer?`<button class="btn gold" id="airfield-transfer">将选中空军转场至${ci.n}</button>`:''}
+    <div class="p-sub">驻扎空军（机场失守时，未撤离的飞机损失）</div>
+    ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
+    <div class="p-sub">组建空军</div>
+    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name">${o.eq.n} · ${o.eq.yr}年</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button></div>`;}).join('')}`;
+  document.getElementById('airfield-city').onclick=()=>showCityPanel(ci);
+  const transferButton=document.getElementById('airfield-transfer');if(transferButton)transferButton.onclick=()=>{if(!UI.busy&&g.rebaseAir(selected,ci.k)){select(selected);updateTopbar();renderLog();}};
+  units.forEach((u,i)=>{document.getElementById('airfield-unit-'+i).onclick=()=>{if(UI.busy||!g.units.includes(u))return;if(UI.sel&&UI.targets.has(u.id)){doAttack(u);return;}if(g.unitFaction(u)===g.playerFaction)select(u);else showUnitInfo(u);};});
+  offers.forEach((o,i)=>{document.getElementById('air-build-'+i).onclick=()=>{if(UI.busy)return;const u=g.recruitAir(ci.k,o.eqKey);if(u){SFX.cap();updateTopbar();select(u);renderLog();}else showAirfieldPanel(ci);};});
+}
 function harborScreen(h) {
   const [x,y]=hexToPix(h.c,h.r),d=Math.max(12,S()*.6);
   return [x+d,y-d];
@@ -597,6 +639,8 @@ function handleClick(sx, sy) {
   const [wx, wy] = screenToWorld(sx, sy);
   const [c, r] = pixToHex(wx, wy);
   if (!g.inMap(c, r)) return;
+  const airIcon=UI.cam.z>=.24&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
+  if(airIcon){showAirfieldPanel(airIcon);return;}
   const harborIcon=g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(harborIcon){deselect();showHarborPanel(harborIcon);return;}
   const u = g.unitAt(c, r);
@@ -608,7 +652,7 @@ function handleClick(sx, sy) {
     if (UI.targets.has(u.id)) { doAttack(u); return; }
   }
   // 2) 选中部队移动
-  if (UI.sel && !UI.sel.attacked && !u && UI.range && UI.range.cost.has(c + ',' + r)) {
+  if (UI.sel && !UI.sel.attacked && (!u||g.isAir(UI.sel)) && UI.range && UI.range.cost.has(c + ',' + r)) {
     doMove(c, r); return;
   }
   // 3) 选择己方单位
@@ -672,7 +716,7 @@ function doMove(c, r) {
     UI.busy = false;
     // 城市占领特效
     const city = g.cityAt(c, r);
-    if (city && city.owner === g.playerFaction) {
+    if (city && city.owner === g.playerFaction && !g.isAir(u)) {
       UI.anims.push({ kind: 'cap', c, r, t0: performance.now(), dur: 900 });
       SFX.cap();
     }
@@ -813,6 +857,8 @@ function updateTooltip(sx, sy, target) {
       html = `${T.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`;
     }
   }
+  const airport=UI.cam.z>=.24&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
+  if(airport)html=`<b>✈ ${airport.n}机场</b><br>${FACTION_NAME[airport.owner]}控制 · 驻扎${g.airUnitsAt(airport.k).length}支空军<br>点击打开机场 · 组建／选择空军`;
   const harbor=g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(harbor){const ci=g.cityByKey[harbor.cityKey];html=`<b>⚓ ${ci.n}军港</b><br>${FACTION_NAME[ci.owner]}控制 · 点击建造海军<br>泊位需空闲；新舰下回合行动`;}
   if (html) {
@@ -857,12 +903,14 @@ function showUnitPanel(u) {
     <div class="hpbar"><div style="width:${Math.max(0, u.hp)}%;background:${u.hp > 60 ? '#67d13d' : u.hp > 30 ? '#e8c33a' : '#e05338'}"></div></div>
     <div class="grid2">
       <span>攻击 <b>${atSea?Math.round(u.eq.atk*ship.attackMultiplier):u.eq.atk}</b></span><span>防御 <b>${atSea?ship.defense:u.eq.def}</b></span>
-      <span>移动力 <b>${g.movOf(u)}</b></span><span>${(u.eq.cls === 'art'||g.isNaval(u)) ? '射程 <b>' + g.rangeOf(u) + '</b>' : '经验 <b>' + u.xp + '</b>'}</span>
+      <span>${g.isAir(u)?'作战半径':'移动力'} <b>${g.movOf(u)}</b></span><span>${(u.eq.cls === 'art'||g.isNaval(u)) ? '射程 <b>' + g.rangeOf(u) + '</b>' : '经验 <b>' + u.xp + '</b>'}</span>
       <span>兵力 <b>${u.hp}/100</b></span><span>老练 <b>+${u.vet * 8}%</b></span>
     </div>
     ${atSea?`<div class="p-sub">🚢 ${ship.name} · 海上攻击保留${Math.round(ship.attackMultiplier*100)}% · 射程1<br>航行移动力固定${ship.move}；海上无法驻防或自动补员。</div>`:''}
     ${g.isNaval(u)?`<div class="p-sub">舰名来源：${shipNameKind(g.shipNameInfo(u))}${g.shipNameInfo(u).note?' · '+g.shipNameInfo(u).note:''}<br>⚓ ${u.eq.role}<br>仅在海上航行；己方军港每回合修复25兵力。射程内可反击，无法占领城市。</div>`:''}
     ${g.cityAt(u.c,u.r)?`<div class="p-sub">🛡 ${cityDefenseText(g.cityAt(u.c,u.r))}<br>与驻防、老练及将领加成共同计入战斗防御。</div>`:''}
+    ${!g.isAir(u)&&g.airfields.some(ci=>ci.x===u.c&&ci.y===u.r)?'<button class="btn gold" id="garrison-airfield">✈ 打开机场 · 组建空军</button>':''}
+    ${g.isAir(u)?`<div class="p-sub">✈ 驻扎机场：${g.airBase(u)?.n||'无'}<br>作战半径 ${g.airRadius(u)}格（约${g.airRadius(u)*45}公里） · 每回合出击一次<br>地图青色格为出击范围，蓝格为可转场的己方机场；转场后本回合不能攻击。空军无法占领城市或驻防。</div><button class="btn" id="unit-airfield">打开驻扎机场</button>`:''}
     ${transportPanel}
     ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">已驻防：防御+30%，移动/攻击后解除</div>' : ''}
     ${gen ? `<div class="gen-chip">
@@ -871,15 +919,17 @@ function showUnitPanel(u) {
       <div class="gbio">${gen.bio}</div>
     </div>` : ''}
     ${my ? `<div class="row-btns">
-      ${idle && !u.attacked && !atSea && !g.isNaval(u) ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
+      ${idle && !u.attacked && !atSea && !g.isNaval(u) && !g.isAir(u) ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
       ${idle ? '<button class="btn" id="pb-skip">⏭ 待命</button>' : ''}
       ${idle&&!g.isNaval(u) ? '<button class="btn gold" id="pb-gen">🎖 将领</button>' : ''}
       <button class="btn" id="pb-next">⏩ 下一部队</button>
     </div>
     <div class="p-sub" style="margin-top:8px">${u.moved && u.attacked ? '⛔ 本回合已行动完毕' : !u.moved ? '蓝格：可移动 · 红框敌军：可攻击' : '已移动，仍可攻击红框敌军'}</div>` : `<div class="p-sub">${g.unitFaction(u)==='neutral'?'中立部队（尚未参战）':'敌方部队'}</div>`}`;
+  const garrisonAirport=document.getElementById('garrison-airfield');if(garrisonAirport)garrisonAirport.onclick=()=>showAirfieldPanel(g.cityAt(u.c,u.r));
+  const airportButton=document.getElementById('unit-airfield');if(airportButton)airportButton.onclick=()=>showAirfieldPanel(g.airBase(u));
   ECONOMY.transports.forEach((t,i)=>{const button=document.getElementById('pb-ship-'+i);if(button)button.onclick=()=>{if(!UI.busy&&g.equipTransport(u,t.id)){SFX.click();select(u);updateTopbar();}};});
   const b1 = document.getElementById('pb-dug');
-  if (b1) b1.onclick = () => { if(UI.busy||g.isNaval(u)||g.isEmbarked(u)||u.attacked)return; u.dug = true; u.moved = true; u.attacked = true; SFX.click(); UI.range = null; UI.targets.clear(); showUnitPanel(u); };
+  if (b1) b1.onclick = () => { if(UI.busy||g.isNaval(u)||g.isAir(u)||g.isEmbarked(u)||u.attacked)return; u.dug = true; u.moved = true; u.attacked = true; SFX.click(); UI.range = null; UI.targets.clear(); showUnitPanel(u); };
   const b2 = document.getElementById('pb-skip');
   if (b2) b2.onclick = () => { u.moved = true; u.attacked = true; UI.range = null; UI.targets.clear(); updatePanel(); nextUnit(); };
   const b3 = document.getElementById('pb-gen');
@@ -899,6 +949,7 @@ function showCityPanel(city) {
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
     <div class="p-sub">🛡 ${cityDefenseText(city)}<br>守军自动获得，无需点击驻防；驻防另加30%防御。</div>
     <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${city.inc} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
+    ${g.airfields.includes(city)?'<button class="btn gold" id="city-airfield">✈ 打开机场 · 组建空军</button>':''}
     ${g.harbors.some(h=>h.cityKey===city.k)?'<button class="btn gold" id="city-harbor">⚓ 打开军港 · 建造舰艇</button>':''}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
     <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
@@ -908,6 +959,7 @@ function showCityPanel(city) {
         <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;
+  const airportButton=document.getElementById('city-airfield');if(airportButton)airportButton.onclick=()=>showAirfieldPanel(city);
   const harborButton=document.getElementById('city-harbor');
   if(harborButton)harborButton.onclick=()=>showHarborPanel(g.harbors.find(h=>h.cityKey===city.k));
   body.querySelectorAll('.shop-item').forEach(el => {
@@ -1116,7 +1168,7 @@ function showHelp() {
         <tr><td>装甲</td><td>115%</td><td>140%</td><td>100%</td><td>40%</td></tr>
         <tr><td>空军</td><td>115%</td><td>130%</td><td>110%</td><td>—</td></tr></table>
         <h4>■ 地形防御加成</h4>
-        森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60%。陆军购买运输装备后可进入海洋，湖泊仍不可通行；跨河多消耗1点移动力。<br>运输船25金／1939年、两栖运输舰55金／1942年、两栖突击舰90金／1944年；升级补差价。下海与上岸分别耗尽行动，海上移动力固定5，攻击分别保留20%／45%／70%，防御为6／12／18。空军可飞越水面，但必须在陆地结束移动。
+        森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60%。陆军购买运输装备后可进入海洋，湖泊仍不可通行；跨河多消耗1点移动力。<br>运输船25金／1939年、两栖运输舰55金／1942年、两栖突击舰90金／1944年；升级补差价。下海与上岸分别耗尽行动，海上移动力固定5，攻击分别保留20%／45%／70%，防御为6／12／18。空军仅在机场组建与驻扎，以机场为中心在作战半径内出击；可攻击海上目标。转场仅限航程内己方机场，并耗尽本回合行动。机场与陆军可以同格。
         <h4>■ 军港与海军</h4>
         点击海格 ⚓ 或城市面板的“打开军港”，建造当前年份最先进舰型；泊位必须空闲。新舰下回合行动，已造旧舰不自动升级。计划舰和游戏解锁年份会在面板中说明。<br>
         八类舰艇仅在海上移动，不能登陆占城。潜艇只能攻击海上目标；驱逐舰、潜艇、航母和空军可以反潜。水面舰可岸轰，航母直接用舰载机远程打击，无需另造机队。己方军港每回合修复25兵力。<br>

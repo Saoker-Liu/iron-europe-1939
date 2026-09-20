@@ -268,7 +268,8 @@ assert(g.moveUnit(tank,...water));
 assert.equal(g.gold.axis,75);assert(tank.embarked&&tank.attacked&&tank.moved);
 g.units=[];
 const air=g.spawnUnit('de','de:air:0',dc,dr,{});
-assert(g.moveRange(air).cost.has(key(cc,cr)),'air crosses Channel');
+assert(g.airBase(air),'aircraft deploy to a friendly airport');
+assert(!g.moveRange(air).cost.has(key(cc,cr)),'aircraft cannot land at an enemy non-airport city');
 for(const k of g.moveRange(air).cost.keys())assert(g.landPassable(...k.split(',').map(Number)));
 
 // A narrow strait remains a water barrier even when its shores occupy adjacent hexes.

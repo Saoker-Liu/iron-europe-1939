@@ -163,3 +163,25 @@ for(const [cityKey,bonus] of [['berlin',60],['hamburg',40]]){
  assert(h.run(`document.getElementById('tooltip').innerHTML.includes('防御+${bonus}%')`));
 }
 console.log('City defense UI: ordinary/capital cities and garrisons expose terrain bonuses.');
+
+// Airport access remains available with a ground garrison, and aircraft use an independent layer.
+h.run(`UI.game=new Game('axis','normal',{initialFleet:false});UI.game.units=[];UI.sel=null;UI.busy=false;UI.cam.z=1;UI.game.gold.axis=10000;
+ const airCity=UI.game.cityByKey.berlin;const garrison=UI.game.spawnUnit('de','de:inf:0',airCity.x,airCity.y,{});
+ showCityPanel(airCity);`);
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('打开机场 · 组建空军')"));
+h.run("document.getElementById('city-airfield').onclick()");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('柏林机场')"));
+h.run("document.getElementById('air-build-0').onclick()");
+assert(h.run("UI.game.isAir(UI.sel)&&UI.sel.airbase==='berlin'&&UI.sel.attacked"));
+assert(h.run("UI.game.unitAt(airCity.x,airCity.y)===garrison"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('作战半径 7格')"));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('pb-dug')"));
+h.run("UI.game.startTurnFor('axis');select(UI.sel);centerOn(airCity.x,airCity.y)");
+h.texts.length=0;h.run('drawAirfields(UI.game)');assert(h.texts.includes('✈'));
+h.run('handleClick(...airfieldScreen(airCity))');assert(h.run("document.getElementById('panel-body').innerHTML.includes('驻扎 1支空军')"));
+h.run("document.getElementById('airfield-unit-0').onclick()");assert(h.run('UI.game.isAir(UI.sel)'));
+h.run(`const transferCity=UI.game.airfields.find(ci=>ci.owner==='axis'&&ci.k!=='berlin'&&UI.game.moveRange(UI.sel).cost.has(ci.x+','+ci.y));showAirfieldPanel(transferCity);document.getElementById('airfield-transfer').onclick();`);
+assert(h.run('UI.sel.airbase===transferCity.k&&UI.sel.moved&&UI.sel.attacked'));
+h.run("showUnitPanel(garrison);document.getElementById('garrison-airfield').onclick()");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('柏林机场')"));
+console.log('Airport UI: occupied-city entry, map icon, purchase, aircraft selection, radius display and transfer passed.');

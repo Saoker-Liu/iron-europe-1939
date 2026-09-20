@@ -30,6 +30,7 @@ jobs:
           node test_labels.js
           node test_render.js
           node test_transport.js
+          node test_air.js
           node test_naval.js
           node test_naval_names.js
           node test_logic.js
