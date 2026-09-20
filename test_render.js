@@ -54,10 +54,10 @@ assert(overview.has('苏联')&&overview.has('乌克兰')&&!overview.has('巴库'
 const regional=labelsAt(.4,43,43);
 assert(regional.has('格鲁吉亚')&&regional.has('巴库')&&!regional.has('苏联')&&!regional.has('阿布哈兹地区'));
 const local=labelsAt(1,41,43);
-assert(local.has('阿布哈兹地区')&&local.has('索契')&&!local.has('格鲁吉亚')&&!local.has('巴库'));
+assert(local.has('阿布哈兹地区')&&local.has('索契')&&!local.has('格鲁吉亚'));
 assert(labelsAt(1,9.7,54.2).has('基尔运河'));
 assert(labelsAt(.4,22.4,58.4).has('萨列马岛'));
-const max=labelsAt(2.2,36.3,45.3);
+const max=labelsAt(1.3,36.3,45.3);
 assert(max.has('刻赤')&&!max.has('刻赤半岛'));
 h.run('UI.cam.z=1; centerOn(UI.game.cityByKey.berlin.x,UI.game.cityByKey.berlin.y)');
 const start=h.arcs[0].slice(0,2);
@@ -91,7 +91,10 @@ h.texts.length=0;h.frame(7240);
 assert(h.texts.includes('柏林'),'maximum zoom paints all city names through drawFrame');
 assert.equal(h.resizes,initial,'label tier switch does not rebuild capped terrain');
 h.run('UI.cam.z=2.19');h.texts.length=0;h.frame(7280);
-assert(!h.texts.includes('柏林'),'leaving maximum zoom restores exclusive secondary-city tier immediately');
+assert(h.texts.includes('柏林'),'major city remains visible below maximum zoom');
+h.run('UI.cam.z=1;centerOn(UI.game.cityByKey.berlin.x,UI.game.cityByKey.berlin.y)');
+h.texts.length=0;h.frame(7300);
+assert(h.texts.includes('柏林'),'major city remains visible with secondary cities');
 
 h.run('UI.cam.z=.2');h.frame(7400);h.frame(7600);
 assert.equal(h.resizes,initial+1,'zoom below cap rebuilds once');

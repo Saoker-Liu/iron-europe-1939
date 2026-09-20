@@ -68,7 +68,7 @@ print(w,h)
 
 # Six fixed viewports show the production label policy without browser automation.
 sheet=Image.new('RGB',(2000,2160),'#12232f')
-views=[('全览：国家与主要地区',.12,25,52),('地区：主要城市与次级地区',.4,40.5,43),('局部：次级城市与低级地区',1,41.5,43),('最大：全部城市名称',2.2,41.5,43),('岛屿与海域：地中海',.4,17,39),('地区与海域：不列颠',.4,-3,54)]
+views=[('全览：国家与主要地区',.12,25,52),('地区：主要城市与次级地区',.4,40.5,43),('局部：主次城市与低级地区',1,41.5,43),('提前显示：全部城市名称',1.3,41.5,43),('岛屿与海域：地中海',.4,17,39),('地区与海域：不列颠',.4,-3,54)]
 for i,(title,z,lon,lat) in enumerate(views):
  script=f"const G=require('./js/core/geography');console.log(JSON.stringify(G.geoToGrid({lon},{lat})));"
  c,r=json.loads(subprocess.check_output(['node','-e',script],encoding='utf8'))
