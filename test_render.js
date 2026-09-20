@@ -285,3 +285,10 @@ h.run("showEndModal(true)");assert.equal(h.run('Music.current'),'victory');asser
 h.run("toggleSound();showEndModal(false)");assert.equal(h.run('Music.current'),'defeat');assert.equal(h.run('Music.enabled'),true);
 h.run("showHelp()");assert(h.run("modalRoot.innerHTML.includes('Kevin MacLeod')&&modalRoot.innerHTML.includes('CC-BY 4.0')"));
 console.log('Music UI: scene transitions, shared mute and visible credits passed.');
+
+assert.equal(h.run('GENERALS.length'),23);
+h.run("UI.game=new Game('axis');showGenerals()");
+assert(h.run("modalRoot.innerHTML.includes('龙德施泰特')&&modalRoot.innerHTML.includes('<svg')"));
+h.run("showUnitPanel(UI.game.units.find(u=>u.gen==='guderian'))");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('<svg')"));
+console.log('Generals UI: expanded roster, portraits and unit panel passed.');

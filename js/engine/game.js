@@ -640,15 +640,15 @@ class Game {
     }
     const vs = this.genSkill(u, 'vs');
     if (vs && target && target.eq.cls === vs.tgt) m *= 1 + vs.m;
-    if (this.genSkill(u, 'rage') && u.hp < 50) m *= 1.15;
-    // 光环：相邻友军将领(艾森豪威尔)
-    for (const [ec, er] of this.neighbors(u.c, u.r)) {
-      const a = this.unitAt(ec, er);
-      if (a && this.unitFaction(a) === f && a.gen) {
-        const ag = this.genOf(a);
-        if (ag && ag.skills.some(s => s.k === 'aura')) { m *= 1.1; break; }
-      }
+    const rage=this.genSkill(u,'rage');
+    if(rage&&u.hp<50)m*=1+(rage.m??.15);
+    // Airports can host commanders alongside ground troops; inspect every unit layer.
+    let aura=0;
+    for(const a of this.units){
+      if(a===u||a.carrierId||a.hp<=0||!a.gen||this.unitFaction(a)!==f||hexDist(u.c,u.r,a.c,a.r)!==1)continue;
+      const skill=this.genSkill(a,'aura');if(skill)aura=Math.max(aura,skill.m??.1);
     }
+    m*=1+aura;
     if (f !== this.playerFaction) m *= this.aiMult.atk;
     if(target&&u.eq.cls==='inf'&&!this.isSeagoing(u)&&hexDist(u.c,u.r,target.c,target.r)===1&&this.riverEdges.has(this.edgeKey([u.c,u.r],[target.c,target.r])))m*=u.eq.infRole==='marine'?.9:.7;
     let seaMultiplier=this.isEmbarked(u)?this.transportOf(u).attackMultiplier:1;
@@ -1382,7 +1382,7 @@ class Game {
       g.construction.push({cityKey:p.cityKey,kind:p.kind,remaining:p.remaining,...(p.kind==='harbor'?{c:p.c,r:p.r}:{})});
     }
     g.stats = d.stats;
-    g.genUnit = d.genUnit; g.genKills = d.genKills;
+    g.genUnit = {...g.genUnit,...d.genUnit}; g.genKills = {...g.genKills,...d.genKills};
     const coastCorrections=new Set(['54,27','55,27','47,37','44,57','76,107','78,107','79,107','77,108','79,108']);
     const reservedCells=new Set(d.units.map(u=>key(u.c,u.r))),coastMigrations=[];
     g.units = d.units.map(u => {
