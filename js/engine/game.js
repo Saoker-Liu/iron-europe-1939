@@ -279,9 +279,9 @@ class Game {
       if(existing){
         const p=freeNear(ci);
         if(p){occupied.delete(key(existing.c,existing.r));[existing.c,existing.r]=p;occupied.set(key(...p),existing);}
-        else {existing.guardCity=ci.k;existing.dug=true;continue;}
+        else {existing.dug=true;continue;}
       }
-      const guard=deploy(ci.ct,'garrison',ci.x,ci.y);guard.guardCity=ci.k;guard.dug=true;
+      const guard=deploy(ci.ct,'garrison',ci.x,ci.y);guard.dug=true;
     }
     // Active fronts get a soldier on every border hex; other borders have no uncovered land approach.
     for(const p of this.groundBorderCells().sort((a,b)=>Number(b.active)-Number(a.active)||a.r-b.r||a.c-b.c)){
@@ -296,7 +296,7 @@ class Game {
       const ci=majors.find(c=>c.ct===ct&&c.cap);if(!ci)continue;
       let p=this.landNeighbors(ci.x,ci.y).find(p=>this.homeCountryOf(...p)===ct&&!occupied.has(key(...p))&&!reserved.has(key(...p)));
       if(!p){
-        const candidate=this.landNeighbors(ci.x,ci.y).find(q=>{const u=occupied.get(key(...q));return u&&u.ct===ct&&!u.guardCity;});
+        const candidate=this.landNeighbors(ci.x,ci.y).find(q=>{const u=occupied.get(key(...q));return u&&u.ct===ct&&!reserved.has(key(...q));});
         const destination=freeNear(ci,4);
         if(candidate&&destination){const u=occupied.get(key(...candidate));occupied.delete(key(...candidate));[u.c,u.r]=destination;occupied.set(key(...destination),u);p=candidate;}
       }
@@ -838,10 +838,7 @@ class Game {
 
   /* 招募：返回单位或 null */
   recruitmentSite(city) {
-    const occupant=this.unitAt(city.x,city.y);
-    if(!occupant)return [city.x,city.y];
-    if(occupant.guardCity!==city.k||this.unitFaction(occupant)!==city.owner)return null;
-    return this.landNeighbors(city.x,city.y).find(p=>!this.unitAt(...p)&&this.territoryOwner(...p)===city.owner&&!this.cityAt(...p)?.demilitarized)||null;
+    return this.unitAt(city.x,city.y)?null:[city.x,city.y];
   }
   recruit(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,false); }
   recruitFactory(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,true); }
@@ -1152,12 +1149,6 @@ class Game {
 
     for (const u of units) {
       if (!this.units.includes(u)) continue;              // 已阵亡
-      const guarded=this.cityByKey[u.guardCity];
-      if(guarded&&guarded.owner===f&&u.c===guarded.x&&u.r===guarded.y){
-        if(atWar&&!u.attacked)this.aiTryAttack(u,acts);
-        if(this.units.includes(u)){u.dug=true;u.moved=true;}
-        continue;
-      }
       if(!u.transport&&!CLASSES[u.eq.cls].fly&&!u.moved&&!u.attacked){
         const sea=this.neighbors(u.c,u.r).filter(p=>this.ocean(...p));
         const target=u.hp<35?distHome:dist;
@@ -1350,7 +1341,7 @@ class Game {
       genUnit: this.genUnit, genKills: this.genKills,
       units: this.units.map(u => ({
         id: u.id, ct: u.ct, eqKey: u.eqKey, shipName:u.shipName, hp: u.hp, xp: u.xp, vet: u.vet,
-        c: u.c, r: u.r, guardCity:u.guardCity, airbase:u.airbase, carrierId:u.carrierId, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
+        c: u.c, r: u.r, airbase:u.airbase, carrierId:u.carrierId, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
       })),
       log: this.log.slice(-80),
     });
@@ -1396,6 +1387,7 @@ class Game {
     const reservedCells=new Set(d.units.map(u=>key(u.c,u.r))),coastMigrations=[];
     g.units = d.units.map(u => {
       const unit={...u,transport:u.transport||null,embarked:!!u.embarked,eq:g.equipOf(u.eqKey)};
+      delete unit.guardCity; // Discard the retired dedicated-garrison assignment from older saves.
       if(!unit.eq)throw Error('存档中的装备无效');
       if(unit.carrierId){
         if(!unit.eq.para||unit.embarked)throw Error('存档中的空运部队无效');
