@@ -61,9 +61,14 @@
 node build_map.js --write
 node build_map.js --check
 node test_geography.js
+node test_render.js
 node test_logic.js
 ```
 
 地图修改入口为 `build_map.js`；不要手改生成的 `js/data/map.js`。投影位于 `js/core/geography.js`，城市经纬度和1939国家定义位于 `js/data/nations.js`。
 
 数据来源、许可、哈希和历史校订见 `MAP_NOTES.md` 与 `map_sources/manifest.json`。
+
+### 渲染修复（2026-09-20）
+
+修复棋子移动后地图偶发停止刷新的问题，以及放大地图时地形缓存反复重建造成的卡顿。移动动画会随拖动和缩放同步更新，单帧绘制异常也不会永久中断后续帧。地图版本仍为v4，现有205城版存档兼容。线上更新后请刷新页面。

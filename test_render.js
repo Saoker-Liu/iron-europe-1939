@@ -1,0 +1,80 @@
+'use strict';
+// Exercise the production UI with deterministic frame/timer clocks and a minimal
+// Canvas/DOM adapter. This tests scheduling/coordinates, not browser rasterisation.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const D = require('./js/data/load-node');
+const { Game, hexDist } = require('./js/engine/game');
+function harness() {
+  const frames = [], timers = [], blits = [], arcs = [], elements = new Map();
+  let resizes = 0, failBlit = false;
+  const context = new Proxy({
+    arc(x,y,r) { assert(r >= 0 && [x,y,r].every(Number.isFinite), 'valid canvas arc'); arcs.push([x,y,r]); },
+    drawImage(...args) { if (failBlit) { failBlit = false; throw Error('transient canvas failure'); } blits.push(args); },
+  }, {get: (o,k) => k in o ? o[k] : () => {}});
+  function element(canvas = false) {
+    return {style:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
+      set width(v){this._width=v;if(canvas)resizes++;}, get width(){return this._width;},height:0};
+  }
+  const sandbox = {...D, Game, hexDist, HexMath:globalThis.HexMath, console,
+    innerWidth:1280,innerHeight:900,performance:{now:()=>1005},
+    document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element(true)},
+    addEventListener(){},requestAnimationFrame(fn){frames.push(fn);},setTimeout(fn){timers.push(fn);},
+    Path2D:class {moveTo(){} lineTo(){} closePath(){}},
+  };
+  sandbox.window=sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync('js/ui/ui.js','utf8'),sandbox);
+  const run = code => vm.runInContext(code,sandbox);
+  run(`UI.game = new Game('axis'); UI.cam = {x:0,y:0,z:1};
+    UI.game.units = []; const ci=UI.game.cityByKey.berlin;
+    UI.sel = UI.game.spawnUnit('de','de:inf:0',ci.x,ci.y,{});
+    const destination=UI.game.landNeighbors(ci.x,ci.y)[0];
+    centerOn(ci.x,ci.y); doMove(...destination);`);
+  return {run,frames,timers,blits,arcs,get resizes(){return resizes;},failNextBlit(){failBlit=true;},
+    frame(now){assert.equal(frames.length,1,'exactly one next frame'); frames.shift()(now);}};
+}
+
+// Browser frame timestamps can precede performance.now() at animation creation.
+const h=harness();
+assert.doesNotThrow(()=>h.run('render(1000)'), 'movement first frame must not access path[-1]');
+assert.equal(h.frames.length,1);
+const start=h.arcs[0].slice(0,2);
+h.run('UI.cam.x += 80; UI.cam.y += 40'); h.arcs.length=0;
+h.frame(1000);
+assert.deepEqual(h.arcs[0].slice(0,2),[start[0]+80,start[1]+40],'moving unit follows camera');
+h.frame(1050);h.frame(5000); // Delayed timer / returning from a background tab.
+h.timers.shift()();
+assert.equal(h.run('UI.moveAnim'),null);
+assert.equal(h.run('UI.busy'),false);
+assert.equal(h.run('UI.sel.moved'),true);
+h.frame(5016);
+const before=h.blits.at(-1).slice(1,3);
+h.run('UI.cam.x += 120; UI.cam.y -= 30');h.frame(5032);
+assert.deepEqual(h.blits.at(-1).slice(1,3),[before[0]+120,before[1]-30],'post-move map paints panning');
+h.run(`UI.anims=['dmg','flash','boom','cap'].map(kind=>({kind,t0:5100,dur:100,
+  c:1,r:1,c1:0,r1:0,c2:1,r2:1,text:'-10'}))`);
+assert.doesNotThrow(()=>h.frame(5050),'new combat effects tolerate earlier frame timestamps');
+h.frame(5150);h.frame(5200);
+assert.equal(h.run('UI.anims.length'),0,'effects expire after their duration');
+
+// Above the texture scale cap, a stationary camera must not rebuild every 140ms.
+const initial=h.resizes;
+for(let t=5200;t<6800;t+=200)h.frame(t);
+assert.equal(h.resizes,initial,'unchanged zoom reuses terrain cache');
+assert(h.run('terrainCache.cv.width * terrainCache.cv.height') < 12010000,'map texture respects pixel budget');
+h.run('UI.cam.z=2');h.frame(7000);h.frame(7200);
+assert.equal(h.resizes,initial,'zoom above cap reuses same texture');
+h.run('UI.cam.z=.2');h.frame(7400);h.frame(7600);
+assert.equal(h.resizes,initial+1,'zoom below cap rebuilds once');
+h.run("UI.game.cityByKey.berlin.owner='west'");h.frame(7800);
+assert.equal(h.resizes,initial+2,'ownership change still rebuilds immediately');
+
+// An unexpected drawing error remains observable but cannot kill frame scheduling.
+h.failNextBlit();assert.throws(()=>h.frame(8000),/transient canvas failure/);
+assert.equal(h.frames.length,1,'frame scheduled even after an exception');
+assert.doesNotThrow(()=>h.frame(8016));
+h.run('UI.game=null');h.frame(8032);
+assert.equal(h.frames.length,1,'no-game screen has a single animation loop');
+console.log('Render: first-frame timing, delayed movement, camera panning, cache reuse and frame recovery passed.');

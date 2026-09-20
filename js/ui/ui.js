@@ -133,6 +133,11 @@ function hexPathInto(path, x, y, s) {
  * 失效条件：城市易手、季节切换（立即重建）；缩放变化（防抖重建）。
  * =================================================================== */
 const terrainCache = { cv: document.createElement('canvas'), scale: 0, wx: 0, wy: 0, key: '', pend: 0 };
+function terrainScale(z) {
+  // Limit the full-map texture to roughly 12M pixels, including its margins.
+  const maxScale = Math.sqrt(12000000 / ((SQ3 * MAP_W + 4) * (1.5 * MAP_H + 4))) / BASE_S;
+  return Math.min(z, 0.69, maxScale);
+}
 
 function terrainKey(g) {
   let k = (g.isWinter() ? 'w' : 's') + (UI.political ? 'p' : 't');
@@ -141,7 +146,7 @@ function terrainKey(g) {
 }
 
 function rebuildTerrain(g, z) {
-  const cs = Math.min(z, 0.69);            // 缓存分辨率上限（约 12M 像素显存预算）
+  const cs = terrainScale(z);
   const s2 = 36 * cs;
   const cv2 = terrainCache.cv;
   cv2.width = Math.ceil(Math.sqrt(3) * s2 * MAP_W + s2 * 4);
@@ -149,8 +154,7 @@ function rebuildTerrain(g, z) {
   terrainCache.scale = cs;
   terrainCache.wx = -2 * 36;               // 缓存原点的世界坐标（36 系 px，与 z 无关）
   terrainCache.wy = -2 * 36;
-  terrainCache.key = terrainKey(g) + '@' + cs.toFixed(3);
-  terrainCache.pend = 0;
+  terrainCache.key = ''; // Only publish a valid cache after the complete draw succeeds.
   const c2 = cv2.getContext('2d');
   c2.setTransform(1, 0, 0, 1, 2 * s2, 2 * s2);   // 世界坐标 → 缓存像素（边距 2*s2 缓存px）
   const winter = g.isWinter();
@@ -235,6 +239,8 @@ function rebuildTerrain(g, z) {
     }
   }
   drawCities(c2, g, s2);
+  terrainCache.key = terrainKey(g) + '@' + cs.toFixed(3);
+  terrainCache.pend = 0;
 }
 
 function drawCities(c2, g, s2) {
@@ -276,17 +282,27 @@ function blitTerrain(z) {
 }
 
 function render(now) {
+  // Keep exceptions visible, but a failed frame must not stop the animation loop.
+  try {
+    cx.save();
+    try { drawFrame(now); } finally { cx.restore(); }
+  } finally {
+    requestAnimationFrame(render);
+  }
+}
+
+function drawFrame(now) {
   const g = UI.game;
   const dpr = window.devicePixelRatio || 1;
   cx.setTransform(dpr, 0, 0, dpr, 0, 0);   // 逻辑坐标 = CSS 像素，物理分辨率输出
   cx.fillStyle = '#1b2836';
   cx.fillRect(0, 0, innerWidth, innerHeight);
-  if (!g) { requestAnimationFrame(render); return; }
+  if (!g) return;
   const s = S();
   const z = s / 36;
 
   // ---- 地形缓存层：离屏画布，每帧一次 blit ----
-  const tKey = terrainKey(g) + '@' + z.toFixed(3);
+  const tKey = terrainKey(g) + '@' + terrainScale(z).toFixed(3);
   if (terrainCache.key !== tKey) {
     const baseNow = tKey.split('@')[0], baseOld = terrainCache.key.split('@')[0];
     if (terrainCache.key === '' || baseNow !== baseOld) rebuildTerrain(g, z);      // 领土易手/季节切换：立即重建
@@ -330,15 +346,17 @@ function render(now) {
     if (!UI.showUnits) continue;
     const isSel = u === UI.sel;
     let [x, y] = hexToPix(u.c, u.r);
-    const animating = UI.moveAnim && UI.moveAnim.unit === u;
+    const animating = UI.moveAnim && UI.moveAnim.unit === u && UI.moveAnim.path.length > 0;
     if (!isSel && !animating &&
         (x < -uM || x > innerWidth + uM || y < -uM || y > innerHeight + uM)) continue;
     if (animating) {
       const p = UI.moveAnim;
-      const seg = Math.min(p.path.length - 1, Math.floor((now - p.t0) / 95));
-      const t = Math.min(1, ((now - p.t0) - seg * 95) / 95);
-      const [x1, y1] = seg > 0 ? hexToPix(...p.path[seg - 1]) : p.startXY;
-      const [x2, y2] = hexToPix(...p.path[Math.min(p.path.length - 1, seg)]);
+      // rAF's frame timestamp can precede performance.now() at creation.
+      const elapsed = Math.max(0, now - p.t0);
+      const seg = Math.min(p.path.length - 1, Math.floor(elapsed / 95));
+      const t = Math.min(1, (elapsed - seg * 95) / 95);
+      const [x1, y1] = hexToPix(...(seg > 0 ? p.path[seg - 1] : p.start));
+      const [x2, y2] = hexToPix(...p.path[seg]);
       x = x1 + (x2 - x1) * t; y = y1 + (y2 - y1) * t;
     }
     const done = u.moved && u.attacked;
@@ -411,14 +429,13 @@ function render(now) {
     render._fn = 0; render._t0 = now;
   }
 
-  requestAnimationFrame(render);
 }
 
 function drawAnims(now) {
   const s = S();
   UI.anims = UI.anims.filter(a => now - a.t0 < a.dur);
   for (const a of UI.anims) {
-    const t = (now - a.t0) / a.dur;
+    const t = Math.max(0, Math.min(1, (now - a.t0) / a.dur));
     if (a.kind === 'dmg') {
       const [x, y] = hexToPix(a.c, a.r);
       cx.font = `900 ${Math.max(14, s * 0.5)}px sans-serif`;
@@ -565,9 +582,9 @@ function computeTargets() {
 function doMove(c, r) {
   const g = UI.game, u = UI.sel;
   const path = g.pathTo(u, c + ',' + r);
-  if (!path) return;
+  if (!path || !path.length) return;
   UI.busy = true; SFX.move();
-  UI.moveAnim = { unit: u, path, t0: performance.now(), startXY: hexToPix(u.c, u.r) };
+  UI.moveAnim = { unit: u, path, t0: performance.now(), start: [u.c, u.r] };
   const total = path.length * 95 + 60;
   setTimeout(() => {
     UI.moveAnim = null;
