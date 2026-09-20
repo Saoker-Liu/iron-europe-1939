@@ -330,3 +330,7 @@ h.run("exitTutorial();startGame('axis','normal',new Game('axis'))");
 assert.equal(h.run("document.getElementById('btn-end').disabled"),false);
 assert(!h.run('UI.game.tutorial'));
 console.log('Tutorial UI: guided selection, small-map rendering, save protection and campaign controls restored passed.');
+
+h.run("globalThis.localStorage={getItem(){return 'existing-campaign';}};showStart()");
+assert(h.run("modalRoot.innerHTML.includes('id=\"m-continue\"')&&modalRoot.innerHTML.includes('id=\"m-tutorial\"')"));
+console.log('Start menu: continue and tutorial coexist with a saved campaign.');

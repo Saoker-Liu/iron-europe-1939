@@ -9,6 +9,9 @@
   // 跳转介绍页期间不启动地图加载。
   if (new URLSearchParams(window.location.search).get('play') !== '1') return;
 
+  // Pass the entry script release to every module, including offline file URLs.
+  const assetVersion = new URL(document.currentScript.src).searchParams.get('v');
+
   const STAGES = [
     { label: '加载六边形地图',     files: ['js/core/hex.js', 'js/core/geography.js', 'js/data/map.js'] },
     { label: '加载地形与河流',     files: ['js/data/terrain.js'] },
@@ -35,7 +38,9 @@
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const el = document.createElement('script');
-      el.src = src;
+      const url = new URL(src, window.location.href);
+      if (assetVersion) url.searchParams.set('v', assetVersion);
+      el.src = url.href;
       el.onload = () => resolve(src);
       el.onerror = () => reject(new Error('资源加载失败: ' + src));
       document.head.appendChild(el);
