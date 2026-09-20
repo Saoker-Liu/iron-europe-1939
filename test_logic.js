@@ -96,7 +96,7 @@ for (const pf of ['axis', 'west', 'sov']) {
         // 不变量
         for (const u of g.units) {
           const tk = g.tile(u.c, u.r);
-          assert(tk && (u.embarked ? tk === '~' && !!g.transportOf(u) && u.eq.cls!=='air' : D.TERRAIN[tk].pass), `[${pf}] 单位 ${u.eq.n} 站在海上 (${u.c},${u.r}) 回合${g.turn}`);
+          assert(tk && (g.isNaval(u) ? tk === '~' && !u.embarked && !u.transport : u.embarked ? tk === '~' && !!g.transportOf(u) && u.eq.cls!=='air' : D.TERRAIN[tk].pass), `[${pf}] 单位 ${u.eq.n} 站在海上 (${u.c},${u.r}) 回合${g.turn}`);
         }
         const unitsAt = {};
         for (const u of g.units) { const k = key(u.c, u.r); unitsAt[k] = (unitsAt[k] || 0) + 1; }

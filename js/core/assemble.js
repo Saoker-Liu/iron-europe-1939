@@ -37,9 +37,28 @@
     root.ECONOMY = M.economy;
 
     /* 5. 军事 */
-    root.CLASSES = M.military.CLASSES;
-    root.ATK_MOD = M.military.ATK_MOD;
-    root.EQUIP = M.military.EQUIP;
+    root.NAVAL = M.naval;
+    root.CLASSES = {...M.military.CLASSES,...M.naval.classes};
+    root.ATK_MOD = {};
+    for(const a of Object.keys(root.CLASSES)){
+      root.ATK_MOD[a]={};
+      for(const b of Object.keys(root.CLASSES)){
+        let mod=M.military.ATK_MOD[a]?.[b] ?? 1;
+        if(root.CLASSES[b].naval && !root.CLASSES[a].naval)mod=a==='air'?1.25:a==='art'?.8:.25;
+        if(root.CLASSES[a].naval){
+          if(b==='sub')mod=a==='dd'?2:a==='cve'?1.65:a==='sub'?1:.25;
+          else if(a==='sub')mod=['bb','bc','cv','cve'].includes(b)?1.65:b==='dd'?.55:1.1;
+          else if(a==='cl'&&['dd','air'].includes(b))mod=1.5;
+          else if(['bb','bc','ca'].includes(a)&&['cl','ca','dd'].includes(b))mod=1.25;
+          else if(['inf','tank','art'].includes(b))mod=['cv','bb'].includes(a)?1.1:.7;
+          if(b==='air')mod=['cl','cve','cv'].includes(a)?1.25:.5;
+        }
+        root.ATK_MOD[a][b]=mod;
+      }
+    }
+    root.EQUIP = {};
+    for(const ct of new Set([...Object.keys(M.military.EQUIP),...Object.keys(M.naval.equipment)]))
+      root.EQUIP[ct]={...M.military.EQUIP[ct],...(M.naval.equipment[ct]||M.naval.equipment.neutral)};
     root.INITIAL_UNITS = map.deployments.map(u => Object.assign({}, u));
 
     /* 6. 将领与历史事件 */
