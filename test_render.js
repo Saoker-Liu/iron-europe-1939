@@ -27,6 +27,7 @@ function harness() {
   };
   sandbox.window=sandbox;
   vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync('js/ui/music.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/ui.js','utf8'),sandbox);
   const run = code => vm.runInContext(code,sandbox);
   run(`UI.game = new Game('axis'); UI.cam = {x:0,y:0,z:1};
@@ -113,7 +114,7 @@ h.run(`UI.game=new Game('axis');UI.game.units=[];UI.busy=false;UI.sel=null;
    UI.sel=UI.game.spawnUnit('de','de:inf:0',port.x,port.y,{});}
   showUnitPanel(UI.sel);document.getElementById('pb-ship-0').onclick();`);
 assert.equal(h.run('UI.sel.transport'),'transport','purchase button equips selected army');
-assert.equal(h.run('UI.game.gold.axis'),95,'purchase button charges correct amount');
+assert.equal(h.run('UI.game.gold.axis'),D.START_GOLD.axis-D.ECONOMY.transports[0].cost,'purchase button charges correct amount');
 h.run(`{const p=UI.game.neighbors(UI.sel.c,UI.sel.r).find(p=>UI.game.ocean(...p));
   UI.game.moveUnit(UI.sel,...p);showUnitPanel(UI.sel);}`);
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('航行中')"));
@@ -275,3 +276,12 @@ assert(!h.run("document.getElementById('panel-body').innerHTML.includes('专职�
 h.run("UI.game.killUnit(UI.game.unitAt(occupiedCity.x,occupiedCity.y));showFactoryPanel(occupiedCity);document.getElementById('factory-build-0').onclick()");
 assert(h.run("UI.sel.eq.artRole==='gun'&&UI.sel.c===occupiedCity.x&&UI.sel.r===occupiedCity.y&&UI.sel.moved&&UI.sel.attacked"));
 console.log('Ground scenario UI: occupied cities block production; new units deploy inside the empty city.');
+
+h.run("showStart()");assert.equal(h.run('Music.current'),'lobby');
+h.run("document.getElementById('m-atlas').onclick()");assert.equal(h.run('Music.current'),'menu');
+h.run("startGame(null,null,new Game('axis'))");assert.equal(h.run('Music.current'),'battle');
+h.run("toggleSound()");assert.equal(h.run('Music.enabled'),false);
+h.run("showEndModal(true)");assert.equal(h.run('Music.current'),'victory');assert.equal(h.run('Music.enabled'),false);
+h.run("toggleSound();showEndModal(false)");assert.equal(h.run('Music.current'),'defeat');assert.equal(h.run('Music.enabled'),true);
+h.run("showHelp()");assert(h.run("modalRoot.innerHTML.includes('Kevin MacLeod')&&modalRoot.innerHTML.includes('CC-BY 4.0')"));
+console.log('Music UI: scene transitions, shared mute and visible credits passed.');

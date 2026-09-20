@@ -1127,6 +1127,7 @@ function eventModalHTML(title, text) {
 
 /* ---- 开始界面 ---- */
 function showStart() {
+  Music.play('lobby');
   const hasSave = (() => { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } })();
   let fac = 'axis', diff = 'normal';
   const FINFO = {
@@ -1172,7 +1173,7 @@ function showStart() {
   });
   document.getElementById('m-start').onclick = () => { closeModal(); startGame(fac, diff); };
   document.getElementById('m-atlas').onclick = () => {
-    closeModal(); UI.game = new Game('axis', 'normal'); UI.showUnits = false;
+    closeModal(); Music.play('menu'); UI.game = new Game('axis', 'normal'); UI.showUnits = false;
     document.getElementById('btn-units').textContent = '显示部队';
     updateTopbar(); updatePanel(); renderLog(); fitMap();
   };
@@ -1188,6 +1189,7 @@ function showStart() {
 }
 
 function startGame(fac, diff, loaded) {
+  Music.play(loaded?.over==='victory'?'victory':loaded?.over==='defeat'?'defeat':'battle',!loaded?.over);
   UI.showUnits = true; document.getElementById('btn-units').textContent = '隐藏部队';
   UI.game = loaded || new Game(fac, diff);
   UI.sel = null; UI.range = null; UI.targets.clear(); UI.anims = []; UI.nextIdx = -1;
@@ -1284,6 +1286,11 @@ function showHelp() {
         <h4>■ 胜负</h4>
         <b>占领敌方首都 → 该国全境沦陷</b>（所有城市易手）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。<br>
         中立国（西班牙/瑞典/瑞士/土耳其等）可进攻，但会倒向你的敌人！
+        <h4>■ 音乐与署名</h4>
+        音乐与音效可用顶部🔊按钮或 M 键统一开关。首次点击或按键后开始播放，切到后台时暂停。<br>
+        Music: Five Armies, Air Prelude, Impact Moderato, Fanfare for Space, Wounded<br>
+        by Kevin MacLeod (<a href="https://incompetech.com/" target="_blank" rel="noopener noreferrer">incompetech.com</a>) — Licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC-BY 4.0</a>.<br>
+        <a href="music/credits.txt" target="_blank" rel="noopener">完整音乐署名</a>
         <h4>■ 历史事件</h4>
         意大利参战(1940.6) → 匈牙利罗马尼亚入轴(1940.11) → <b>巴巴罗萨</b>(1941.6) → 美国参战(1941.12) → <b>俄罗斯严冬</b>(每年12-2月，轴心国在苏境-12兵力/回合) → <b>诺曼底登陆</b>(1944.6)
       </div>
@@ -1294,6 +1301,7 @@ function showHelp() {
 
 /* ---- 终局 ---- */
 function showEndModal(win) {
+  Music.play(win?'victory':'defeat',false);
   const g = UI.game;
   const myCaps = g.capitalsOf(g.playerFaction).length;
   const cities = g.factionCityCount(g.playerFaction);
@@ -1346,7 +1354,7 @@ document.getElementById('btn-end').onclick = endTurnFlow;
 document.getElementById('btn-gen').onclick = () => UI.game && showGenerals();
 document.getElementById('btn-help').onclick = showHelp;
 document.getElementById('btn-save').onclick = () => { if (autoSave()) banner('已保存'); };
-function toggleSound() { const on = SFX.toggle(); document.getElementById('btn-sound').textContent = on ? '🔊' : '🔇'; }
+function toggleSound() { const on = SFX.toggle(); Music.setEnabled(on); document.getElementById('btn-sound').textContent = on ? '🔊' : '🔇'; }
 document.getElementById('btn-sound').onclick = toggleSound;
 function autoSave() {
   if (!UI.game) return false;
