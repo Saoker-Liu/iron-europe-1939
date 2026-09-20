@@ -38,6 +38,7 @@
 
     /* 5. 军事 */
     root.NAVAL = M.naval;
+    root.AIR = M.air;
     root.CLASSES = {...M.military.CLASSES,...M.naval.classes};
     root.ATK_MOD = {};
     for(const a of Object.keys(root.CLASSES)){
@@ -59,6 +60,10 @@
     root.EQUIP = {};
     for(const ct of new Set([...Object.keys(M.military.EQUIP),...Object.keys(M.naval.equipment)]))
       root.EQUIP[ct]={...M.military.EQUIP[ct],...(M.naval.equipment[ct]||M.naval.equipment.neutral)};
+    for(const ct of Object.keys(root.EQUIP)){
+      root.EQUIP[ct].air=M.air.equipment[ct]||M.air.equipment.neutral;
+      root.EQUIP[ct].para=[M.air.paratrooper];
+    }
     root.INITIAL_UNITS = map.deployments.map(u => Object.assign({}, u));
 
     /* 6. 将领与历史事件 */

@@ -13,6 +13,7 @@ require('./terrain.js');
 require('./nations.js');
 require('./economy.js');
 require('./military.js');
+require('./air.js');
 require('./naval.js');
 require('./naval-names.js');
 require('./naval-scenario.js');
@@ -31,6 +32,7 @@ module.exports = {
   TERRAIN: root.TERRAIN,
   RIVERS: root.RIVERS,
   NAVAL: root.NAVAL,
+  AIR: root.AIR,
   CLASSES: root.CLASSES,
   ATK_MOD: root.ATK_MOD,
   FACTION_NAME: root.FACTION_NAME,

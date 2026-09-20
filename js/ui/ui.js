@@ -332,6 +332,7 @@ function drawFrame(now) {
   blitTerrain(z);
   drawHarbors(g);
   drawAirfields(g);
+  drawFallout(g);
 
   // ---- 移动范围（批量单路径）----
   if (UI.sel && UI.range && !UI.sel.attacked) {
@@ -363,7 +364,7 @@ function drawFrame(now) {
   const uM = s * 2;
   const simple = s < 11;
   for (const u of g.units) {
-    if (!UI.showUnits || g.isAir(u)) continue;
+    if (!UI.showUnits || g.isAir(u) || u.carrierId) continue;
     const isSel = u === UI.sel;
     let [x, y] = hexToPix(u.c, u.r);
     const animating = UI.moveAnim && UI.moveAnim.unit === u && UI.moveAnim.path.length > 0;
@@ -550,6 +551,36 @@ addEventListener('keydown', e => {
   else if (e.key === 'm' || e.key === 'M') toggleSound();
 }, true);
 
+function drawFallout(g) {
+  cx.save();
+  for(const [k,n]of Object.entries(g.fallout)){
+    const [c,r]=k.split(',').map(Number),[x,y]=hexToPix(c,r);
+    if(x<-S()*2||x>innerWidth+S()*2||y<-S()*2||y>innerHeight+S()*2)continue;
+    hexPath(x,y,S()*.92);cx.fillStyle='rgba(165,190,30,.30)';cx.fill();cx.strokeStyle='#d9dc57';cx.lineWidth=2;cx.stroke();
+    if(UI.cam.z>=.4){cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillStyle='#ffffa0';cx.fillText('☢ '+n,x,y);}
+  }
+  cx.restore();
+}
+function beginAirMission(kind) {
+  const g=UI.game,u=UI.sel;if(UI.busy||!u||!g.isAir(u)||g.unitFaction(u)!==g.playerFaction)return;
+  UI.airMission=kind;banner(kind==='nuclear'?'选择核打击目标格：将显示范围与损失确认':'选择空闲陆格执行伞降',3500);
+}
+function airMissionTarget(c,r) {
+  const g=UI.game,u=UI.sel,kind=UI.airMission;
+  const error=kind==='nuclear'?g.nuclearError(u,c,r):g.paradropError(u,c,r);
+  if(error){banner(error,2200);return;}
+  if(kind==='drop'){
+    g.paradrop(u,c,r);UI.airMission=null;select(u);updateTopbar();renderLog();return;
+  }
+  const victims=g.units.filter(v=>hexDist(c,r,v.c,v.r)<=1),city=g.cityAt(c,r);
+  openModal(`<div class="modal"><h1>☢ 确认核打击</h1><p>目标：${city?city.n:'('+c+','+r+')'}。消耗${AIR.nuclear.cost}金。</p><p>中心格所有单位消灭，周围一格损失${AIR.nuclear.splash}兵力，友军同样受影响。范围内共${victims.length}支部队，其中己方${victims.filter(v=>g.unitFaction(v)===g.playerFaction).length}支。</p><p>污染持续${AIR.nuclear.duration}回合，每回合损失${AIR.nuclear.damage}兵力；污染城市收入为0。波及中立／非交战国家将引发参战。</p><button class="btn danger" id="nuclear-confirm">执行核打击</button><button class="btn" id="nuclear-cancel">取消</button></div>`);
+  document.getElementById('nuclear-cancel').onclick=()=>{closeModal();UI.airMission=null;};
+  document.getElementById('nuclear-confirm').onclick=()=>{
+    if(UI.busy)return;
+    const result=g.nuclearStrike(u,c,r);closeModal();UI.airMission=null;
+    if(result){UI.anims.push({kind:'boom',c,r,t0:performance.now(),dur:1300});SFX.boom();if(g.units.includes(u))select(u);else deselect();updatePanel();updateTopbar();renderLog();checkEnd();}
+  };
+}
 function airfieldScreen(ci) {
   const [x,y]=hexToPix(ci.x,ci.y),d=Math.max(14,S()*.7);return [x+d,y+d];
 }
@@ -583,9 +614,9 @@ function showAirfieldPanel(ci) {
     <button class="btn" id="airfield-city">查看所属城市</button>
     ${transfer?`<button class="btn gold" id="airfield-transfer">将选中空军转场至${ci.n}</button>`:''}
     <div class="p-sub">驻扎空军（机场失守时，未撤离的飞机损失）</div>
-    ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
+    ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${g.airRoleName(u)} · ${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
     <div class="p-sub">组建空军</div>
-    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name">${o.eq.n} · ${o.eq.yr}年</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button></div>`;}).join('')}`;
+    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name">${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
   document.getElementById('airfield-city').onclick=()=>showCityPanel(ci);
   const transferButton=document.getElementById('airfield-transfer');if(transferButton)transferButton.onclick=()=>{if(!UI.busy&&g.rebaseAir(selected,ci.k)){select(selected);updateTopbar();renderLog();}};
   units.forEach((u,i)=>{document.getElementById('airfield-unit-'+i).onclick=()=>{if(UI.busy||!g.units.includes(u))return;if(UI.sel&&UI.targets.has(u.id)){doAttack(u);return;}if(g.unitFaction(u)===g.playerFaction)select(u);else showUnitInfo(u);};});
@@ -645,6 +676,7 @@ function handleClick(sx, sy) {
   const [wx, wy] = screenToWorld(sx, sy);
   const [c, r] = pixToHex(wx, wy);
   if (!g.inMap(c, r)) return;
+  if(UI.airMission&&UI.sel){airMissionTarget(c,r);return;}
   const airIcon=UI.cam.z>=.24&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(airIcon){showAirfieldPanel(airIcon);return;}
   const harborIcon=g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
@@ -674,13 +706,13 @@ function handleClick(sx, sy) {
 
 function select(u) {
   const g = UI.game;
-  UI.sel = u;
+  UI.sel = u;UI.airMission=null;
   SFX.click();
   if (!u.moved) UI.range = g.moveRange(u); else UI.range = null;
   computeTargets();
   updatePanel();
 }
-function deselect() { UI.sel = null; UI.range = null; UI.targets.clear(); }
+function deselect() { UI.airMission=null; UI.sel = null; UI.range = null; UI.targets.clear(); }
 
 /* 计算可攻击目标（含移动接敌方案）：enemyId -> null(原地可攻) | [c,r](接敌格) */
 function computeTargets() {
@@ -851,7 +883,7 @@ function updateTooltip(sx, sy, target) {
       ⚔${u.eq.atk} 🛡${u.eq.def} 👣${g.movOf(u)}${u.eq.cls === 'art'||g.isNaval(u) ? ' 🎯' + g.rangeOf(u) : ''} ❤${u.hp}/100<br>
       ${city ? cityDefenseText(city)+'<br>' : ''}${u.dug ? '🔒 已驻防(+30%防御) ' : ''}${u.vet ? `老练度+${u.vet * 8}% ` : ''}${gen ? `<br>🎖 ${gen.name}（${gen.title}）` : ''}`;
   } else if (city) {
-    html = `<b>${city.n}</b>${city.cap ? ' ★首都' : ''}<br>${COUNTRIES[city.ct].name} · ${FACTION_NAME[city.owner]}控制<br>${cityDefenseText(city)}<br>收入 ${city.inc} 金/回合${city.note ? '<br>' + city.note : ''}<br><span style="color:#9aa4b0">占领该国首都可令其全境易手</span>`;
+    html = `<b>${city.n}</b>${city.cap ? ' ★首都' : ''}<br>${COUNTRIES[city.ct].name} · ${FACTION_NAME[city.owner]}控制<br>${cityDefenseText(city)}<br>收入 ${g.cityIncome(city)} 金/回合${city.note ? '<br>' + city.note : ''}<br><span style="color:#9aa4b0">占领该国首都可令其全境易手</span>`;
   } else if (g.inMap(c, r)) {
     const t = g.tile(c, r);
     const T = TERRAIN[t];
@@ -867,6 +899,7 @@ function updateTooltip(sx, sy, target) {
   if(airport)html=`<b>✈ ${airport.n}机场</b><br>${FACTION_NAME[airport.owner]}控制 · 驻扎${g.airUnitsAt(airport.k).length}支空军<br>点击打开机场 · 组建／选择空军`;
   const harbor=g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(harbor){const ci=g.cityByKey[harbor.cityKey];html=`<b>⚓ ${ci.n}军港</b><br>${FACTION_NAME[ci.owner]}控制 · 点击建造海军<br>泊位需空闲；新舰下回合行动`;}
+  if(g.contamination(c,r))html+=`<br>☢ 核污染：剩余${g.contamination(c,r)}回合，每回合-${AIR.nuclear.damage}兵力；城市收入为0，暂停补员。`;
   if (html) {
     const tk = c + ',' + r + '|' + (u ? u.id : 0)+'|'+html;
     if (tk !== tipKey) { tt.innerHTML = html; tipKey = tk; }
@@ -902,6 +935,7 @@ function showUnitPanel(u) {
   const skills = gen ? gen.skills.map(skillText).join('<br>') : '';
   const rank = gen ? Math.min(5, 1 + Math.floor((g.genKills[gen.id] || 0) / 3)) : 0;
   const ship=g.transportOf(u),atSea=g.isEmbarked(u);
+  const airborneCargo=g.cargoOf(u),base=g.airBase(u),waitingPara=base?g.unitAt(base.x,base.y):null;
   const transportPanel=my&&!g.isNaval(u)&&u.eq.cls!=='air'?`<div class="p-sub">运输装备：${ship?ship.name:'未配备'} · ${atSea?'航行中':'陆上'}<br>沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="价格${t.cost}金；海上移动${t.move}，防御${t.defense}，攻击保留${Math.round(t.attackMultiplier*100)}%" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?t.year+'年解锁':ship&&ship.cost>=t.cost?(ship.id===t.id?'已配备':'已有更高级'):g.transportPrice(u,t.id)+'金'}</button>`).join('')}</div>`:'';
   body.innerHTML = `
     <div class="p-title"><span>${g.unitName(u)}</span><span class="tag" style="border-color:${FACTION_COLOR[g.unitFaction(u)]}">${FACTION_NAME[g.unitFaction(u)]}</span></div>
@@ -917,6 +951,9 @@ function showUnitPanel(u) {
     ${g.cityAt(u.c,u.r)?`<div class="p-sub">🛡 ${cityDefenseText(g.cityAt(u.c,u.r))}<br>与驻防、老练及将领加成共同计入战斗防御。</div>`:''}
     ${!g.isAir(u)&&g.airfields.some(ci=>ci.x===u.c&&ci.y===u.r)?'<button class="btn gold" id="garrison-airfield">✈ 打开机场 · 组建空军</button>':''}
     ${g.isAir(u)?`<div class="p-sub">✈ 驻扎机场：${g.airBase(u)?.n||'无'}<br>作战半径 ${g.airRadius(u)}格（约${g.airRadius(u)*45}公里） · 每回合出击一次<br>地图青色格为出击范围，蓝格为可转场的己方机场；转场后本回合不能攻击。空军无法占领城市或驻防。</div><button class="btn" id="unit-airfield">打开驻扎机场</button>`:''}
+    ${g.isAir(u)?`<div class="p-sub">机种：${g.airRoleName(u)}<br>${u.eq.role}<br>${u.eq.nt||''}</div>`:''}
+    ${my&&g.isAir(u)&&g.airRole(u)==='transport'?`<div class="p-sub">载员：${airborneCargo?airborneCargo.eq.n+' · 兵力'+airborneCargo.hp:'空载'}<br>在同一机场城市组建伞兵，待双方可行动时装载。装载后可立即伞降；卸载、转场和伞降均耗尽本回合行动。</div><button class="btn" id="air-load" ${UI.busy||u.moved||u.attacked||airborneCargo||!waitingPara?.eq.para||waitingPara?.moved||waitingPara?.attacked?'disabled':''}>装载机场伞兵</button><button class="btn" id="air-unload" ${UI.busy||u.moved||u.attacked||!airborneCargo||waitingPara?'disabled':''}>在机场卸载</button><button class="btn gold" id="air-drop" ${UI.busy||u.moved||u.attacked||!airborneCargo?'disabled':''}>执行伞降 · 选择目标</button>`:''}
+    ${my&&g.isAir(u)&&g.airRole(u)==='strategic'?`<div class="p-sub">☢ 核打击：${AIR.nuclear.year}年解锁 · 每次${AIR.nuclear.cost}金</div><button class="btn danger" id="air-nuclear" ${UI.busy||g.nuclearError(u,u.c,u.r)?'disabled':''}>核打击 · 选择目标</button>`:''}
     ${transportPanel}
     ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">已驻防：防御+30%，移动/攻击后解除</div>' : ''}
     ${gen ? `<div class="gen-chip">
@@ -930,7 +967,11 @@ function showUnitPanel(u) {
       ${idle&&!g.isNaval(u) ? '<button class="btn gold" id="pb-gen">🎖 将领</button>' : ''}
       <button class="btn" id="pb-next">⏩ 下一部队</button>
     </div>
-    <div class="p-sub" style="margin-top:8px">${u.moved && u.attacked ? '⛔ 本回合已行动完毕' : !u.moved ? '蓝格：可移动 · 红框敌军：可攻击' : '已移动，仍可攻击红框敌军'}</div>` : `<div class="p-sub">${g.unitFaction(u)==='neutral'?'中立部队（尚未参战）':'敌方部队'}</div>`}`;
+    <div class="p-sub" style="margin-top:8px">${u.moved && u.attacked ? '⛔ 本回合已行动完毕' : !u.moved ? g.isAir(u)?'青色格：航程 · 蓝格：机场转场 · 红框：可出击目标':'蓝格：可移动 · 红框敌军：可攻击' : '已移动，仍可攻击红框敌军'}</div>` : `<div class="p-sub">${g.unitFaction(u)==='neutral'?'中立部队（尚未参战）':'敌方部队'}</div>`}`;
+  const load=document.getElementById('air-load');if(load)load.onclick=()=>{if(!UI.busy&&g.loadParatrooper(u,waitingPara)){select(u);renderLog();}};
+  const unload=document.getElementById('air-unload');if(unload)unload.onclick=()=>{if(!UI.busy&&g.unloadParatrooper(u))select(u);};
+  const drop=document.getElementById('air-drop');if(drop)drop.onclick=()=>beginAirMission('drop');
+  const nuclear=document.getElementById('air-nuclear');if(nuclear)nuclear.onclick=()=>beginAirMission('nuclear');
   const garrisonAirport=document.getElementById('garrison-airfield');if(garrisonAirport)garrisonAirport.onclick=()=>showAirfieldPanel(g.cityAt(u.c,u.r));
   const airportButton=document.getElementById('unit-airfield');if(airportButton)airportButton.onclick=()=>showAirfieldPanel(g.airBase(u));
   ECONOMY.transports.forEach((t,i)=>{const button=document.getElementById('pb-ship-'+i);if(button)button.onclick=()=>{if(!UI.busy&&g.equipTransport(u,t.id)){SFX.click();select(u);updateTopbar();}};});
@@ -954,7 +995,7 @@ function showCityPanel(city) {
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
     <div class="p-sub">🛡 ${cityDefenseText(city)}<br>守军自动获得，无需点击驻防；驻防另加30%防御。</div>
-    <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${city.inc} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
+    <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${g.cityIncome(city)} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
     ${g.airfields.includes(city)?'<button class="btn gold" id="city-airfield">✈ 打开机场 · 组建空军</button>':''}
     ${g.harbors.some(h=>h.cityKey===city.k)?'<button class="btn gold" id="city-harbor">⚓ 打开军港 · 建造舰艇</button>':''}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
