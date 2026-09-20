@@ -261,3 +261,6 @@ assert(h.run("document.getElementById('panel-body').innerHTML.includes('超重�
 h.run("document.getElementById('factory-build-8').onclick()");
 assert(h.run("UI.sel.eq.armorRole==='heavy'&&UI.sel.eq.counterMultiplier===.8"));
 console.log('Armor UI: five factory categories, Tiger replacement and recruitment passed.');
+h.run("UI.game=new Game('axis');UI.sel=null;UI.busy=false;UI.game.gold.axis=10000;const guardedCity=UI.game.cityByKey.berlin;const guardedSlot=UI.game.landNeighbors(guardedCity.x,guardedCity.y).find(p=>UI.game.territoryOwner(...p)==='axis');const occupyingGuardSlot=UI.game.unitAt(...guardedSlot);if(occupyingGuardSlot)UI.game.killUnit(occupyingGuardSlot);showCityPanel(guardedCity);document.getElementById('city-factory').onclick();document.getElementById('factory-build-0').onclick()");
+assert(h.run("UI.sel.eq.artRole==='gun'&&UI.game.unitAt(guardedCity.x,guardedCity.y).guardCity==='berlin'"));
+console.log('Ground scenario UI: guarded city factory production keeps the garrison in place.');

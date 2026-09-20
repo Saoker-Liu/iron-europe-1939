@@ -87,6 +87,7 @@ class Game {
       if(this.equipOf(d.eq).cls==='air')continue; // Replaced by the national air scenario.
       this.spawnUnit(d.ct, d.eq, d.x, d.y, { gen: d.gen, silent: true });
     }
+    if(options.initialGround!==false)this.deployInitialGroundForces();
     if(options.initialFleet!==false)this.deployInitialFleets();
     if(options.initialAir!==false)this.deployInitialAirForces();
     this.pushLog(`1939年9月，德国入侵波兰，英法对德宣战——第二次世界大战爆发！`, 'war');
@@ -244,6 +245,72 @@ class Game {
   }
   shipNameInfo(u) {
     return this.shipNamePool(u.ct,u.eqKey).find(e=>e.n===u.shipName)||{n:u.shipName,kind:'generic'};
+  }
+  groundBorderCells() {
+    const cells=[];
+    const sovereign=ct=>COUNTRIES[ct]?.controller||ct;
+    for(let r=0;r<MAP_H;r++)for(let c=0;c<MAP_W;c++){
+      const ct=this.homeCountryOf(c,r);
+      if(!ct||ct==='xx'||!this.cityByKey||!this.cities.some(ci=>ci.ct===ct&&!ci.demilitarized)||!this.landPassable(c,r)||this.cityAt(c,r)?.demilitarized)continue;
+      const across=this.landNeighbors(c,r).map(p=>this.homeCountryOf(...p)).filter(other=>other&&other!=='xx'&&sovereign(other)!==sovereign(ct));
+      if(across.length)cells.push({c,r,ct,active:across.some(other=>this.atWar(this.cf[ct],this.cf[other]))});
+    }
+    return cells;
+  }
+  deployInitialGroundForces() {
+    const occupied=new Map(this.units.filter(u=>!this.isAir(u)&&!this.isNaval(u)).map(u=>[key(u.c,u.r),u]));
+    const majors=this.cities.filter(ci=>!ci.demilitarized&&(ci.cap||MAP_META.cityLabelLevels[ci.k]<=1));
+    const reserved=new Set(majors.map(ci=>key(ci.x,ci.y)));
+    const nationalKey=(ct,role)=>`${EQUIP[ct]?.[role]?ct:'neutral'}:${role}:0`;
+    const freeNear=(ci,radius=3)=>{
+      const queue=[[ci.x,ci.y]],seen=new Set([key(ci.x,ci.y)]);
+      for(let i=0;i<queue.length;i++){
+        const p=queue[i];
+        if(!occupied.has(key(...p))&&!reserved.has(key(...p))&&!this.cityAt(...p)?.demilitarized)return p;
+        for(const q of this.landNeighbors(...p))if(this.homeCountryOf(...q)===ci.ct&&hexDist(ci.x,ci.y,...q)<=radius&&!seen.has(key(...q))){seen.add(key(...q));queue.push(q);}
+      }
+      return null;
+    };
+    const deploy=(ct,role,c,r)=>{
+      const u=this.spawnUnit(ct,nationalKey(ct,role),c,r,{silent:true});occupied.set(key(c,r),u);return u;
+    };
+    for(const ci of majors){
+      const existing=occupied.get(key(ci.x,ci.y));
+      if(existing){
+        const p=freeNear(ci);
+        if(p){occupied.delete(key(existing.c,existing.r));[existing.c,existing.r]=p;occupied.set(key(...p),existing);}
+        else {existing.guardCity=ci.k;existing.dug=true;continue;}
+      }
+      const guard=deploy(ci.ct,'garrison',ci.x,ci.y);guard.guardCity=ci.k;guard.dug=true;
+    }
+    // Active fronts get a soldier on every border hex; other borders have no uncovered land approach.
+    for(const p of this.groundBorderCells().sort((a,b)=>Number(b.active)-Number(a.active)||a.r-b.r||a.c-b.c)){
+      if(occupied.has(key(p.c,p.r)))continue;
+      const covered=this.landNeighbors(p.c,p.r).some(q=>{const u=occupied.get(key(...q));return u&&u.ct===p.ct;});
+      if(!p.active&&covered)continue;
+      const role=this.tile(p.c,p.r)==='m'?'mountain':'infantry';
+      const u=deploy(p.ct,role,p.c,p.r);u.dug=true;
+    }
+    // Capitals of the major powers receive a dedicated adjacent anti-air battery.
+    for(const ct of ['de','su','fr','uk','it','pl']){
+      const ci=majors.find(c=>c.ct===ct&&c.cap);if(!ci)continue;
+      let p=this.landNeighbors(ci.x,ci.y).find(p=>this.homeCountryOf(...p)===ct&&!occupied.has(key(...p))&&!reserved.has(key(...p)));
+      if(!p){
+        const candidate=this.landNeighbors(ci.x,ci.y).find(q=>{const u=occupied.get(key(...q));return u&&u.ct===ct&&!u.guardCity;});
+        const destination=freeNear(ci,4);
+        if(candidate&&destination){const u=occupied.get(key(...candidate));occupied.delete(key(...candidate));[u.c,u.r]=destination;occupied.set(key(...destination),u);p=candidate;}
+      }
+      if(p)deploy(ct,'gun_aa',...p);
+    }
+    const reserves={de:28,su:34,fr:22,uk:18,it:18,pl:12,es:8,ro:6,yu:6,tr:6,fi:4,se:4,nl:4,be:4,hu:4,gr:4,bg:4};
+    const roles=['infantry','gun_gun','armor_light','motorized','gun_at','gun_aa','armor_medium'];
+    for(const [ct,count]of Object.entries(reserves)){
+      const bases=majors.filter(ci=>ci.ct===ct);
+      for(let i=0;i<count&&bases.length;i++){
+        const ci=bases[i%bases.length],p=freeNear(ci,4);if(p)deploy(ct,roles[i%roles.length],...p);
+      }
+    }
+
   }
   deployInitialAirForces() {
     for(const d of AIR.initialUnits){
@@ -464,6 +531,9 @@ class Game {
       if(base)for(const ci of this.airfields)if(ci!==base&&ci.owner===this.unitFaction(u)&&hexDist(base.x,base.y,ci.x,ci.y)<=this.airRadius(u)){cost.set(key(ci.x,ci.y),hexDist(base.x,base.y,ci.x,ci.y));prev.set(key(ci.x,ci.y),key(u.c,u.r));}
       return {cost,prev};
     }
+    // Per-query snapshot: movement queries do not mutate units; avoid repeated full-army scans.
+    const occupancy=new Map();for(const unit of this.units)if(!this.isAir(unit)&&!unit.carrierId&&!occupancy.has(key(unit.c,unit.r)))occupancy.set(key(unit.c,unit.r),unit);
+    const at=(c,r)=>occupancy.get(key(c,r));
     const start = key(u.c, u.r);
     const cost = new Map([[start, 0]]), prev = new Map(), zocStop = new Set();
     const visited = new Set();
@@ -479,7 +549,7 @@ class Game {
         const nk = key(nc, nr), t = this.tile(nc, nr);
         if (!t || (!CLASSES[u.eq.cls].fly && !(this.isSeagoing(u) ? this.ocean(nc,nr) : this.landPassable(nc,nr)))) continue;
         if (!CLASSES[u.eq.cls].fly && this.blockedEdges.has(this.edgeKey([c, r], [nc, nr]))) continue;
-        const occ = this.unitAt(nc, nr);
+        const occ = at(nc, nr);
         if (occ && this.unitFaction(occ) !== this.unitFaction(u)) continue;   // 敌方格阻挡
         const step = this.terrainCost(u, nc, nr) + (this.isSeagoing(u)?hexDist(c,r,nc,nr)-1:0) +
           (!CLASSES[u.eq.cls].fly && !this.isSeagoing(u) && u.eq.infRole!=='marine' && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
@@ -489,7 +559,7 @@ class Game {
         // 进入敌方控制区 → 移动终止于该格
         if (!this.hasNoZOC(u)) {
           const nearEnemy = (this.isSeagoing(u) ? this.neighbors(nc,nr) : this.landNeighbors(nc, nr)).some(([ec, er]) => {
-            const e = this.unitAt(ec, er);
+            const e = at(ec, er);
             return e && this.atWar(this.unitFaction(u), this.unitFaction(e)) && this.canStrikeFrom(e,ec,er,{...u,c:nc,r:nr});
           });
           if (nearEnemy) zocStop.add(nk);
@@ -501,12 +571,12 @@ class Game {
     const ends = new Map();
     for (const [k, v] of cost) {
       const p = k.split(',').map(Number);
-      if ((this.isSeagoing(u) ? this.ocean(...p) : this.landPassable(...p)) && !this.unitAt(...p)) ends.set(k, v);
+      if ((this.isSeagoing(u) ? this.ocean(...p) : this.landPassable(...p)) && !at(...p)) ends.set(k, v);
     }
     // A shore transition is a separate adjacent move and ends both actions.
     if(!this.isNaval(u) && !CLASSES[u.eq.cls].fly && this.transportOf(u))for(const p of this.neighbors(u.c,u.r)){
       const valid=this.isEmbarked(u)?this.landPassable(...p):this.ocean(...p);
-      if(valid&&!this.unitAt(...p)){ends.set(key(...p),mov);prev.set(key(...p),start);}
+      if(valid&&!at(...p)){ends.set(key(...p),mov);prev.set(key(...p),start);}
     }
     return { cost: ends, prev };
   }
@@ -763,16 +833,23 @@ class Game {
   factionCityCount(f) { return this.cities.filter(ci => ci.owner === f).length; }
 
   /* 招募：返回单位或 null */
+  recruitmentSite(city) {
+    const occupant=this.unitAt(city.x,city.y);
+    if(!occupant)return [city.x,city.y];
+    if(occupant.guardCity!==city.k||this.unitFaction(occupant)!==city.owner)return null;
+    return this.landNeighbors(city.x,city.y).find(p=>!this.unitAt(...p)&&this.territoryOwner(...p)===city.owner&&!this.cityAt(...p)?.demilitarized)||null;
+  }
   recruit(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,false); }
   recruitFactory(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,true); }
   recruitGround(cityK,eqKey,faction,factory) {
     const city=this.cityByKey[cityK];
-    if(!city||city.demilitarized||city.owner!==faction||!['axis','west','sov'].includes(faction)||this.unitAt(city.x,city.y))return null;
+    if(!city||city.demilitarized||city.owner!==faction||!['axis','west','sov'].includes(faction))return null;
+    const site=this.recruitmentSite(city);if(!site)return null;
     const offer=(factory?this.factoryRoster(city):this.rosterFor(city)).find(o=>o.eqKey===eqKey&&!o.locked);
     if(!offer||this.gold[faction]<offer.eq.cost)return null;
     const country=eqKey.split(':')[0],ct=this.cf[city.ct]===faction?city.ct:({axis:'de',west:'uk',sov:'su'}[faction]);
     this.gold[faction]-=offer.eq.cost;
-    const u=this.spawnUnit(country==='us'?'us':ct,eqKey,city.x,city.y,{});u.moved=true;u.attacked=true;
+    const u=this.spawnUnit(country==='us'?'us':ct,eqKey,...site,{});u.moved=true;u.attacked=true;
     this.pushLog(`${city.n}${factory?'工厂':''}组建${u.eq.n}（-${u.eq.cost}金）。`,'econ');return u;
   }
   spawnUnit(ct, eqKey, x, y, opt) {
@@ -1071,6 +1148,12 @@ class Game {
 
     for (const u of units) {
       if (!this.units.includes(u)) continue;              // 已阵亡
+      const guarded=this.cityByKey[u.guardCity];
+      if(guarded&&guarded.owner===f&&u.c===guarded.x&&u.r===guarded.y){
+        if(atWar&&!u.attacked)this.aiTryAttack(u,acts);
+        if(this.units.includes(u)){u.dug=true;u.moved=true;}
+        continue;
+      }
       if(!u.transport&&!CLASSES[u.eq.cls].fly&&!u.moved&&!u.attacked){
         const sea=this.neighbors(u.c,u.r).filter(p=>this.ocean(...p));
         const target=u.hp<35?distHome:dist;
@@ -1196,7 +1279,7 @@ class Game {
     const peaceCap = cities.length * 2;
     if (myUnits >= (atWar ? cap : peaceCap)) return;
     for (const ci of cities) {
-      if (this.unitAt(ci.x, ci.y)) continue;
+      if (!this.recruitmentSite(ci)) continue;
       const opts=[...this.rosterFor(ci),...this.factoryRoster(ci)].filter(o=>!o.locked&&o.eq.cost<=this.gold[f]).map(o=>o.eqKey);
       if (!opts.length) continue;
       // 地面部队构成偏好：装甲 4 / 炮兵 2.5 / 步兵 2.5；空军由机场逻辑组建。
@@ -1263,7 +1346,7 @@ class Game {
       genUnit: this.genUnit, genKills: this.genKills,
       units: this.units.map(u => ({
         id: u.id, ct: u.ct, eqKey: u.eqKey, shipName:u.shipName, hp: u.hp, xp: u.xp, vet: u.vet,
-        c: u.c, r: u.r, airbase:u.airbase, carrierId:u.carrierId, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
+        c: u.c, r: u.r, guardCity:u.guardCity, airbase:u.airbase, carrierId:u.carrierId, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
       })),
       log: this.log.slice(-80),
     });
@@ -1271,7 +1354,7 @@ class Game {
   static deserialize(str) {
     const d = JSON.parse(str);
     if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
-    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false,initialFactories:false});
+    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false,initialFactories:false,initialGround:false});
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;
     g.wars = new Set(d.wars); g.cf = d.cf;

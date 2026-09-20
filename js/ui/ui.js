@@ -983,6 +983,7 @@ function showUnitPanel(u) {
     </div>
     ${atSea?`<div class="p-sub">🚢 ${ship.name} · 海上攻击保留${Math.round(ship.attackMultiplier*100)}% · 射程1<br>航行移动力固定${ship.move}；海上无法驻防或自动补员。</div>`:''}
     ${g.isNaval(u)?`<div class="p-sub">舰名来源：${shipNameKind(g.shipNameInfo(u))}${g.shipNameInfo(u).note?' · '+g.shipNameInfo(u).note:''}<br>⚓ ${u.eq.role}<br>仅在海上航行；己方军港每回合修复25兵力。射程内可反击，无法占领城市。</div>`:''}
+    ${u.guardCity?'<div class="p-sub">城市守备：AI在所属城市留守；守军驻城时新部队可部署到相邻空闲己方陆格。</div>':''}
     ${g.cityAt(u.c,u.r)?`<div class="p-sub">🛡 ${cityDefenseText(g.cityAt(u.c,u.r))}<br>与驻防、老练及将领加成共同计入战斗防御。</div>`:''}
     ${g.cityAt(u.c,u.r)?'<button class="btn" id="garrison-city">查看城市 · 建设设施</button>':''}
     ${!g.isAir(u)&&g.airfields.some(ci=>ci.x===u.c&&ci.y===u.r)?'<button class="btn gold" id="garrison-airfield">✈ 打开机场 · 组建空军</button>':''}
@@ -1026,8 +1027,8 @@ function showUnitInfo(u) { showUnitPanel(u); }
 
 function showFactoryPanel(city) {
   const g=UI.game,body=document.getElementById('panel-body');if(!city.factory)return;
-  const offers=g.factoryRoster(city),blocked=city.owner!==g.playerFaction||city.demilitarized||!!g.unitAt(city.x,city.y)||UI.busy;
-  body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，城市格须无地面驻军，新部队下回合行动。</div>
+  const offers=g.factoryRoster(city),blocked=city.owner!==g.playerFaction||city.demilitarized||!g.recruitmentSite(city)||UI.busy;
+  body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，部署到空闲城市格；专职守军驻城时可部署到相邻空闲己方陆格，新部队下回合行动。</div>
     <button class="btn" id="factory-city">返回城市</button>
     ${offers.map((o,i)=>`<div class="shop-item"><div>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${i}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
   document.getElementById('factory-city').onclick=()=>showCityPanel(city);
@@ -1036,7 +1037,7 @@ function showFactoryPanel(city) {
 function showCityPanel(city) {
   const g = UI.game;
   const body = document.getElementById('panel-body');
-  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !g.unitAt(city.x, city.y) && !UI.busy;
+  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy;
   const roster = canRecruit ? g.rosterFor(city) : [];
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
@@ -1047,7 +1048,7 @@ function showCityPanel(city) {
     ${city.factory?'<button class="btn gold" id="city-factory">⚒ 打开工厂 · 组建炮兵与装甲</button>':''}
     ${constructionHTML(city)}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
-    <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
+    <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方城市且有可用部署格可招募'}</div>
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
         <div><div class="s-name">${CLASSES[it.eq.cls].glyph}·${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>

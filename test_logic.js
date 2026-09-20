@@ -53,7 +53,7 @@ console.log(`  城市 ${D.CITIES.length} 座，初始单位 ${D.INITIAL_UNITS.le
 /* ---------- 2. 战斗/移动 单元测试 ---------- */
 console.log('== 机制测试 ==');
 {
-  const g = new Game('axis', 'normal');
+  const g = new Game('axis', 'normal', {initialGround:false});
   const tank = g.units.find(u => u.gen === 'guderian');
   const rng = g.moveRange(tank);
   assert(rng.cost.size > 5, `古德里安移动力异常，可达 ${rng.cost.size} 格`);
