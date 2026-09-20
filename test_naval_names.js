@@ -8,6 +8,7 @@ const names=[];
 for(let i=0;i<4;i++)names.push(g.spawnUnit('de','de:bb:1',10+i,1,{}).shipName);
 assert.deepEqual(names,['俾斯麦号','提尔皮茨号','战列舰1','战列舰2']);
 assert.equal(g.navalIdentity(g.units[1]),'德国 · 战列舰 · 俾斯麦级 · 提尔皮茨号');
+assert.equal(D.EQUIP.uk.cv[0].className,'皇家方舟级','single-ship designs still expose a distinct class name');
 const bismarck=g.units[0];g.killUnit(bismarck);
 assert.equal(g.nextShipName('de','de:bb:1').n,'战列舰3','sunk names are not reused');
 assert.equal(g.nextShipName('de','de:bb:1').n,'战列舰3','preview does not reserve names');
