@@ -983,6 +983,7 @@ class Game {
   serialize() {
     return JSON.stringify({
       v: 6, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
+      terrainRevision:MAP_META.terrainRevision||0,
       usedShipNames:[...this.usedShipNames],
       playerFaction: this.playerFaction, difficulty: this.difficulty,
       gold: this.gold, westBonus: this.westBonus, usaIn: this.usaIn,
@@ -1007,9 +1008,26 @@ class Game {
     d.cityOwners.forEach((o, i) => { g.cities[i].owner = o; });
     g.stats = d.stats;
     g.genUnit = d.genUnit; g.genKills = d.genKills;
+    const coastCorrections=new Set(['54,27','55,27','47,37','44,57','76,107','78,107','79,107','77,108','79,108']);
+    const reservedCells=new Set(d.units.map(u=>key(u.c,u.r))),coastMigrations=[];
     g.units = d.units.map(u => {
       const unit={...u,transport:u.transport||null,embarked:!!u.embarked,eq:g.equipOf(u.eqKey)};
       if(!unit.eq)throw Error('存档中的装备无效');
+      // Only legacy units on explicitly corrected coastline cells may relocate.
+      // Reserve all old and newly assigned cells to prevent migration stacking.
+      if((d.terrainRevision||0)<1&&coastCorrections.has(key(unit.c,unit.r))){
+        const valid=(c,r)=>g.isSeagoing(unit)?g.ocean(c,r):g.landPassable(c,r);
+        if(!valid(unit.c,unit.r)){
+          const spots=[];
+          for(let r=unit.r-4;r<=unit.r+4;r++)for(let c=unit.c-4;c<=unit.c+4;c++){
+            const distance=hexDist(unit.c,unit.r,c,r);
+            if(distance<=4&&valid(c,r)&&!reservedCells.has(key(c,r)))spots.push({c,r,distance});
+          }
+          spots.sort((a,b)=>a.distance-b.distance||a.r-b.r||a.c-b.c);
+          if(!spots.length)throw Error('海岸修正后附近没有可用位置，请使用其它存档');
+          const p=spots[0];unit.c=p.c;unit.r=p.r;reservedCells.add(key(p.c,p.r));coastMigrations.push(unit);
+        }
+      }
       if(d.v<5&&CLASSES[unit.eq.cls].fly&&['50,55','77,37'].includes(key(unit.c,unit.r))){
         const p=g.neighbors(unit.c,unit.r).find(p=>g.landPassable(...p)&&!d.units.some(v=>v.c===p[0]&&v.r===p[1]));
         if(!p)throw Error('旧河口空军存档需要先腾出相邻陆格后保存');
@@ -1043,6 +1061,7 @@ class Game {
       const record=g.nextShipName(u.ct,u.eqKey);u.shipName=record.n;g.rememberShipName(u.ct,record);
     }
     g.log = d.log || [];
+    if(coastMigrations.length)g.pushLog(`地图海岸校正：${coastMigrations.length}支部队已移至最近空闲的同类地形格，兵力与装备保留。`,'info');
     g.terrDirty = true; g.over = null; g.pendingEvents = [];
     g.checkVictory();
     return g;
