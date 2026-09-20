@@ -217,12 +217,6 @@ function rebuildTerrain(g, z) {
       c2.stroke();
     }
   }
-  c2.strokeStyle = '#85b5d999'; c2.lineWidth = Math.max(.6, s2 * .04); c2.setLineDash([s2 * .35, s2 * .25]);
-  for (const route of MAP_META.routes) {
-    const a = pix(...route.a), b = pix(...route.b);
-    c2.beginPath(); c2.moveTo(...a); c2.lineTo(...b); c2.stroke();
-  }
-  c2.setLineDash([]);
   drawCities(c2, g, s2);
   drawCanals(c2, s2);
   terrainCache.key = terrainKey(g) + '@' + cs.toFixed(3);
@@ -399,8 +393,8 @@ function drawFrame(now) {
       cx.textAlign = 'center';
       cx.font = `900 ${s * 0.44}px "Microsoft YaHei",sans-serif`;
       cx.fillStyle = '#fff'; cx.strokeStyle = 'rgba(0,0,0,.6)'; cx.lineWidth = 3;
-      cx.strokeText(CLASSES[u.eq.cls].glyph, x, y + s * 0.16);
-      cx.fillText(CLASSES[u.eq.cls].glyph, x, y + s * 0.16);
+      cx.strokeText((g.isEmbarked(u)?'船':CLASSES[u.eq.cls].glyph), x, y + s * 0.16);
+      cx.fillText((g.isEmbarked(u)?'船':CLASSES[u.eq.cls].glyph), x, y + s * 0.16);
       // 将领星
       if (u.gen) {
         cx.font = `900 ${s * 0.34}px sans-serif`; cx.fillStyle = '#ffd75e';
@@ -584,11 +578,10 @@ function computeTargets() {
   const g = UI.game, u = UI.sel;
   UI.targets.clear();
   if (!u || u.attacked) return;
-  const rng = u.eq.cls === 'art' ? g.rangeOf(u) : 1;
   const spots = [{ c: u.c, r: u.r, plan: null, score: 99 }];
   if (UI.range) for (const [k, cost] of UI.range.cost) {
     const [c, r] = k.split(',').map(Number);
-    if (u.eq.cls !== 'air' && g.ferryDestinations(u.c, u.r).some(p => p[0] === c && p[1] === r)) continue;
+    if (g.movementEndsTurn(u,c,r)) continue;
     spots.push({ c, r, plan: [c, r], score: g.terrainDefBonus(c, r) - cost * 0.01 });
   }
   for (const e of g.units) {
@@ -596,8 +589,7 @@ function computeTargets() {
     let chosen;                    // undefined=不可及; null=原地可攻
     let bs = -1;
     for (const sp of spots) {
-      if (u.eq.cls !== 'air' && u.eq.cls !== 'art' && g.blockedEdges.has(g.edgeKey([sp.c, sp.r], [e.c, e.r]))) continue;
-      if (hexDist(sp.c, sp.r, e.c, e.r) <= rng) {
+      if (g.canStrikeFrom(u,sp.c,sp.r,e)) {
         if (sp.plan === null) { chosen = null; break; }
         if (sp.score > bs) { bs = sp.score; chosen = sp.plan; }
       }
@@ -793,15 +785,19 @@ function showUnitPanel(u) {
   const idle = my && (!u.moved || !u.attacked);
   const skills = gen ? gen.skills.map(skillText).join('<br>') : '';
   const rank = gen ? Math.min(5, 1 + Math.floor((g.genKills[gen.id] || 0) / 3)) : 0;
+  const ship=g.transportOf(u),atSea=g.isEmbarked(u);
+  const transportPanel=my&&u.eq.cls!=='air'?`<div class="p-sub">运输装备：${ship?ship.name:'未配备'} · ${atSea?'航行中':'陆上'}<br>沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="价格${t.cost}金；海上移动${t.move}，防御${t.defense}，攻击保留${Math.round(t.attackMultiplier*100)}%" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?t.year+'年解锁':ship&&ship.cost>=t.cost?(ship.id===t.id?'已配备':'已有更高级'):g.transportPrice(u,t.id)+'金'}</button>`).join('')}</div>`:'';
   body.innerHTML = `
     <div class="p-title"><span>${u.eq.n}</span><span class="tag" style="border-color:${FACTION_COLOR[g.unitFaction(u)]}">${FACTION_NAME[g.unitFaction(u)]}</span></div>
     <div class="p-sub">${COUNTRIES[u.ct].name} · ${CLASSES[u.eq.cls].name} · ${u.eq.nt || ''}</div>
     <div class="hpbar"><div style="width:${Math.max(0, u.hp)}%;background:${u.hp > 60 ? '#67d13d' : u.hp > 30 ? '#e8c33a' : '#e05338'}"></div></div>
     <div class="grid2">
-      <span>攻击 <b>${u.eq.atk}</b></span><span>防御 <b>${u.eq.def}</b></span>
+      <span>攻击 <b>${atSea?Math.round(u.eq.atk*ship.attackMultiplier):u.eq.atk}</b></span><span>防御 <b>${atSea?ship.defense:u.eq.def}</b></span>
       <span>移动力 <b>${g.movOf(u)}</b></span><span>${u.eq.cls === 'art' ? '射程 <b>' + g.rangeOf(u) + '</b>' : '经验 <b>' + u.xp + '</b>'}</span>
       <span>兵力 <b>${u.hp}/100</b></span><span>老练 <b>+${u.vet * 8}%</b></span>
     </div>
+    ${atSea?`<div class="p-sub">🚢 ${ship.name} · 海上攻击保留${Math.round(ship.attackMultiplier*100)}% · 射程1<br>航行移动力固定${ship.move}；海上无法驻防或自动补员。</div>`:''}
+    ${transportPanel}
     ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">已驻防：防御+30%，移动/攻击后解除</div>' : ''}
     ${gen ? `<div class="gen-chip">
       <span class="gname">🎖 ${gen.name}</span> <span style="color:#9aa4b0">${gen.title} · ${'★'.repeat(rank)}级 · 击杀${g.genKills[gen.id] || 0}</span>
@@ -809,14 +805,15 @@ function showUnitPanel(u) {
       <div class="gbio">${gen.bio}</div>
     </div>` : ''}
     ${my ? `<div class="row-btns">
-      ${idle && !u.attacked ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
+      ${idle && !u.attacked && !atSea ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
       ${idle ? '<button class="btn" id="pb-skip">⏭ 待命</button>' : ''}
       ${idle ? '<button class="btn gold" id="pb-gen">🎖 将领</button>' : ''}
       <button class="btn" id="pb-next">⏩ 下一部队</button>
     </div>
     <div class="p-sub" style="margin-top:8px">${u.moved && u.attacked ? '⛔ 本回合已行动完毕' : !u.moved ? '蓝格：可移动 · 红框敌军：可攻击' : '已移动，仍可攻击红框敌军'}</div>` : '<div class="p-sub">敌方部队</div>'}`;
+  ECONOMY.transports.forEach((t,i)=>{const button=document.getElementById('pb-ship-'+i);if(button)button.onclick=()=>{if(!UI.busy&&g.equipTransport(u,t.id)){SFX.click();select(u);updateTopbar();}};});
   const b1 = document.getElementById('pb-dug');
-  if (b1) b1.onclick = () => { u.dug = true; u.moved = true; u.attacked = true; SFX.click(); UI.range = null; UI.targets.clear(); showUnitPanel(u); };
+  if (b1) b1.onclick = () => { if(UI.busy||g.isEmbarked(u)||u.attacked)return; u.dug = true; u.moved = true; u.attacked = true; SFX.click(); UI.range = null; UI.targets.clear(); showUnitPanel(u); };
   const b2 = document.getElementById('pb-skip');
   if (b2) b2.onclick = () => { u.moved = true; u.attacked = true; UI.range = null; UI.targets.clear(); updatePanel(); nextUnit(); };
   const b3 = document.getElementById('pb-gen');
@@ -1031,7 +1028,7 @@ function showHelp() {
       <h1><span class="zh">❓ 玩法手册</span></h1>
       <div class="help-body">
         <h4>■ 基本操作</h4>
-        左键选择部队/城市 · 蓝色格子=可移动，红色闪烁敌军=可攻击（点击自动接敌）· 拖拽平移地图，滚轮缩放<br>
+        左键选择部队/城市 · 蓝色格子=可移动，红色闪烁敌军=可攻击（点击自动接敌）· 拖拽平移地图，滚轮缩放<br>陆军在沿海购买运输装备，点击相邻海格下海；下海／上岸结束整回合行动，海上按运输船移动力航行。1942、1944年解锁更高级舰艇。<br>
         快捷键：<b>N</b> 下一部队 · <b>E/回车</b> 结束回合 · <b>G</b> 将领 · <b>H</b> 帮助 · <b>M</b> 静音 · <b>Esc/右键</b> 取消
         <h4>■ 回合与经济</h4>
         每回合=1个月。城市每回合产出金币，在己方空城可组建新部队（下回合可行动）。部队在己方城市+25兵力/回合，己方领土+12。
@@ -1047,7 +1044,7 @@ function showHelp() {
         <tr><td>装甲</td><td>115%</td><td>140%</td><td>100%</td><td>40%</td></tr>
         <tr><td>空军</td><td>115%</td><td>130%</td><td>110%</td><td>—</td></tr></table>
         <h4>■ 地形防御加成</h4>
-        森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60%。海洋与湖泊不可供陆军通行；跨河多消耗1点移动力。<br>蓝色虚线为抽象海运航线：从己方港口到空置目的地花费25金，并耗尽本回合行动。空军可飞越水面，但必须在陆地结束移动。
+        森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60%。陆军购买运输装备后可进入海洋，湖泊仍不可通行；跨河多消耗1点移动力。<br>运输船25金／1939年、两栖运输舰55金／1942年、两栖突击舰90金／1944年；升级补差价。下海与上岸分别耗尽行动，海上移动力固定5，攻击分别保留20%／45%／70%，防御为6／12／18。空军可飞越水面，但必须在陆地结束移动。
         <h4>■ 胜负</h4>
         <b>占领敌方首都 → 该国全境沦陷</b>（所有城市易手）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。<br>
         中立国（西班牙/瑞典/瑞士/土耳其等）可进攻，但会倒向你的敌人！

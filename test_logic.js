@@ -31,7 +31,7 @@ for (const u of D.INITIAL_UNITS) { const k = key(u.x, u.y); posCount[k] = (posCo
 for (const k in posCount) assert(posCount[k] === 1, `初始单位叠格: ${k} 有 ${posCount[k]} 个`);
 console.log(`  城市 ${D.CITIES.length} 座，初始单位 ${D.INITIAL_UNITS.length} 个`);
 
-/* 地理连通性：允许显式港口航线；不再要求岛屿与大陆有陆桥。 */
+/* 地理连通性：允许运输船经过海洋；不再要求岛屿与大陆有陆桥。 */
 {
   const g = new Game('axis', 'normal');
   const berlin = D.CITIES.find(ci => ci.k === 'berlin');
@@ -39,9 +39,9 @@ console.log(`  城市 ${D.CITIES.length} 座，初始单位 ${D.INITIAL_UNITS.le
   const q = [[berlin.x, berlin.y]];
   while (q.length) {
     const [c, r] = q.shift();
-    for (const [nc, nr] of [...g.landNeighbors(c, r), ...g.ferryDestinations(c, r)]) {
+    for (const [nc, nr] of g.transportNeighbors(c, r)) {
       const t = g.tile(nc, nr);
-      if (g.landPassable(nc, nr) && !seen.has(key(nc, nr))) { seen.add(key(nc, nr)); q.push([nc, nr]); }
+      if (!seen.has(key(nc, nr))) { seen.add(key(nc, nr)); q.push([nc, nr]); }
     }
   }
   for (const ci of D.CITIES) {
@@ -96,7 +96,7 @@ for (const pf of ['axis', 'west', 'sov']) {
         // 不变量
         for (const u of g.units) {
           const tk = g.tile(u.c, u.r);
-          assert(tk && D.TERRAIN[tk].pass, `[${pf}] 单位 ${u.eq.n} 站在海上 (${u.c},${u.r}) 回合${g.turn}`);
+          assert(tk && (u.embarked ? tk === '~' && !!g.transportOf(u) && u.eq.cls!=='air' : D.TERRAIN[tk].pass), `[${pf}] 单位 ${u.eq.n} 站在海上 (${u.c},${u.r}) 回合${g.turn}`);
         }
         const unitsAt = {};
         for (const u of g.units) { const k = key(u.c, u.r); unitsAt[k] = (unitsAt[k] || 0) + 1; }

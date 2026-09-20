@@ -29,6 +29,7 @@ jobs:
           node test_geography.js
           node test_labels.js
           node test_render.js
+          node test_transport.js
           node test_logic.js
       - name: 打包游戏和地图资料
         run: |

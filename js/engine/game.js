@@ -95,14 +95,31 @@ class Game {
     return this.neighbors(c, r).filter(p => this.landPassable(...p) &&
       !this.blockedEdges.has(this.edgeKey([c, r], p)));
   }
-  ferryDestinations(c, r) {
-    const out = [];
-    for (const route of MAP_META.routes) {
-      if (route.a[0] === c && route.a[1] === r) out.push(route.b);
-      if (route.b[0] === c && route.b[1] === r) out.push(route.a);
-    }
-    return out;
+  transportOf(u) { return (ECONOMY.transports || []).find(t => t.id === u.transport) || null; }
+  isEmbarked(u) { return !!u.embarked && !!this.transportOf(u) && !CLASSES[u.eq.cls].fly; }
+  ocean(c,r) { return this.tile(c,r) === '~'; }
+  // Strategic connectivity for AI; costs/ownership/occupancy are checked by moveRange.
+  transportNeighbors(c,r) {
+    return this.neighbors(c,r).filter(p => (this.ocean(...p) || this.landPassable(...p)) &&
+      (this.ocean(c,r) || this.ocean(...p) || !this.blockedEdges.has(this.edgeKey([c,r],p))));
   }
+  transportPrice(u,id) {
+    const next=(ECONOMY.transports || []).find(t=>t.id===id),old=this.transportOf(u);
+    return next ? next.cost-(old ? old.cost : 0) : Infinity;
+  }
+  canEquipTransport(u,id) {
+    const ship=(ECONOMY.transports || []).find(t=>t.id===id),price=this.transportPrice(u,id);
+    return this.units.includes(u) && !CLASSES[u.eq.cls].fly && !u.embarked && !u.moved && !u.attacked &&
+      this.landPassable(u.c,u.r) && this.neighbors(u.c,u.r).some(p=>this.ocean(...p)) &&
+      !!ship && ship.year<=this.year() && price>0 && this.gold[this.unitFaction(u)]>=price;
+  }
+  equipTransport(u,id) {
+    if(!this.canEquipTransport(u,id))return false;
+    const price=this.transportPrice(u,id);this.gold[this.unitFaction(u)]-=price;u.transport=id;
+    this.pushLog(`${u.eq.n} 配备${this.transportOf(u).name}（-${price} 金），可选择相邻海格下海。`,'econ');
+    return true;
+  }
+  movementEndsTurn(u,c,r) { return !CLASSES[u.eq.cls].fly && this.isEmbarked(u)!==this.ocean(c,r); }
   unitAt(c, r) { return this.units.find(u => u.c === c && u.r === r) || null; }
   cityAt(c, r) { return this.cities.find(ci => ci.x === c && ci.y === r) || null; }
   unitFaction(u) { return this.cf[u.ct]; }
@@ -144,6 +161,7 @@ class Game {
     return false;
   }
   rangeOf(u) {
+    if (this.isEmbarked(u)) return 1;
     let rng = CLASSES.art.ranged && u.eq.cls === 'art' ? (u.eq.rng || 2) : 1;
     const s = this.genSkill(u, 'rng'); if (s) rng += s.n;
     return rng;
@@ -151,6 +169,7 @@ class Game {
 
   /* ------------------------------ 移动 ------------------------------ */
   terrainCost(u, c, r) {
+    if(this.isEmbarked(u))return this.ocean(c,r)?1:Infinity;
     const t = this.tile(c, r); const T = TERRAIN[t];
     if (CLASSES[u.eq.cls].fly && (t === '~' || t === 'l')) return 1;
     if (!T || !T.pass) return Infinity;
@@ -158,6 +177,7 @@ class Game {
   }
   /* 迪杰斯特拉：可达格成本表 + 前驱(用于还原路径) */
   moveRange(u) {
+    if(u.moved || u.attacked)return {cost:new Map(),prev:new Map()};
     const start = key(u.c, u.r);
     const cost = new Map([[start, 0]]), prev = new Map(), zocStop = new Set();
     const visited = new Set();
@@ -171,18 +191,18 @@ class Game {
       if (zocStop.has(bk)) continue;                      // 控制区：到此为止
       for (const [nc, nr] of this.neighbors(c, r)) {
         const nk = key(nc, nr), t = this.tile(nc, nr);
-        if (!t || (!CLASSES[u.eq.cls].fly && !this.landPassable(nc, nr))) continue;
+        if (!t || (!CLASSES[u.eq.cls].fly && !(this.isEmbarked(u) ? this.ocean(nc,nr) : this.landPassable(nc,nr)))) continue;
         if (!CLASSES[u.eq.cls].fly && this.blockedEdges.has(this.edgeKey([c, r], [nc, nr]))) continue;
         const occ = this.unitAt(nc, nr);
         if (occ && this.unitFaction(occ) !== this.unitFaction(u)) continue;   // 敌方格阻挡
         const step = this.terrainCost(u, nc, nr) +
-          (!CLASSES[u.eq.cls].fly && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
+          (!CLASSES[u.eq.cls].fly && !this.isEmbarked(u) && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
         const ncost = bc + step;
         if (ncost > mov) continue;
         if (!cost.has(nk) || ncost < cost.get(nk)) { cost.set(nk, ncost); prev.set(nk, bk); }
         // 进入敌方控制区 → 移动终止于该格
         if (!this.hasNoZOC(u)) {
-          const nearEnemy = this.landNeighbors(nc, nr).some(([ec, er]) => {
+          const nearEnemy = (this.isEmbarked(u) ? this.neighbors(nc,nr) : this.landNeighbors(nc, nr)).some(([ec, er]) => {
             const e = this.unitAt(ec, er);
             return e && this.atWar(this.unitFaction(u), this.unitFaction(e));
           });
@@ -195,35 +215,37 @@ class Game {
     const ends = new Map();
     for (const [k, v] of cost) {
       const p = k.split(',').map(Number);
-      if (this.landPassable(...p) && !this.unitAt(...p)) ends.set(k, v);
+      if ((this.isEmbarked(u) ? this.ocean(...p) : this.landPassable(...p)) && !this.unitAt(...p)) ends.set(k, v);
     }
-    // Transport is an explicit port-to-port voyage, not a bridge over the sea.
-    const f = this.unitFaction(u);
-    if (!CLASSES[u.eq.cls].fly && this.territoryOwner(u.c, u.r) === f && this.gold[f] >= 25) {
-      for (const p of this.ferryDestinations(u.c, u.r)) if (!this.unitAt(...p)) {
-        ends.set(key(...p), mov); prev.set(key(...p), start);
-      }
+    // A shore transition is a separate adjacent move and ends both actions.
+    if(!CLASSES[u.eq.cls].fly && this.transportOf(u))for(const p of this.neighbors(u.c,u.r)){
+      const valid=this.isEmbarked(u)?this.landPassable(...p):this.ocean(...p);
+      if(valid&&!this.unitAt(...p)){ends.set(key(...p),mov);prev.set(key(...p),start);}
     }
     return { cost: ends, prev };
   }
   pathTo(u, ck) {
-    const { prev } = this.moveRange(u);
+    const { cost, prev } = this.moveRange(u);
+    if(!cost.has(ck))return null;
     const path = []; let k = ck;
     while (k && k !== key(u.c, u.r)) { path.unshift(k); k = prev.get(k); }
     return path.length ? path.map(s => s.split(',').map(Number)) : null;
   }
   movOf(u) {
+    if(this.isEmbarked(u))return this.transportOf(u).move;
     let m = u.eq.mov;
     const s = this.genSkill(u, 'mov'); if (s) m += s.n;
     return m;
   }
 
   moveUnit(u, c, r, path) {
+    if(!this.units.includes(u)||u.moved||u.attacked)return false;
     const f = this.unitFaction(u);
-    const voyage = !CLASSES[u.eq.cls].fly && this.ferryDestinations(u.c, u.r).some(p => p[0] === c && p[1] === r);
-    if (voyage && (this.gold[f] < 25 || this.territoryOwner(u.c, u.r) !== f || this.unitAt(c, r))) return false;
-    path = path || (voyage ? [[c, r]] : this.pathTo(u, key(c, r))) || [[c, r]];
-    if (voyage) { this.gold[f] -= 25; u.attacked = true; this.pushLog('部队完成海运：花费25金，本回合无法攻击。', 'info'); }
+    // Never trust caller-supplied paths to bypass movement/terrain/occupancy rules.
+    path=this.pathTo(u,key(c,r));if(!path)return false;
+    const transition=this.movementEndsTurn(u,c,r);
+    if(transition){u.embarked=this.ocean(c,r);u.attacked=true;
+      this.pushLog(`${u.eq.n}${u.embarked?'下海':'上岸'}，本回合行动结束。`,'info');}
     for (const p of path) {
       const ct = this.homeCountryOf(...p);
       if (ct && !COUNTRIES[ct].context && !COUNTRIES[ct].controller && this.cf[ct] === 'neutral' && f !== 'neutral') this.neutralDefect(ct, f);
@@ -248,7 +270,7 @@ class Game {
       m *= 1 + 0.04 * (rank - 1);
       for (const s of g.skills) if (s.k === 'atk' && (!s.cls || s.cls === u.eq.cls)) m *= 1 + s.m;
     }
-    if (target) m *= ATK_MOD[u.eq.cls][target.eq.cls];     // 兵种克制
+    if (target && !this.isEmbarked(u)) m *= ATK_MOD[u.eq.cls][this.isEmbarked(target)?'inf':target.eq.cls];     // 兵种克制
     const vs = this.genSkill(u, 'vs');
     if (vs && target && target.eq.cls === vs.tgt) m *= 1 + vs.m;
     if (this.genSkill(u, 'rage') && u.hp < 50) m *= 1.15;
@@ -261,9 +283,10 @@ class Game {
       }
     }
     if (f !== this.playerFaction) m *= this.aiMult.atk;
-    return u.eq.atk * m;
+    return u.eq.atk * m * (this.isEmbarked(u)?this.transportOf(u).attackMultiplier:1);
   }
   effDef(u) {
+    if(this.isEmbarked(u))return this.transportOf(u).defense*(this.unitFaction(u)!==this.playerFaction?this.aiMult.def:1);
     const f = this.unitFaction(u);
     let m = 1;
     m *= 1 + 0.08 * u.vet;
@@ -285,7 +308,7 @@ class Game {
   /* 预览伤害(期望值) / 实际结算 */
   computeDamage(att, def, opt) {
     const a = this.effAtk(att, def);
-    const ignoreTerrain = att.eq.cls === 'art' || att.eq.cls === 'air';
+    const ignoreTerrain = !this.isEmbarked(att) && (att.eq.cls === 'art' || att.eq.cls === 'air');
     let dm = 1 + (ignoreTerrain ? 0 : this.terrainDefBonus(def.c, def.r));
     const cd = this.genSkill(def, 'citydef');
     if (cd && this.cityAt(def.c, def.r)) dm *= 1 + cd.m;
@@ -295,19 +318,18 @@ class Game {
     return Math.max(3, Math.round(dmg));
   }
   canAttackNow(u) { return !u.attacked && u.hp > 0; }
+  canStrikeFrom(u,c,r,e) {
+    const dist=hexDist(c,r,e.c,e.r);
+    if(dist<1||dist>this.rangeOf(u))return false;
+    if(!this.isEmbarked(u)&&u.eq.cls!=='air'&&u.eq.cls!=='art'&&this.blockedEdges.has(this.edgeKey([c,r],[e.c,e.r])))return false;
+    return true;
+  }
   targetsOf(u) {
-    const out = [], f = this.unitFaction(u), rng = this.rangeOf(u);
-    if (!this.canAttackNow(u)) return out;
-    for (const e of this.units) {
-      if (!this.atWar(f, this.unitFaction(e))) continue;
-      const dist = hexDist(u.c, u.r, e.c, e.r);
-      if (u.eq.cls !== 'air' && u.eq.cls !== 'art' && this.blockedEdges.has(this.edgeKey([u.c, u.r], [e.c, e.r]))) continue;
-      if (u.eq.cls === 'art') { if (dist <= rng) out.push(e); }
-      else if (dist === 1) out.push(e);
-    }
-    return out;
+    if(!this.canAttackNow(u))return [];
+    return this.units.filter(e=>this.atWar(this.unitFaction(u),this.unitFaction(e))&&this.canStrikeFrom(u,u.c,u.r,e));
   }
   attack(att, def) {
+    if(!this.units.includes(att)||!this.units.includes(def)||!this.targetsOf(att).includes(def))return null;
     const rec = { type: 'battle', aC: att.c, aR: att.r, c: def.c, r: def.r, killed: false, counter: 0 };
     const fA = this.unitFaction(att), fD = this.unitFaction(def);
     // 中立国被攻击 → 倒向攻击者的敌对阵营
@@ -323,7 +345,7 @@ class Game {
     } else {
       // 反击：近战 & 防守方为步兵/装甲
       const dist = hexDist(att.c, att.r, def.c, def.r);
-      if (dist === 1 && !this.blockedEdges.has(this.edgeKey([att.c, att.r], [def.c, def.r])) && (def.eq.cls === 'inf' || def.eq.cls === 'tank')) {
+      if (dist === 1 && this.canStrikeFrom(def,def.c,def.r,att) && (this.isEmbarked(def) || def.eq.cls === 'inf' || def.eq.cls === 'tank')) {
         let cm = 0.55;
         const cs = this.genSkill(def, 'counter'); if (cs) cm += cs.m;
         const a2 = this.effAtk(def, att);
@@ -420,7 +442,7 @@ class Game {
     const u = {
       id: this.nextId++, ct, eqKey, eq,
       hp: 100, xp: 0, vet: 0, c: x, r: y,
-      moved: false, attacked: false, dug: false, gen: null,
+      moved: false, attacked: false, dug: false, gen: null, transport:null, embarked:false,
     };
     this.units.push(u);
     if (opt && opt.gen && this.genUnit[opt.gen] === null) {
@@ -448,6 +470,7 @@ class Game {
       u.moved = false; u.attacked = false;
       const city = this.cityAt(u.c, u.r);
       let heal = 0;
+      if (this.isEmbarked(u)) continue;
       if (city && city.owner === f) heal = 25;
       else if (this.territoryOwner(u.c, u.r) === f) heal = 12;
       if (heal) u.hp = Math.min(100, u.hp + heal);
@@ -604,6 +627,15 @@ class Game {
 
     for (const u of units) {
       if (!this.units.includes(u)) continue;              // 已阵亡
+      if(!u.transport&&!CLASSES[u.eq.cls].fly&&!u.moved&&!u.attacked){
+        const sea=this.neighbors(u.c,u.r).filter(p=>this.ocean(...p));
+        const target=u.hp<35?distHome:dist;
+        const here=target.get(key(u.c,u.r));
+        if(Number.isFinite(here)&&sea.some(p=>(target.get(key(...p))??Infinity)+5 <= here)){
+          const ship=[...ECONOMY.transports].reverse().find(t=>this.canEquipTransport(u,t.id));
+          if(ship)this.equipTransport(u,ship.id);
+        }
+      }
       // 1) 残血撤退
       if (u.hp < 35 && u.eq.cls !== 'air') {
         const t = this.bestTile(u, distHome, { defensive: true });
@@ -702,11 +734,10 @@ class Game {
     while (heap.length) {
       const [d, c, r] = pop();
       if (d > (dist.get(key(c, r)) ?? 1e9)) continue;
-      for (const [nc, nr] of [...this.landNeighbors(c, r), ...this.ferryDestinations(c, r)]) {
+      for (const [nc, nr] of this.transportNeighbors(c, r)) {
         const t = this.tile(nc, nr);
-        if (!this.landPassable(nc, nr)) continue;
-        const ferry = this.ferryDestinations(c, r).some(p => p[0] === nc && p[1] === nr);
-        const nd = d + (ferry ? 8 : (COST[t] || 2)) + (this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
+        const transition=this.ocean(c,r)!==this.ocean(nc,nr);
+        const nd = d + (transition ? 5 : this.ocean(nc,nr)?1:(COST[t] || 2)) + (this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
         if (nd < (dist.get(key(nc, nr)) ?? 1e9)) { dist.set(key(nc, nr), nd); push(nd, nc, nr); }
       }
     }
@@ -781,7 +812,7 @@ class Game {
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {
     return JSON.stringify({
-      v: 3, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
+      v: 4, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
       playerFaction: this.playerFaction, difficulty: this.difficulty,
       gold: this.gold, westBonus: this.westBonus, usaIn: this.usaIn,
       wars: [...this.wars], cf: this.cf,
@@ -790,7 +821,7 @@ class Game {
       genUnit: this.genUnit, genKills: this.genKills,
       units: this.units.map(u => ({
         id: u.id, ct: u.ct, eqKey: u.eqKey, hp: u.hp, xp: u.xp, vet: u.vet,
-        c: u.c, r: u.r, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen,
+        c: u.c, r: u.r, moved: u.moved, attacked: u.attacked, dug: u.dug, gen: u.gen, transport:u.transport, embarked:this.isEmbarked(u),
       })),
       log: this.log.slice(-80),
     });
@@ -805,7 +836,13 @@ class Game {
     d.cityOwners.forEach((o, i) => { g.cities[i].owner = o; });
     g.stats = d.stats;
     g.genUnit = d.genUnit; g.genKills = d.genKills;
-    g.units = d.units.map(u => ({ ...u, eq: g.equipOf(u.eqKey) }));
+    g.units = d.units.map(u => {
+      const unit={...u,transport:u.transport||null,embarked:!!u.embarked,eq:g.equipOf(u.eqKey)};
+      if(unit.transport&&!g.transportOf(unit))throw Error('存档中的运输舰艇类型无效');
+      if(unit.embarked&&(!g.isEmbarked(unit)||!g.ocean(unit.c,unit.r)))throw Error('存档中的运输状态无效');
+      if(!unit.embarked&&!g.landPassable(unit.c,unit.r))throw Error('存档中存在未登船的海上单位');
+      return unit;
+    });
     g.log = d.log || [];
     g.terrDirty = true; g.over = null; g.pendingEvents = [];
     g.checkVictory();
