@@ -309,6 +309,7 @@ function render(now) {
   }
 }
 
+function unitIconClass(g,u) { return !g.isEmbarked(u)&&Object.hasOwn(UnitIcons.SHAPES,u.eq.cls)?u.eq.cls:null; }
 function drawFrame(now) {
   const g = UI.game;
   const dpr = window.devicePixelRatio || 1;
@@ -392,13 +393,16 @@ function drawFrame(now) {
     cx.fillStyle = cc; cx.fill();
     cx.lineWidth = 2.5; cx.strokeStyle = FACTION_COLOR[f] || '#999'; cx.stroke();
     if (u.gen) { cx.lineWidth = 1.6; cx.strokeStyle = '#ffd75e'; cx.beginPath(); cx.arc(x, y, s * 0.62, 0, 7); cx.stroke(); }
+    const iconClass=unitIconClass(g,u);
+    if(iconClass)UnitIcons.draw(cx,iconClass,x,y,s*UnitIcons.BOX_RATIO,{detail:s>=18});
     if (!simple) {
-      // 兵种字（显式居中：主画布不再有城市循环预设 textAlign）
       cx.textAlign = 'center';
-      cx.font = `900 ${s * 0.44}px "Microsoft YaHei",sans-serif`;
-      cx.fillStyle = '#fff'; cx.strokeStyle = 'rgba(0,0,0,.6)'; cx.lineWidth = 3;
-      cx.strokeText((g.isEmbarked(u)?'船':CLASSES[u.eq.cls].glyph), x, y + s * 0.16);
-      cx.fillText((g.isEmbarked(u)?'船':CLASSES[u.eq.cls].glyph), x, y + s * 0.16);
+      if(!iconClass){
+        cx.font = `900 ${s * 0.44}px "Microsoft YaHei",sans-serif`;
+        cx.fillStyle = '#fff'; cx.strokeStyle = 'rgba(0,0,0,.6)'; cx.lineWidth = 3;
+        const glyph=g.isEmbarked(u)?'船':CLASSES[u.eq.cls].glyph;
+        cx.strokeText(glyph,x,y+s*.16);cx.fillText(glyph,x,y+s*.16);
+      }
       // 将领星
       if (u.gen) {
         cx.font = `900 ${s * 0.34}px sans-serif`; cx.fillStyle = '#ffd75e';
@@ -612,7 +616,7 @@ function showAirfieldPanel(ci) {
     <div class="p-sub">驻扎空军（机场失守时，未撤离的飞机损失）</div>
     ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${g.airRoleName(u)} · ${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
     <div class="p-sub">组建空军</div>
-    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name">${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
+    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${UnitIcons.svg('air',18)}</span>${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
   document.getElementById('airfield-city').onclick=()=>showCityPanel(ci);
   const transferButton=document.getElementById('airfield-transfer');if(transferButton)transferButton.onclick=()=>{if(!UI.busy&&g.rebaseAir(selected,ci.k)){select(selected);updateTopbar();renderLog();}};
   units.forEach((u,i)=>{document.getElementById('airfield-unit-'+i).onclick=()=>{if(UI.busy||!g.units.includes(u))return;if(UI.sel&&UI.targets.has(u.id)){doAttack(u);return;}if(g.unitFaction(u)===g.playerFaction)select(u);else showUnitInfo(u);};});
@@ -1038,7 +1042,7 @@ function showFactoryPanel(city) {
   body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，仅部署到空闲城市格，新部队当回合不能行动，需在城内停留至下回合。</div>
     <button class="btn" id="factory-city">返回城市</button>
     ${recruitmentTabsHTML('factory',groups,category)}
-    ${offers.map(o=>`<div class="shop-item"><div>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${o.index}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
+    ${offers.map(o=>`<div class="shop-item"><div><span class="ico">${UnitIcons.svg(o.eq.cls,18)}</span>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${o.index}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
   document.getElementById('factory-city').onclick=()=>showCityPanel(city);
   groups.forEach((label,i)=>document.getElementById('factory-tab-'+i).onclick=()=>{UI.factoryCategory=label;showFactoryPanel(city);});
   offers.forEach(o=>document.getElementById('factory-build-'+o.index).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
@@ -1063,7 +1067,7 @@ function showCityPanel(city) {
     ${recruitmentTabsHTML('city-recruit',groups,category)}
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
-        <div><div class="s-name">${CLASSES[it.eq.cls].glyph}·${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
+        <div><div class="s-name"><span class="ico">${UnitIcons.svg(it.eq.cls,15)}</span>${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
         <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;

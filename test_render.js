@@ -27,6 +27,7 @@ function harness() {
   };
   sandbox.window=sandbox;
   vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync('js/ui/unit-icons.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/music.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/ui.js','utf8'),sandbox);
   const run = code => vm.runInContext(code,sandbox);
@@ -298,3 +299,11 @@ assert.equal(h.run("filterGeneralRoster(GENERALS,'','de').length"),20);
 assert.equal(h.run("filterGeneralRoster(GENERALS,'曼纳海姆','de').length"),0);
 assert.equal(h.run("filterGeneralRoster(GENERALS,'毫无匹配').length"),0);
 console.log('Expanded general roster: Chinese/English search and country filtering passed.');
+
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'tank'}})"),'tank');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'bb'}})"),null);
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'inf'},embarked:true,transport:'transport'})"),null);
+assert.equal(h.run("UnitIcons.svg('bb',18)"),'');
+h.run("UI.game=new Game('axis');UI.game.units=[];UI.cityRecruitCategory='徒步步兵';showCityPanel(UI.game.cityByKey.berlin)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('class=\"u-icon\"')"));
+console.log('Artwork UI: vector recruitment, naval text fallback and transported-army distinction passed.');

@@ -14,7 +14,7 @@
     { label: '加载将领与历史事件', files: ['js/data/generals.js', 'js/data/events.js'] },
     { label: '装配地图与数据',     files: ['js/core/assemble.js'] },
     { label: '初始化引擎',         files: ['js/engine/game.js'] },
-    { label: '初始化界面',         files: ['js/ui/map-labels.js', 'js/ui/music.js', 'js/ui/ui.js'] },
+    { label: '初始化界面',         files: ['js/ui/map-labels.js', 'js/ui/unit-icons.js', 'js/ui/music.js', 'js/ui/ui.js'] },
   ];
   const TOTAL = STAGES.reduce((n, s) => n + s.files.length, 0);
   let done = 0;

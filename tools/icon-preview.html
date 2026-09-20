@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>兵种图标预览 · 钢铁欧陆 1939</title>
+<!--
+  改动 js/ui/unit-icons.js 后，用浏览器打开本页即可检查四种兵种图标的效果。
+  无需服务器：双击本文件即可（file:// 下也能加载 ../js/ui/unit-icons.js）。
+  检查要点：
+    ① 尺寸梯度：缩到 s=8 是否还能大致分辨兵种（这是替换汉字的主要动机）
+    ② 对比度：白色图标 + 深色描边，在最亮的两种国家色（芬兰/白）上是否仍然清晰
+    ③ 破形：形状若有透明裂口，多半是子路径环绕方向相反（见 unit-icons.js 文件头 §2）
+    ④ 放大：s≈76 时细节层（负重轮/发动机短舱）是否自然
+-->
+<style>
+  body{margin:0;background:#eef1f4;font:13px/1.5 "Microsoft YaHei",sans-serif;color:#222}
+  .wrap{padding:16px 18px}
+  h3{margin:14px 0 6px;font-size:14px}
+  canvas{display:block;background:#fff;border:1px solid #ccd}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sw{width:112px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+  code{font-size:11px;color:#667}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h3>① 各兵种 × 多种格宽 s（= 游戏内 <code>s</code>；圆盘 + 阵营环 + 图标）</h3>
+  <canvas id="cv1" width="1080" height="330"></canvas>
+
+  <h3>② 同一图标画在不同国家色圆盘上（对比度检验；yl / wht 为最亮的两种）</h3>
+  <canvas id="cv2" width="1080" height="130"></canvas>
+
+  <h3>③ DOM 内联 SVG（招募面板用法，与 Canvas 同源同形）</h3>
+  <div id="domrow" class="row"></div>
+
+  <h3>④ 放大观察（纯色填充，若出现透明裂口即为子路径方向不一致）</h3>
+  <canvas id="cv4" width="1080" height="210"></canvas>
+</div>
+
+<script src="../js/ui/unit-icons.js"></script>
+<script>
+const CLASSES = { inf:{name:'步兵'}, art:{name:'炮兵'}, tank:{name:'装甲'}, air:{name:'空军'} };
+const CLS = ['inf','art','tank','air'];
+/* nations.js 里真实的国家配色；yl/wht 是人为加的最亮底色，用于压测对比度 */
+const COLORS = { de:'#66796b', su:'#b03a31', uk:'#b39b45', fi:'#9bb0c4',
+                 dk:'#c0504d', gr:'#6f9fc4', yl:'#e8dc9a', wht:'#f2f2f2' };
+const FACTION_COLOR = { axis:'#4a3b3b', west:'#2f4f7a', sov:'#8a2620', neutral:'#6b6b6b' };
+const BOX = s => s * UnitIcons.BOX_RATIO;
+
+function disc(cx, x, y, s, cc, fc) {
+  cx.beginPath(); cx.arc(x, y + s*0.30, s*0.5, 0, 7); cx.fillStyle='rgba(0,0,0,.25)'; cx.fill();
+  cx.beginPath(); cx.arc(x, y, s*0.52, 0, 7); cx.fillStyle = cc; cx.fill();
+  cx.lineWidth = 2.5; cx.strokeStyle = fc; cx.stroke();
+}
+
+/* ① 尺寸梯度（与 ui.js 的渲染顺序一致） */
+(function () {
+  const cx = document.getElementById('cv1').getContext('2d');
+  cx.font = '11px "Microsoft YaHei",sans-serif';
+  [8, 11, 14, 18, 24, 36, 52, 76].forEach((s, i) => {
+    const x0 = 40 + i * 132;
+    cx.fillStyle = '#556'; cx.textAlign = 'center';
+    cx.fillText('s=' + s, x0, 16);
+    if (s < 11) cx.fillText('低倍速简化', x0, 28);
+    CLS.forEach((c, j) => {
+      const y = 82 + j * 62;
+      disc(cx, x0, y, s, COLORS.de, FACTION_COLOR.axis);
+      UnitIcons.draw(cx, c, x0, y, BOX(s), { detail: s >= 18 });
+    });
+  });
+  cx.textAlign = 'right'; cx.fillStyle = '#556';
+  CLS.forEach((c, j) => cx.fillText(CLASSES[c].name, 36, 87 + j * 62));
+})();
+
+/* ② 国家色对比（上排装甲 / 下排步兵） */
+(function () {
+  const cx = document.getElementById('cv2').getContext('2d');
+  Object.keys(COLORS).forEach((k, i) => {
+    const x = 70 + i * 130;
+    disc(cx, x, 42, 40, COLORS[k], '#333');
+    UnitIcons.draw(cx, 'tank', x, 42, BOX(40), { detail: true });
+    disc(cx, x, 96, 40, COLORS[k], '#333');
+    UnitIcons.draw(cx, 'inf', x, 96, BOX(40), { detail: true });
+    cx.textAlign = 'center'; cx.fillStyle = '#556';
+    cx.font = '11px "Microsoft YaHei",sans-serif';
+    cx.fillText(k, x, 124);
+  });
+})();
+
+/* ③ DOM 内联 SVG */
+document.getElementById('domrow').innerHTML = CLS.map(c =>
+  `<div class="sw" style="background:#66796b;color:#fff">` + UnitIcons.svg(c, 32, '#fff') +
+  `<span style="margin-left:6px;font-size:12px">${CLASSES[c].name}</span></div>`).join('') +
+  `<code>UnitIcons.svg(cls, size, fill)</code>`;
+
+/* ④ 放大（纯色填充，最容易看出破形） */
+(function () {
+  const cx = document.getElementById('cv4').getContext('2d');
+  const K = 1.6, cy = 92;
+  CLS.forEach((c, i) => {
+    const bx = 145 + i * 258;
+    cx.save();
+    cx.translate(bx, cy);          // 形状以 (0,0) 为中心，必须先移到目标位置再放大
+    cx.scale(K, K);
+    cx.fillStyle = '#1a1f26';
+    cx.fill(UnitIcons.shape(c));
+    cx.restore();
+    cx.textAlign = 'center'; cx.fillStyle = '#556';
+    cx.font = '12px "Microsoft YaHei",sans-serif';
+    cx.fillText(CLASSES[c].name + '  ' + c, bx, 192);
+  });
+})();
+</script>
+</body>
+</html>
