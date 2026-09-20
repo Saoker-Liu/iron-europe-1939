@@ -179,3 +179,13 @@ node test_logic.js
 - [英国国家档案馆：1939—1947年苏联领土变化](https://www.nationalarchives.gov.uk/education/resources/cold-war-on-file/soviet-territories-1939-1947/)
 - [英国皇家空军历史资料：十二群岛及1939边界](https://www.raf.mod.uk/what-we-do/our-history/air-historical-branch/second-world-war-campaign-narratives/operations-in-the-dodecanese-islands-sep-nov-1943/)
 - [美国国会图书馆：高加索地图史及1937—1939年地图集](https://guides.loc.gov/caucasus-maps/contents-history)
+
+## 半岛、平原、山系与历史地区补充
+
+本轮把宏观地理单元放在全览层：斯堪的纳维亚、安纳托利亚半岛、伊比利亚半岛、亚平宁半岛、巴尔干半岛、西欧／中欧／东欧平原、乌拉尔山脉及波罗的海三国。西欧与中欧平原是欧洲大平原西、中段的概化名称，不代表精确划定的新地形边界；山脉文字亦不新增地形或改变移动规则。乌拉尔锚点59°E、60°N位于现有地图范围内。
+
+奥克西塔尼亚为法国南部历史文化地区，锚点2°E、44°N，不将2016年成立的现代行政大区投射到1939年。加利西亚区分西班牙西北部（-7.6°E、42.8°N）与东欧历史地区（23°E、49.7°N）；东欧锚点位于1939年8月波兰境内。保留先前西班牙标签，避免把两处同名地理区域混同。
+
+比利牛斯、阿尔卑斯、奥地利、克罗地亚、莱茵兰在地区层显示；更小的波西米亚、摩拉维亚、斯洛文尼亚、多布罗加和鲁尔在局部层显示。奥地利不恢复独立国家；克罗地亚、斯洛文尼亚仍在南斯拉夫；波西米亚和摩拉维亚的文字不更改保护国与苏台德的1939边界。多布罗加锚点位于罗马尼亚，保留其战前南多布罗加归属。波罗的海三国只是集合地名，三国仍独立。
+
+安纳托利亚原地区层标签改为全览层“安纳托利亚半岛”，避免同一地理单元跨层重复。所有名称仍遵循层级替换和碰撞避让；最大倍率仅显示城市名称。地理术语参考[国家地理学会：欧洲自然地理](https://education.nationalgeographic.org/resource/europe-physical-geography/)，国界沿用本项目的1939快照。
