@@ -72,7 +72,7 @@ console.log('== 机制测试 ==');
   const berlin = g.cityByKey.berlin;
   g.units = g.units.filter(u => u !== deInf);
   const gold0 = g.gold.axis;
-  const u2 = g.recruit('berlin', 'de:inf:0');
+  const u2 = g.recruit('berlin', 'de:infantry:0');
   assert(u2 && g.gold.axis === gold0 - 60, '柏林招募步兵应花费60金');
   assert(u2.attacked === true && u2.moved === true, '新兵当回合不可行动');
   assert(g.recruit('berlin', 'de:tank:2') === null, '城市被占/年份未到应招募失败');

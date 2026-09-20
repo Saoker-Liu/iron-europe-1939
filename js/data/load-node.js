@@ -13,6 +13,7 @@ require('./terrain.js');
 require('./nations.js');
 require('./economy.js');
 require('./military.js');
+require('./infantry.js');
 require('./air.js');
 require('./air-scenario.js');
 require('./naval.js');

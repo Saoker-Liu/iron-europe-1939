@@ -62,7 +62,8 @@
       root.EQUIP[ct]={...M.military.EQUIP[ct],...(M.naval.equipment[ct]||M.naval.equipment.neutral)};
     for(const ct of Object.keys(root.EQUIP)){
       root.EQUIP[ct].air=M.air.equipment[ct]||M.air.equipment.neutral;
-      root.EQUIP[ct].para=[M.air.paratrooper];
+      root.EQUIP[ct].para=[M.air.paratrooper]; // Legacy saves retain their equipment keys.
+      Object.assign(root.EQUIP[ct],M.infantry.equipment[ct]||M.infantry.equipment.neutral);
     }
     root.INITIAL_UNITS = map.deployments.map(u => Object.assign({}, u));
 

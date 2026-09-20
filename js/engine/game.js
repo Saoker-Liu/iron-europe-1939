@@ -450,7 +450,9 @@ class Game {
     const t = this.tile(c, r); const T = TERRAIN[t];
     if (CLASSES[u.eq.cls].fly && (t === '~' || t === 'l')) return 1;
     if (!T || !T.pass) return Infinity;
-    return T.cost ? T.cost[u.eq.cls] : 1;
+    const cost=T.cost ? T.cost[u.eq.cls] : 1;
+    const specialist=u.eq.infRole==='mountain'&&['h','m'].includes(t)||u.eq.infRole==='ranger'&&t==='f';
+    return specialist?Math.max(1,cost-1):cost;
   }
   /* 迪杰斯特拉：可达格成本表 + 前驱(用于还原路径) */
   moveRange(u) {
@@ -478,7 +480,7 @@ class Game {
         const occ = this.unitAt(nc, nr);
         if (occ && this.unitFaction(occ) !== this.unitFaction(u)) continue;   // 敌方格阻挡
         const step = this.terrainCost(u, nc, nr) + (this.isSeagoing(u)?hexDist(c,r,nc,nr)-1:0) +
-          (!CLASSES[u.eq.cls].fly && !this.isSeagoing(u) && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
+          (!CLASSES[u.eq.cls].fly && !this.isSeagoing(u) && u.eq.infRole!=='marine' && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
         const ncost = bc + step;
         if (ncost > mov) continue;
         if (!cost.has(nk) || ncost < cost.get(nk)) { cost.set(nk, ncost); prev.set(nk, bk); }
@@ -569,7 +571,10 @@ class Game {
       }
     }
     if (f !== this.playerFaction) m *= this.aiMult.atk;
-    return u.eq.atk * m * (this.isEmbarked(u)?this.transportOf(u).attackMultiplier:1);
+    if(target&&u.eq.cls==='inf'&&!this.isSeagoing(u)&&hexDist(u.c,u.r,target.c,target.r)===1&&this.riverEdges.has(this.edgeKey([u.c,u.r],[target.c,target.r])))m*=u.eq.infRole==='marine'?.9:.7;
+    let seaMultiplier=this.isEmbarked(u)?this.transportOf(u).attackMultiplier:1;
+    if(this.isEmbarked(u)&&u.eq.infRole==='marine'&&target&&this.landPassable(target.c,target.r))seaMultiplier=Math.min(1,seaMultiplier+.3);
+    return u.eq.atk*m*seaMultiplier;
   }
   effDef(u) {
     if(this.isEmbarked(u))return this.transportOf(u).defense*(this.unitFaction(u)!==this.playerFaction?this.aiMult.def:1);
@@ -596,7 +601,8 @@ class Game {
     const a = this.effAtk(att, def);
     if(a<=0)return 0;
     const ignoreTerrain = !this.isEmbarked(att) && (att.eq.cls === 'art' || att.eq.cls === 'air');
-    let dm = 1 + (ignoreTerrain ? 0 : this.terrainDefBonus(def.c, def.r));
+    const t=this.tile(def.c,def.r),specialist=!this.isEmbarked(att)&&(att.eq.infRole==='mountain'&&['h','m'].includes(t)||att.eq.infRole==='ranger'&&t==='f');
+    let dm = 1 + (ignoreTerrain ? 0 : this.terrainDefBonus(def.c, def.r)*(specialist?.5:1));
     const cd = this.genSkill(def, 'citydef');
     if (cd && this.cityAt(def.c, def.r)) dm *= 1 + cd.m;
     const d = this.effDef(def) * dm;
@@ -722,27 +728,17 @@ class Game {
   factionCityCount(f) { return this.cities.filter(ci => ci.owner === f).length; }
 
   /* 招募：返回单位或 null */
-  recruit(cityK, eqKey) {
-    const city = this.cityByKey[cityK]; if (!city || city.demilitarized) return null;
-    const f = city.owner;
-    if (this.unitAt(city.x, city.y)) return null;
-    const eq = this.equipOf(eqKey);
-    if(eq?.para&&!this.airfields.includes(city))return null;
-    if (!eq || eq.cls==='air' || CLASSES[eq.cls].naval || eq.yr > this.year()) return null;
-    if (eq.cls === 'tank' || eq.cls === 'art') {
-      const allowUS = city.ct === 'uk' && this.usaIn;
-      const rosterCt = (eqKey.startsWith('us:') && !allowUS) ? null : (EQUIP[city.ct] ? city.ct : 'neutral');
-      if (eqKey.split(':')[0] !== rosterCt) return null;
-    } else {
-      const rosterCt = EQUIP[city.ct] ? city.ct : 'neutral';
-      if (eqKey.split(':')[0] !== rosterCt) return null;
-    }
-    if (this.gold[f] < eq.cost) return null;
-    this.gold[f] -= eq.cost;
-    const u = this.spawnUnit(city.ct, eqKey, city.x, city.y, {});
-    u.moved = true; u.attacked = true;                    // 本回合不可行动
-    this.pushLog(`${this.factionName(f)} 在 ${city.n} 组建 ${eq.n}（-${eq.cost} 金）`, 'econ');
-    return u;
+  recruit(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,false); }
+  recruitFactory(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,true); }
+  recruitGround(cityK,eqKey,faction,factory) {
+    const city=this.cityByKey[cityK];
+    if(!city||city.demilitarized||city.owner!==faction||!['axis','west','sov'].includes(faction)||this.unitAt(city.x,city.y))return null;
+    const offer=(factory?this.factoryRoster(city):this.rosterFor(city)).find(o=>o.eqKey===eqKey&&!o.locked);
+    if(!offer||this.gold[faction]<offer.eq.cost)return null;
+    const country=eqKey.split(':')[0],ct=this.cf[city.ct]===faction?city.ct:({axis:'de',west:'uk',sov:'su'}[faction]);
+    this.gold[faction]-=offer.eq.cost;
+    const u=this.spawnUnit(country==='us'?'us':ct,eqKey,city.x,city.y,{});u.moved=true;u.attacked=true;
+    this.pushLog(`${city.n}${factory?'工厂':''}组建${u.eq.n}（-${u.eq.cost}金）。`,'econ');return u;
   }
   spawnUnit(ct, eqKey, x, y, opt) {
     const eq = this.equipOf(eqKey);
@@ -1160,13 +1156,7 @@ class Game {
     if (myUnits >= (atWar ? cap : peaceCap)) return;
     for (const ci of cities) {
       if (this.unitAt(ci.x, ci.y)) continue;
-      const rosterCt = EQUIP[ci.ct] ? ci.ct : 'neutral';
-      const opts = [];
-      for (const cls of ['inf', 'art', 'tank',...(this.airfields.includes(ci)?['para']:[])]) {
-        (EQUIP[rosterCt][cls] || []).forEach((eq, i) => {
-          if (eq.yr <= this.year() && eq.cost <= this.gold[f]) opts.push(`${rosterCt}:${cls}:${i}`);
-        });
-      }
+      const opts=[...this.rosterFor(ci),...this.factoryRoster(ci)].filter(o=>!o.locked&&o.eq.cost<=this.gold[f]).map(o=>o.eqKey);
       if (!opts.length) continue;
       // 地面部队构成偏好：装甲 4 / 炮兵 2.5 / 步兵 2.5；空军由机场逻辑组建。
       const weight = ek => {
@@ -1182,7 +1172,7 @@ class Game {
       for (const ek of opts) { pick -= weight(ek); if (pick <= 0) { chosen = ek; break; } }
       // 超级武器只有富余时才买
       if (this.equipOf(chosen).cost > 400 && this.gold[f] < 600) continue;
-      const u = this.recruit(ci.k, chosen);
+      const u = ['art','tank'].includes(this.equipOf(chosen).cls)?this.recruitFactory(ci.k,chosen,f):this.recruit(ci.k,chosen,f);
       if (u) {
         // AI 给新部队指派空闲将领
         const pool = GENERALS.filter(g => this.cf[g.ct] === f && this.genUnit[g.id] === null);
@@ -1199,25 +1189,21 @@ class Game {
   }
   playerUnits() { return this.units.filter(u => !u.carrierId && this.unitFaction(u) === this.playerFaction); }
   /* 玩家可招募列表（某城市） */
-  rosterFor(city) {
-    const rosterCt = EQUIP[city.ct] ? city.ct : 'neutral';
-    const out = [];
-    for (const cls of ['inf', 'art', 'tank']) {
-      (EQUIP[rosterCt][cls] || []).forEach((eq, i) => {
-        out.push({ eqKey: `${rosterCt}:${cls}:${i}`, eq, locked: eq.yr > this.year() });
-      });
-    }
-    if(this.airfields.includes(city))out.push({eqKey:`${rosterCt}:para:0`,eq:EQUIP[rosterCt].para[0],locked:false});
-    // 1942 年后伦敦可招募美军装备
-    if (city.ct === 'uk' && this.usaIn) {
-      for (const cls of ['inf', 'art', 'tank']) {
-        (EQUIP.us[cls] || []).forEach((eq, i) => {
-          out.push({ eqKey: `us:${cls}:${i}`, eq, locked: eq.yr > this.year() });
-        });
-      }
-    }
-    return out;
+  groundCountry(city) {
+    const ct=this.cf[city.ct]===city.owner?city.ct:({axis:'de',west:'uk',sov:'su'}[city.owner]||'neutral');
+    return EQUIP[ct]?.infantry?ct:'neutral';
   }
+  latestGroundRoster(city,roles) {
+    const native=this.groundCountry(city),ct=roles.includes('art')&&!EQUIP[native].art?'neutral':native;
+    return roles.map(role=>{
+      const list=EQUIP[ct][role]||[],available=list.map((eq,i)=>({eq,eqKey:`${ct}:${role}:${i}`})).filter(o=>o.eq.yr<=this.year());
+      return available.at(-1)||null;
+    }).filter(Boolean).map(o=>({...o,locked:false}));
+  }
+  rosterFor(city) {
+    return this.latestGroundRoster(city,['militia','garrison','irregular','infantry','mountain','marine','ranger','airborne','cavalry','motorized','mechanized']);
+  }
+  factoryRoster(city) { return city.factory?this.latestGroundRoster(city,['art','tank']):[]; }
 
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {

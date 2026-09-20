@@ -654,7 +654,7 @@ function constructionHTML(city) {
     Object.entries(ECONOMY.construction).map(([kind,rule])=>{
       const job=g.construction.find(p=>p.cityKey===city.k&&p.kind===kind),done=g.hasFacility(city,kind),error=g.constructionError(city.k,kind);
       const state=done?'已建成':job?'建设中 · 剩余'+job.remaining+'回合':error||'可建设';
-      return `<div class="p-sub">${rule.name}：${state}${kind==='factory'?' · 目前不提供收益加成':''}</div>`+
+      return `<div class="p-sub">${rule.name}：${state}${kind==='factory'?' · 可组建炮兵与装甲部队':''}</div>`+
         (!done&&!job&&city.owner===g.playerFaction?`<button class="btn" id="city-build-${kind}" ${error||UI.busy?'disabled':''}>${kind==='harbor'?'选择海格建设港口':'建设'+rule.name} · ${rule.cost}金 · ${rule.turns}回合</button>`:'');
     }).join('');
 }
@@ -1022,6 +1022,15 @@ function showUnitPanel(u) {
 
 function showUnitInfo(u) { showUnitPanel(u); }
 
+function showFactoryPanel(city) {
+  const g=UI.game,body=document.getElementById('panel-body');if(!city.factory)return;
+  const offers=g.factoryRoster(city),blocked=city.owner!==g.playerFaction||city.demilitarized||!!g.unitAt(city.x,city.y)||UI.busy;
+  body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，城市格须无地面驻军，新部队下回合行动。</div>
+    <button class="btn" id="factory-city">返回城市</button>
+    ${offers.map((o,i)=>`<div class="shop-item"><div>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov}</div><button class="btn gold" id="factory-build-${i}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
+  document.getElementById('factory-city').onclick=()=>showCityPanel(city);
+  offers.forEach((o,i)=>document.getElementById('factory-build-'+i).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
+}
 function showCityPanel(city) {
   const g = UI.game;
   const body = document.getElementById('panel-body');
@@ -1033,16 +1042,18 @@ function showCityPanel(city) {
     <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${g.cityIncome(city)} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
     ${g.airfields.includes(city)?'<button class="btn gold" id="city-airfield">✈ 打开机场 · 组建空军</button>':''}
     ${g.harbors.some(h=>h.cityKey===city.k)?'<button class="btn gold" id="city-harbor">⚓ 打开军港 · 建造舰艇</button>':''}
+    ${city.factory?'<button class="btn gold" id="city-factory">⚒ 打开工厂 · 组建炮兵与装甲</button>':''}
     ${constructionHTML(city)}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
     <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方未驻军的城市可招募'}</div>
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
-        <div><div class="s-name">${CLASSES[it.eq.cls].glyph}·${it.eq.n}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
+        <div><div class="s-name">${CLASSES[it.eq.cls].glyph}·${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
         <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;
   for(const kind of Object.keys(ECONOMY.construction)){const button=document.getElementById('city-build-'+kind);if(button)button.onclick=()=>{if(UI.busy)return;kind==='harbor'?chooseHarborSite(city):beginConstruction(city,kind);};}
+  const factoryButton=document.getElementById('city-factory');if(factoryButton)factoryButton.onclick=()=>showFactoryPanel(city);
   const airportButton=document.getElementById('city-airfield');if(airportButton)airportButton.onclick=()=>showAirfieldPanel(city);
   const harborButton=document.getElementById('city-harbor');
   if(harborButton)harborButton.onclick=()=>showHarborPanel(g.harbors.find(h=>h.cityKey===city.k));
