@@ -57,6 +57,8 @@ class Game {
     this.harbors = this.buildHarbors();
     // Major-city airports are scenario abstractions, not individual historical airfields.
     this.airfields = this.cities.filter(ci=>!ci.demilitarized && (ci.cap || MAP_META.cityLabelLevels[ci.k]<=1));
+    // Main scenario: the same major-city tier as airports starts with industry.
+    if(options.initialFactories!==false)for(const ci of this.cities)if(!ci.demilitarized&&(ci.cap||MAP_META.cityLabelLevels[ci.k]<=1))ci.factory=true;
     this.terrDirty = true; this._terrCache = null;
     this.blockedEdges = new Set(MAP_META.blockedEdges);
     this.riverEdges = new Set(MAP_META.riverEdges || []);
@@ -1269,7 +1271,7 @@ class Game {
   static deserialize(str) {
     const d = JSON.parse(str);
     if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
-    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false});
+    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false,initialFactories:false});
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;
     g.wars = new Set(d.wars); g.cf = d.cf;

@@ -47,3 +47,14 @@ const old=JSON.parse(new Game('axis','normal',{initialFleet:false}).serialize())
 const legacy=Game.deserialize(JSON.stringify(old));assert(legacy.airfields.length>60);assert.equal(legacy.construction.length,0);
 const bad=JSON.parse(g.serialize());bad.construction=[{cityKey:'bad',kind:'factory',remaining:1}];assert.throws(()=>Game.deserialize(JSON.stringify(bad)),/建设数据/);
 console.log('PASS construction: pricing, costs, legality, turn timing, capture, blocked harbor, recruitment, saves and legacy migration');
+// Initial industry follows the same major-city tier as airfields and never leaks into loaded saves.
+const opening=new Game('axis');const factories=opening.cities.filter(c=>c.factory);
+assert.equal(factories.length,93);assert.deepEqual(factories.map(c=>c.k),opening.airfields.map(c=>c.k));assert.deepEqual(opening.gold,require('./js/data/load-node').START_GOLD);
+for(const k of ['berlin','hamburg','essen','london','manch','paris','lyon','moscow','leningrad','rome','milan'])assert(opening.cityByKey[k].factory,k);
+assert.equal(opening.construction.length,0);assert(!factories.some(c=>c.demilitarized));
+opening.units=[];assert(opening.recruitFactory('berlin','de:gun_gun:0'));assert(!opening.startConstruction('berlin','factory'));
+assert.equal(Game.deserialize(opening.serialize()).cities.filter(c=>c.factory).length,93);
+const prior=new Game('axis','normal',{initialFactories:false});prior.gold.axis=1000;assert(prior.startConstruction('berlin','factory'));prior.advanceConstruction();
+const priorLoaded=Game.deserialize(prior.serialize());assert(!priorLoaded.cityByKey.berlin.factory);assert.equal(priorLoaded.construction[0].remaining,2);
+const ancient=JSON.parse(prior.serialize());delete ancient.facilities;delete ancient.construction;ancient.v=8;assert.equal(Game.deserialize(JSON.stringify(ancient)).cities.filter(c=>c.factory).length,0);
+console.log('Initial factories: 93 major cities, ready production, unchanged gold, saved factories and old in-progress construction passed');

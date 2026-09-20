@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),{Game}=require('./js/engine/game'),D=require('./js/data/load-node');
-const g=new Game('axis','normal',{initialAir:false,initialFleet:false});g.units=[];g.gold.axis=10000;const city=g.cityByKey.berlin;
+const g=new Game('axis','normal',{initialAir:false,initialFleet:false,initialFactories:false});g.units=[];g.gold.axis=10000;const city=g.cityByKey.berlin;
 assert.equal(g.rosterFor(city).length,11);assert(g.rosterFor(city).every(o=>o.eq.cls==='inf'));
 assert.equal(g.recruit('berlin','de:art:0'),null);assert.equal(g.recruitFactory('berlin','de:art:0'),null);
 assert.equal(g.recruit('london','uk:infantry:0'),null);assert.equal(g.recruit('berlin','su:infantry:0'),null);assert.equal(g.recruit('berlin','de:inf:0'),null);
@@ -28,12 +28,12 @@ const restored=Game.deserialize(g.serialize());assert.equal(restored.units.find(
 g.units=[];g.captureCity(g.cityByKey.paris,'axis');assert(g.rosterFor(g.cityByKey.paris).some(o=>o.eq.n.includes('武装党卫军')));assert(g.recruit('paris','de:infantry:0'));assert.equal(g.units.at(-1).ct,'de');
 console.log('Infantry: 11 roles, 3 dates, national replacements, factory gates, terrain skills, ownership and save compatibility passed');
 // Marine river movement discount is reflected in the actual path cost map.
-const riverGame=new Game('axis','normal',{initialAir:false,initialFleet:false});riverGame.units=[];
+const riverGame=new Game('axis','normal',{initialAir:false,initialFleet:false,initialFactories:false});riverGame.units=[];
 const home=riverGame.cityByKey.berlin,[rc,rr]=riverGame.neighbors(home.x,home.y)[0];riverGame.terr[rc+','+rr]='.';
 riverGame.riverEdges=new Set([riverGame.edgeKey([home.x,home.y],[rc,rr])]);
 const foot=riverGame.spawnUnit('de','de:infantry:0',home.x,home.y,{});const footCost=riverGame.moveRange(foot).cost.get(rc+','+rr);riverGame.killUnit(foot);
 const navalInf=riverGame.spawnUnit('de','de:marine:0',home.x,home.y,{});assert.equal(footCost,2);assert.equal(riverGame.moveRange(navalInf).cost.get(rc+','+rr),1);
 // Enemy AI uses its own nationality and cannot buy factory units in ordinary cities.
-const ai=new Game('axis','normal',{initialAir:false,initialFleet:false});ai.units=[];ai.gold.west=10000;ai.aiRecruit('west',true);
+const ai=new Game('axis','normal',{initialAir:false,initialFleet:false,initialFactories:false});ai.units=[];ai.gold.west=10000;ai.aiRecruit('west',true);
 assert(ai.units.length);assert(ai.units.every(u=>u.eq.cls==='inf'&&u.eq.infRole&&ai.unitFaction(u)==='west'));
 console.log('Infantry movement and AI city restrictions passed');

@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),{Game}=require('./js/engine/game'),D=require('./js/data/load-node');
-const fresh=()=>{const g=new Game('axis','normal',{initialAir:false,initialFleet:false});g.units=[];g.gold.axis=10000;g.wars.add('axis|sov');return g;};
+const fresh=()=>{const g=new Game('axis','normal',{initialAir:false,initialFleet:false,initialFactories:false});g.units=[];g.gold.axis=10000;g.wars.add('axis|sov');return g;};
 let g=fresh();const b=g.cityByKey.berlin;const make=(role,ct='de',x=b.x,y=b.y)=>g.spawnUnit(ct,ct+':gun_'+role+':0',x,y,{});
 const gun=make('gun'),at=make('at'),aa=make('aa'),field=make('field'),rocket=make('rocket');
 const tank=g.spawnUnit('uk','uk:tank:0',b.x+1,b.y,{}),inf=g.spawnUnit('uk','uk:infantry:0',b.x+1,b.y,{});
