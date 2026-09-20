@@ -4,12 +4,12 @@
  const root=typeof window!=='undefined'?window:globalThis;
  const roles={
   fighter:{name:'轻型战斗机',atk:30,def:14,radius:6,cost:120,air:2.4,inf:.65,ground:.18,sea:.12,role:'机场制空，善于歼灭飞机；对步兵有限杀伤，对装甲和舰船效果很弱'},
-  heavy:{name:'重型战斗机',atk:39,def:20,radius:9,cost:190,air:2.5,inf:.75,ground:.25,sea:.18,role:'更远航程、更强火力与防护的制空机型'},
-  cas:{name:'近地支援机',atk:44,def:8,radius:7,cost:230,air:.12,inf:1.55,ground:1.65,sea:.35,role:'短程对地支援，擅长攻击步兵、装甲与炮兵，易遭战斗机杀伤'},
-  naval:{name:'海军轰炸机',atk:42,def:11,radius:9,cost:250,air:.15,inf:.4,ground:.3,sea:2.1,role:'鱼雷／反舰与海上巡逻任务，专长攻击舰队及海运部队，可反潜'},
+  heavy:{name:'重型战斗机',atk:39,def:20,radius:9,cost:260,air:2.5,inf:.75,ground:.25,sea:.18,role:'更远航程、更强火力与防护的制空机型'},
+  cas:{name:'近地支援机',atk:44,def:8,radius:7,cost:140,air:.12,inf:1.55,ground:1.65,sea:.35,role:'短程对地支援，擅长攻击步兵、装甲与炮兵，易遭战斗机杀伤'},
+  naval:{name:'海军轰炸机',atk:42,def:11,radius:9,cost:160,air:.15,inf:.4,ground:.3,sea:2.1,role:'鱼雷／反舰与海上巡逻任务，专长攻击舰队及海运部队，可反潜'},
   tactical:{name:'战术轰炸机',atk:48,def:16,radius:10,cost:280,air:.18,inf:1.6,ground:1.5,sea:.55,role:'中程战术对地轰炸，比近地支援机航程远、防护强'},
   strategic:{name:'战略轰炸机',atk:65,def:30,radius:16,cost:480,air:.2,inf:1.9,ground:1.65,sea:.5,role:'远程重型对地轰炸；1945年核技术解锁后可执行核打击'},
-  transport:{name:'运输机',atk:0,def:14,radius:12,cost:210,air:0,inf:0,ground:0,sea:0,role:'无攻击能力；装载一支伞兵并执行伞降或随队转场'},
+  transport:{name:'运输机',atk:0,def:14,radius:12,cost:260,air:0,inf:0,ground:0,sea:0,role:'无攻击能力；装载一支伞兵并执行伞降或随队转场'},
  };
  // Entries: model, game unlock year, optional note. Repeated families denote distinct variants/roles.
  const models={
