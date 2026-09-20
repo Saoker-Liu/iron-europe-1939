@@ -39,7 +39,7 @@ assert.equal(g.cf.it,'neutral'); assert.equal(g.cf.al,'neutral');
 assert.equal(g.cf.sk,'axis'); assert.equal(g.cf.bm,'axis');
 
 // City expansion: requested ports and battle locations are playable city objects.
-assert.equal(D.CITIES.length,205);
+assert.equal(D.CITIES.length,278);
 assert.equal(new Set(D.CITIES.map(ci=>ci.k)).size,D.CITIES.length,'unique city keys');
 for (const [k,ct] of Object.entries({genoa:'it',venice:'it',zara:'it',liverpool:'uk',dunkirk:'fr',caen:'fr',cherbourg:'fr',saintlo:'fr',split:'yu',brestlitovsk:'pl'})) {
   assert.equal(g.cityByKey[k].ct,ct,k+' 1939 owner');
@@ -57,7 +57,71 @@ for (const [ct,budget] of Object.entries(D.ECONOMY.countryIncomeBudget)) {
 }
 assert(g.cities.every(ci=>Number.isInteger(ci.inc)&&ci.inc>0),'all cities have positive income');
 
+// Small strategic ports/bases must stay on their islands and retain 1939 owners.
+for(const [k,ct,lon,lat] of [
+ ['fiume','it',14.4422,45.3271],['palma','es',2.6502,39.5696],
+ ['scapaflow','uk',-3.191,58.835],['ronne','dk',14.706,55.101],
+ ['torshavn','dk',-6.7716,62.0079],['jersey','uk',-2.1045,49.1838],
+ ['janmayen','no',-8.5,70.98]
+]) {
+ assert.equal(g.cityByKey[k].ct,ct,k+' 1939 owner');
+ assert.deepEqual(city(k),at(lon,lat),k+' stays on intended island/enclave');
+ assert(g.neighbors(...city(k)).some(p=>g.tile(...p)==='~'),k+' coastal access');
+ assert(D.MAP_META.routes.some(rt=>rt.cities.includes(k)),k+' supply connection');
+}
+assert.equal(g.homeCountryOf(67,52),'de','East Prussian coastal gap must not inherit modern Russian ownership');
+for(let r=0;r<D.MAP_H;r++)for(let c=0;c<D.MAP_W;c++) {
+ const [lon,lat]=geo.hexToGeo(c,r);
+ if(lon>19&&lon<23&&lat>54&&lat<56) assert.notEqual(g.homeCountryOf(c,r),'su','no Soviet enclave beside Königsberg');
+}
+assert(g.landNeighbors(...city('fiume')).some(p=>g.homeCountryOf(...p)==='yu'),'Fiume has Yugoslav land boundary');
+for(const [a,b]of [['palma','barca'],['scapaflow','aberdeen'],['ronne','copenhagen'],['torshavn','scapaflow'],['jersey','portsmouth'],['jersey','cherbourg'],['janmayen','tromso']]) {
+ assert.equal(route(city(a),city(b)),Infinity,a+' is separated by sea from '+b);
+ assert(Number.isFinite(route(city(a),city(b),true)),a+' usable sea transport to '+b);
+}
+
 // Projection round trips and bounds; local error is limited to hex discretisation.
+// Regional expansion uses the 1939 border even where later wartime annexations differ.
+for(const [ct,keys]of Object.entries({
+ uk:['douglas','cardiff','swansea','nottingham','leeds','southampton','exeter','inverness','norwich'],
+ ie:['cork','galway','limerick','waterford'],
+ es:['acoruna','vigo','bilbao','murcia','cartagena','granada','malaga','alicante','oviedo','santander','burgos','valladolid','salamanca','cordoba'],
+ de:['wilhelmshaven','emden','rostock','magdeburg','erfurt','regensburg'],
+ se:['visby','karlskrona'],fi:['mariehamn'],bg:['plovdiv','burgas','ruse'],
+ hu:['szeged','pecs','gyor','miskolc'],
+ ro:['timisoara','arad','oradea','brasov','sibiu','iasi','galati','craiova'],
+ yu:['podgorica','novisad','subotica','petrovgrad','nis','banjaluka','osijek','dubrovnik'],
+ su:['yerevan','batumi','tbilisi','baku','kutaisi','grozny','makhachkala','ordzhonikidze']
+}))for(const k of keys)assert.equal(g.cityByKey[k].ct,ct,k+' 1939 country');
+for(const k of ['douglas','visby','mariehamn']) {
+ const ci=g.cityByKey[k];assert.deepEqual(city(k),at(ci.lon,ci.lat),k+' island position');
+ assert.equal(route(city(k),city('berlin')),Infinity,k+' separated from mainland');
+ assert(Number.isFinite(route(city(k),city('berlin'),true)),k+' reachable by sea');
+}
+assert(g.cityByKey.ronne.mapLabel.includes('博恩霍尔姆'));
+assert(!D.MAP_META.labels.some(l=>l.name==='博恩霍尔姆岛'),'no displaced floating Bornholm label');
+assert(g.cityByKey.bilbao.major && g.cityByKey.bilbao.region==='巴斯克');
+assert.equal(g.cityByKey.petrovgrad.n,'彼得罗夫格勒','pre-1946 city name');
+for(const k of ['yerevan','tbilisi','baku'])assert(!g.cityByKey[k].cap,'republic capital does not trigger USSR capitulation');
+// The apparent island SW of Plymouth is Cornwall: restore land connectivity.
+assert.equal(home(-5.28,50.06),'uk');
+assert(Number.isFinite(route(at(-5.28,50.06),city('london'))),'Cornwall peninsula connected to Britain');
+assert.deepEqual(city('plymouth'),at(-4.1427,50.3755),'Plymouth at its actual coastal hex');
+assert(route(city('cardiff'),city('bristol'))>1,'no walking directly across the Severn estuary');
+// A port must touch water connected to the Atlantic, not an enclosed sea-coloured hole.
+const ocean=new Set(['0,50']),waterQueue=[[0,50]];
+for(let i=0;i<waterQueue.length;i++)for(const p of g.neighbors(...waterQueue[i]))
+ if(g.tile(...p)==='~'&&!ocean.has(key(...p))){ocean.add(key(...p));waterQueue.push(p);}
+for(const k of ['bristol','plymouth','cardiff','swansea','douglas','visby','mariehamn','wilhelmshaven','emden'])
+ assert(g.neighbors(...city(k)).some(p=>ocean.has(key(...p))),k+' open sea access');
+// Åland keeps Finnish sovereignty and a civilian port; neither player nor AI may recruit there.
+const alandGame=new Game('axis'),aland=alandGame.cityByKey.mariehamn;
+assert(aland.demilitarized);assert(!alandGame.unitAt(aland.x,aland.y));
+aland.owner='axis';alandGame.gold.axis=1000;
+assert.equal(alandGame.recruit('mariehamn','neutral:inf:0'),null);
+assert.equal(alandGame.gold.axis,1000,'demilitarisation rejection does not charge money');
+assert(Game.deserialize(alandGame.serialize()).cityByKey.mariehamn.demilitarized,'status survives save/load');
+
 for(let r=0;r<D.MAP_H;r+=7)for(let c=0;c<D.MAP_W;c+=7)
   assert.deepEqual(at(...geo.hexToGeo(c,r)),[c,r]);
 for(const ci of D.CITIES) {
@@ -120,5 +184,7 @@ assert(g.targetsOf(artillery).includes(defender),'artillery can fire over water'
 assert.equal(g.attack(artillery,defender).counter,0,'no infantry counterattack over water');
 assert.throws(()=>Game.deserialize(JSON.stringify({v:2})),/旧地图/);
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v3'})),/旧地图/);
+assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v4'})),/旧地图/);
+assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v5'})),/旧地图/);
 assert.equal(Game.deserialize(g.serialize()).units.length,g.units.length);
 console.log('Geography: historical checkpoints, projection, coastline, transport, river and save tests passed.');

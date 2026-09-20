@@ -54,7 +54,7 @@ for mode in ['political','terrain']:
   x,y=p(ci['x'],ci['y']);cap=ci.get('cap',False)
   d.ellipse((x-3,y-3,x+3,y+3),fill='#ffe4a1' if cap else '#ded8bf',outline='#243441')
   if cap or ci.get('major'):
-   txt=('★' if cap else '')+ci['n']
+   txt=('★' if cap else '')+ci.get('mapLabel',ci['n'])
    for sx,sy in [(x+7,y+6),(x+7,y-23),(x-95,y+6),(x-95,y-23),(x+7,y+26)]:
     box=d.textbbox((sx,sy),txt,font=f(15),stroke_width=2)
     if all(box[2]<b[0] or box[0]>b[2] or box[3]<b[1] or box[1]>b[3]for b in label_boxes):

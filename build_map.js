@@ -71,6 +71,9 @@ function countryAt(lon,lat,modernName) {
  if(modernName==='Cyprus'||modernName==='Northern Cyprus'||modernName==='Akrotiri Sovereign Base Area'||modernName==='Dhekelia Sovereign Base Area')ct='uk';
  if(modernName==='Malta'||modernName==='Gibraltar')ct='uk';
  if(modernName==='Iceland')ct='is';
+ // The modern Kaliningrad exclave was East Prussia in 1939. Its modern coast
+ // extends beyond the historical polygon; never fill those coastal gaps as USSR.
+ if(modernName==='Russia'&&lon>19&&lon<23&&lat>54&&lat<56)ct='de';
  if(modernName==='Russia'&&!ct)ct='su';
  // Modern coast polygons occasionally extend beyond the coarser historical coast.
  if(!ct) {
@@ -147,17 +150,31 @@ const inMap=(c,r)=>c>=0&&r>=0&&c<W&&r<H;
 const neigh=(c,r)=>[[1,0],[-1,0],[r&1?1:0,-1],[r&1?0:-1,-1],[r&1?1:0,1],[r&1?0:-1,1]].map(([x,y])=>[x+c,y+r]).filter(p=>inMap(...p));
 const landAt=(c,r)=>inMap(c,r)&&homes[r][c]&&homes[r][c]!=='xx';
 const edgeKey=(a,b)=>[a.join(','),b.join(',')].sort().join('|');
+// At 45 km resolution Cres otherwise fills the entire Kvarner Gulf and encloses
+// Fiume inland. Prioritise the gulf's navigable water over this sub-grid island.
+const kvarner=G.geoToHex(14.45,44.95);
+rows[kvarner[1]][kvarner[0]]='~';homes[kvarner[1]][kvarner[0]]=null;
+// Cornwall is a continuous peninsula. Centre-only sampling severed its narrow
+// neck and left the Lizard as a fictitious offshore island.
+for(const [a,b]of [[[-5.55,50.12],[-4.7,50.4]],[[-4.7,50.4],[-3.8,50.65]]])
+ for(const [c,r]of lineHexes(a,b)){rows[r][c]='.';homes[r][c]='uk';}
+// Preserve the Bristol Channel and Severn/Avon estuary at sub-grid scale.
+// This opens the formerly enclosed water hex west of Bristol to the Atlantic.
+for(const [c,r]of lineHexes([-4.2,51.35],[-3.15,51.43])){rows[r][c]='~';homes[r][c]=null;}
 // Retain tiny but strategically relevant islands and states at one-hex resolution.
 // Only these explicit anchors can promote a sea cell to land; never arbitrary units.
-const anchors={valletta:'uk',gibraltar:'uk',luxembourg:'lu',danzig:'dz',rhodes:'it',bratislava:'sk',kosice:'hu',zara:'it',dunkirk:'fr'};
+const anchors={valletta:'uk',gibraltar:'uk',luxembourg:'lu',danzig:'dz',rhodes:'it',bratislava:'sk',kosice:'hu',zara:'it',dunkirk:'fr',fiume:'it',scapaflow:'uk',ronne:'dk',torshavn:'dk',jersey:'uk',janmayen:'no',douglas:'uk',visby:'se',mariehamn:'fi',plymouth:'uk'};
 for(const ci of N.CITIES.filter(ci=>anchors[ci.k])){
  const [c,r]=G.geoToHex(ci.lon,ci.lat);rows[r][c]='.';homes[r][c]=ci.ct;
 }
 const cityLocations={},used=new Set();
+const reserved=new Map(N.CITIES.filter(ci=>anchors[ci.k]).map(ci=>[G.geoToHex(ci.lon,ci.lat).join(','),ci.k]));
 for(const ci of N.CITIES) {
  const target=G.project(ci.lon,ci.lat); let best=null,bd=Infinity;
  for(let r=0;r<H;r++)for(let c=0;c<W;c++) {
   if(homes[r][c]!==ci.ct||used.has(c+','+r))continue;
+  if(reserved.has(c+','+r)&&reserved.get(c+','+r)!==ci.k)continue;
+  if(ci.port&&!neigh(c,r).some(([x,y])=>rows[y][x]==='~'))continue;
   const p=G.project(...G.hexToGeo(c,r)); const d=Math.hypot(p[0]-target[0],p[1]-target[1]);
   if(d<bd){bd=d;best=[c,r];}
  }
@@ -180,6 +197,8 @@ const cuts=[
  ['大贝尔特海峡',[10.85,54.7],[11.05,55.85]],
  ['小贝尔特海峡',[9.65,54.9],[9.8,55.6]],
  ['刻赤海峡',[36.45,45.5],[36.6,45.0]],
+ ['彭特兰海峡',[-3.7,58.78],[-2.75,58.7]],
+ ['塞文河口',[-3.25,51.35],[-2.6,51.62]],
  ['直布罗陀海峡',[-6,35.95],[-5.1,35.95]]
 ];
 function crosses(a,b,c,d) {const cross=(p,q,s)=>(q[0]-p[0])*(s[1]-p[1])-(q[1]-p[1])*(s[0]-p[0]);return cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0;}
@@ -190,7 +209,7 @@ for(let r=0;r<H;r++)for(let c=0;c<W;c++)if(landAt(c,r))for(const p of neigh(c,r)
  if((cts.includes('dk')&&cts.includes('se'))||(cts.includes('uk')&&cts.includes('fr'))||cuts.some(([,s,t])=>crosses(a,b,G.project(...s),G.project(...t))))blockedEdges.push(edgeKey([c,r],p));
 }
 // City placement must not connect Malta / Rhodes / Gibraltar across open water.
-for(const k of ['valletta','rhodes']){
+for(const k of ['valletta','rhodes','ronne','torshavn','jersey','janmayen','douglas','mariehamn']){
  const p=cityLocations[k];for(const q of neigh(...p))if(landAt(...q)&&Math.hypot(...G.project(...G.hexToGeo(...q)).map((v,i)=>v-G.project(N.CITIES.find(c=>c.k===k).lon,N.CITIES.find(c=>c.k===k).lat)[i]))>35)blockedEdges.push(edgeKey(p,q));
 }
 // Ferry routes are graph edges, NEVER land/shallows. Both endpoints are named ports.
@@ -198,6 +217,19 @@ for(const k of ['valletta','rhodes']){
 const routeDefs=[['多佛尔—加来','dover','calais'],['爱尔兰海航线','belfast','manch'],['爱尔兰海航线','dublin','london'],['科西嘉航线','marseille','ajaccio'],['撒丁岛航线','cagliari','rome'],['西西里航线','naples','palermo'],['马耳他航线','palermo','valletta'],['克里特航线','athens','heraklion'],['罗得岛航线','heraklion','rhodes'],['塞浦路斯航线','rhodes','nicosia'],['丹麦海峡航线','copenhagen','hamburg'],['厄勒海峡航线','copenhagen','goteborg'],['北海航线','edinburgh','bergen'],['冰岛航线','glasgow','reykjavik']];
 const routes=routeDefs.map(([name,a,b])=>({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]}));
 for (const [name,a,b] of [['亚得里亚海航线','ancona','zara'],['利物浦—都柏林','liverpool','dublin']]) routes.push({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]});
+for (const [name,a,b] of [
+ ['阜姆—威尼斯','fiume','venice'],['马略卡岛航线','palma','barca'],
+ ['奥克尼群岛航线','scapaflow','aberdeen'],['博恩霍尔姆航线','ronne','copenhagen'],
+ ['法罗群岛航线','torshavn','scapaflow'],['法罗—冰岛','torshavn','reykjavik'],
+ ['泽西岛航线','jersey','portsmouth'],['扬马延登陆补给线','janmayen','reykjavik'],
+ ['扬马延—挪威','janmayen','tromso']
+]) routes.push({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]});
+for(const [name,a,b]of [
+ ['马恩岛航线','douglas','liverpool'],['哥特兰航线','visby','stockholm'],
+ ['奥兰—芬兰','mariehamn','turku'],['奥兰—瑞典','mariehamn','stockholm'],
+ ['布里斯托尔湾海运','bristol','cork'],['威尔士—爱尔兰','cardiff','waterford'],
+ ['斯旺西—科克','swansea','cork']
+])routes.push({name,a:cityLocations[a],b:cityLocations[b],cities:[a,b]});
 // Istanbul has a ferry to Asian shore even though there is no separate city there.
 const ist=cityLocations.istanbul; const asian=lineHexes([29.15,40.95],[29.5,40.8]).find(p=>landAt(...p)&&p.join(',')!==ist.join(','));
 if(asian)routes.push({name:'博斯普鲁斯渡运',a:ist,b:asian,cities:['istanbul']});
@@ -241,6 +273,8 @@ for(let r=0;r<H;r++)for(let c=0;c<W;c++)if(homes[r][c]==='fr'){
 }
 const labels=[['大西洋',-15,48],['北海',3,57],['波罗的海',19,57],['地中海',8,37],['黑海',34,43],['挪威海',0,66],['亚得里亚海',16,42],['爱琴海',25,38],['白海',37,65.5],['拉多加湖',31.5,61],['里海',50,43]].map(([name,lon,lat])=>({name,grid:G.geoToGrid(lon,lat)}));
 labels.push({name:'诺曼底',grid:G.geoToGrid(-.7,48.8),kind:'region'});
+for(const [name,lon,lat]of [['法罗群岛',-9.7,62.7],['马略卡岛',2.9,38.9]])
+ labels.push({name,grid:G.geoToGrid(lon,lat),kind:'region'});
 const map={...G.spec,rows:rows.map(r=>r.join('')),homes,cityLocations,deployments,rivers,riverEdges:[...riverEdges],blockedEdges:[...new Set(blockedEdges)],routes,landingCells,labels,land:[],shallows:[]};
 // Quantise projection metadata so V8/libm rounding differences across OS/Node versions do not change generated bytes.
 const mapJSON=JSON.stringify(map,(_key,value)=>typeof value==='number'&&!Number.isInteger(value)?Number(value.toFixed(6)):value);
