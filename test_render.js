@@ -151,3 +151,15 @@ assert(h.run("document.getElementById('panel-body').innerHTML.includes('下艘�
 h.run('UI.cam.z=1.3;centerOn(named2.c,named2.r)');h.texts.length=0;h.frame(10000);
 assert(h.texts.includes('提尔皮茨号'),'zoomed map paints personal ship name');
 console.log('Naval identity UI: panel, tooltip, next-name preview and map label passed.');
+
+// City defense must be visible both with and without a garrison.
+for(const [cityKey,bonus] of [['berlin',60],['hamburg',40]]){
+ h.run(`UI.game.units=[];UI.sel=null;const ci_${cityKey}=UI.game.cityByKey.${cityKey};showCityPanel(ci_${cityKey});`);
+ assert(h.run(`document.getElementById('panel-body').innerHTML.includes('防御+${bonus}%')`));
+ h.run(`centerOn(ci_${cityKey}.x,ci_${cityKey}.y);updateTooltip(...hexToPix(ci_${cityKey}.x,ci_${cityKey}.y))`);
+ assert(h.run(`document.getElementById('tooltip').innerHTML.includes('防御+${bonus}%')`));
+ h.run(`UI.sel=UI.game.spawnUnit('de','de:inf:0',ci_${cityKey}.x,ci_${cityKey}.y,{});showUnitPanel(UI.sel);updateTooltip(...hexToPix(UI.sel.c,UI.sel.r));`);
+ assert(h.run(`document.getElementById('panel-body').innerHTML.includes('防御+${bonus}%')`));
+ assert(h.run(`document.getElementById('tooltip').innerHTML.includes('防御+${bonus}%')`));
+}
+console.log('City defense UI: ordinary/capital cities and garrisons expose terrain bonuses.');

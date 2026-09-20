@@ -782,6 +782,9 @@ function checkEnd() {
 }
 
 /* ============================ Tooltip ============================ */
+function cityDefenseText(city) {
+  return `${city.cap ? '首都' : '城市'}地形：防御+${Math.round(UI.game.terrainDefBonus(city.x,city.y)*100)}%（炮兵、空军攻击忽略）`;
+}
 let tipKey = '';
 function updateTooltip(sx, sy, target) {
   const g = UI.game, tt = document.getElementById('tooltip');
@@ -796,9 +799,9 @@ function updateTooltip(sx, sy, target) {
     html = `<b style="color:${COUNTRIES[u.ct].color === '#b39b45' ? '#ffd75e' : '#fff'}">${g.unitName(u)}</b><br>
       ${g.isNaval(u)?g.navalIdentity(u):COUNTRIES[u.ct].name+' · '+FACTION_NAME[g.unitFaction(u)]+' · '+CLASSES[u.eq.cls].name}<br>
       ⚔${u.eq.atk} 🛡${u.eq.def} 👣${g.movOf(u)}${u.eq.cls === 'art'||g.isNaval(u) ? ' 🎯' + g.rangeOf(u) : ''} ❤${u.hp}/100<br>
-      ${u.dug ? '🔒 已驻防(+30%防御) ' : ''}${u.vet ? `老练度+${u.vet * 8}% ` : ''}${gen ? `<br>🎖 ${gen.name}（${gen.title}）` : ''}`;
+      ${city ? cityDefenseText(city)+'<br>' : ''}${u.dug ? '🔒 已驻防(+30%防御) ' : ''}${u.vet ? `老练度+${u.vet * 8}% ` : ''}${gen ? `<br>🎖 ${gen.name}（${gen.title}）` : ''}`;
   } else if (city) {
-    html = `<b>${city.n}</b>${city.cap ? ' ★首都' : ''}<br>${COUNTRIES[city.ct].name} · ${FACTION_NAME[city.owner]}控制<br>收入 ${city.inc} 金/回合${city.note ? '<br>' + city.note : ''}<br><span style="color:#9aa4b0">占领该国首都可令其全境易手</span>`;
+    html = `<b>${city.n}</b>${city.cap ? ' ★首都' : ''}<br>${COUNTRIES[city.ct].name} · ${FACTION_NAME[city.owner]}控制<br>${cityDefenseText(city)}<br>收入 ${city.inc} 金/回合${city.note ? '<br>' + city.note : ''}<br><span style="color:#9aa4b0">占领该国首都可令其全境易手</span>`;
   } else if (g.inMap(c, r)) {
     const t = g.tile(c, r);
     const T = TERRAIN[t];
@@ -859,6 +862,7 @@ function showUnitPanel(u) {
     </div>
     ${atSea?`<div class="p-sub">🚢 ${ship.name} · 海上攻击保留${Math.round(ship.attackMultiplier*100)}% · 射程1<br>航行移动力固定${ship.move}；海上无法驻防或自动补员。</div>`:''}
     ${g.isNaval(u)?`<div class="p-sub">舰名来源：${shipNameKind(g.shipNameInfo(u))}${g.shipNameInfo(u).note?' · '+g.shipNameInfo(u).note:''}<br>⚓ ${u.eq.role}<br>仅在海上航行；己方军港每回合修复25兵力。射程内可反击，无法占领城市。</div>`:''}
+    ${g.cityAt(u.c,u.r)?`<div class="p-sub">🛡 ${cityDefenseText(g.cityAt(u.c,u.r))}<br>与驻防、老练及将领加成共同计入战斗防御。</div>`:''}
     ${transportPanel}
     ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">已驻防：防御+30%，移动/攻击后解除</div>' : ''}
     ${gen ? `<div class="gen-chip">
@@ -893,6 +897,7 @@ function showCityPanel(city) {
   const roster = canRecruit ? g.rosterFor(city) : [];
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
+    <div class="p-sub">🛡 ${cityDefenseText(city)}<br>守军自动获得，无需点击驻防；驻防另加30%防御。</div>
     <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${city.inc} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
     ${g.harbors.some(h=>h.cityKey===city.k)?'<button class="btn gold" id="city-harbor">⚓ 打开军港 · 建造舰艇</button>':''}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}

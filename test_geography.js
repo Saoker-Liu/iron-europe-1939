@@ -289,3 +289,23 @@ assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-g
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v7'})),/旧地图/);
 assert.equal(Game.deserialize(g.serialize()).units.length,g.units.length);
 console.log('Geography: historical checkpoints, projection, coastline, transport, river and save tests passed.');
+
+// City overlays confer actual combat protection even when the source map is plain land.
+{
+const battle=new Game('axis','normal',{initialFleet:false});battle.units=[];
+const attacker=battle.spawnUnit('de','de:inf:0',40,60,{});
+const defender=battle.spawnUnit('uk','uk:inf:0',41,60,{});
+const plain=Object.entries(battle.terr).find(([k,t])=>t==='.'&&!battle.cityAt(...k.split(',').map(Number)))[0].split(',').map(Number);
+const damageAt=(p)=>{[defender.c,defender.r]=p;return battle.computeDamage(attacker,defender,{preview:true});};
+const ordinary=battle.cityByKey.hamburg,capital=battle.cityByKey.berlin;
+const points=[plain,[ordinary.x,ordinary.y],[capital.x,capital.y]];
+assert.equal(battle.terrainDefBonus(...points[1]),0.4);
+assert.equal(battle.terrainDefBonus(...points[2]),0.6);
+const damages=points.map(damageAt);assert(damages[0]>damages[1]&&damages[1]>=damages[2]);
+defender.dug=true;assert(damageAt(points[1])<damages[1],'entrenchment compounds city defense');defender.dug=false;
+for(const cls of ['art','air']){
+ attacker.eq=battle.equipOf('de:'+cls+':0');
+ const values=points.map(damageAt);assert(values.every(v=>v===values[0]),cls+' ignores terrain');
+}
+console.log('City combat: ordinary/capital protection, entrenchment and bombardment rules passed.');
+}
