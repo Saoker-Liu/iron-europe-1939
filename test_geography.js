@@ -163,7 +163,8 @@ for(const k of ['douglas','visby','mariehamn']) {
  assert(Number.isFinite(route(city(k),city('berlin'),true)),k+' reachable by sea');
 }
 assert(g.cityByKey.ronne.mapLabel.includes('博恩霍尔姆'));
-assert(!D.MAP_META.labels.some(l=>l.name==='博恩霍尔姆岛'),'no displaced floating Bornholm label');
+const bornholmLabel=D.MAP_META.labels.find(l=>l.name==='博恩霍尔姆岛');
+assert(bornholmLabel&&Math.abs(bornholmLabel.lon-14.95)<.01&&Math.abs(bornholmLabel.lat-55.15)<.01,'Bornholm label anchored on the island');
 assert(g.cityByKey.bilbao.major && g.cityByKey.bilbao.region==='巴斯克');
 assert.equal(g.cityByKey.petrovgrad.n,'彼得罗夫格勒','pre-1946 city name');
 for(const k of ['yerevan','tbilisi','baku'])assert(!g.cityByKey[k].cap,'republic capital does not trigger USSR capitulation');

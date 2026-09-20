@@ -129,7 +129,7 @@ function hexPathInto(path, x, y, s) {
 }
 
 /* ============================ 地形缓存层 ============================
- * 把地形/领土染色/河流/城市画进世界坐标离屏画布，每帧仅一次 drawImage。
+ * 把地形/领土染色/河流/城市符号画进世界坐标离屏画布；文字独立按镜头层级绘制。
  * 失效条件：城市易手、季节切换（立即重建）；缩放变化（防抖重建）。
  * =================================================================== */
 const terrainCache = { cv: document.createElement('canvas'), scale: 0, wx: 0, wy: 0, key: '', pend: 0 };
@@ -223,21 +223,6 @@ function rebuildTerrain(g, z) {
     c2.beginPath(); c2.moveTo(...a); c2.lineTo(...b); c2.stroke();
   }
   c2.setLineDash([]);
-  c2.textAlign = 'center'; c2.fillStyle = '#b9d2df'; c2.font = `${Math.max(10, s2 * .5)}px "Microsoft YaHei",sans-serif`;
-  for (const label of MAP_META.labels) {
-    c2.fillStyle = label.kind === 'region' ? '#ead6a4' : '#b9d2df';
-    c2.fillText(label.name, s2 * SQ3 * label.grid[0], s2 * 1.5 * label.grid[1]);
-  }
-  if (UI.political) {
-    const labelPoints = {de:[10,51.5],uk:[-3.4,54.2],fr:[2,46.7],es:[-3.2,39.6],pt:[-8,39.5],it:[12,43],su:[42,58],pl:[21.5,52.3],se:[16,63],no:[8,62],fi:[27,64],ro:[25,46],hu:[19,47],yu:[19,44],gr:[22,39],tr:[33,39],ie:[-8,53],dk:[9.2,56.3],ee:[25.5,58.6],lv:[25,57],lt:[23.7,55.5],bg:[25,42.5],is:[-19,65]};
-    c2.font = `600 ${Math.max(10, s2 * .6)}px "Microsoft YaHei",sans-serif`;
-    for (const [ct, p] of Object.entries(labelPoints)) {
-      const [x, y] = Geography.geoToGrid(...p);
-      const label = COUNTRIES[ct].short || COUNTRIES[ct].name;
-      c2.strokeStyle = '#17232add'; c2.lineWidth = 3; c2.strokeText(label, x * s2 * SQ3, y * s2 * 1.5);
-      c2.fillStyle = '#faf1d7'; c2.fillText(label, x * s2 * SQ3, y * s2 * 1.5);
-    }
-  }
   drawCities(c2, g, s2);
   drawCanals(c2, s2);
   terrainCache.key = terrainKey(g) + '@' + cs.toFixed(3);
@@ -254,13 +239,7 @@ function drawCanals(c2, s2) {
     });
     c2.strokeStyle='#193748';c2.lineWidth=Math.max(3,s2*.22);c2.stroke();
     c2.strokeStyle='#8ce5ef';c2.lineWidth=Math.max(1.4,s2*.1);c2.stroke();
-    const [col,row]=canal.labelAnchor, [dx,dy]=canal.labelOffset;
-    const x=s2*SQ3*col,y=s2*1.5*row,lx=x+s2*dx,ly=y+s2*dy;
-    c2.beginPath();c2.moveTo(x,y);c2.lineTo(lx,ly+4);
-    c2.lineWidth=1;c2.stroke();
-    c2.textAlign='center';c2.font=`600 ${Math.max(9,s2*.32)}px "Microsoft YaHei",sans-serif`;
-    c2.strokeStyle='#193748';c2.lineWidth=3;c2.strokeText(canal.name,lx,ly);
-    c2.fillStyle='#b3f5ff';c2.fillText(canal.name,lx,ly);c2.restore();
+    c2.restore();
   }
 }
 
@@ -286,14 +265,38 @@ function drawCities(c2, g, s2) {
       c2.font = `900 ${Math.max(9, s2 * 0.34)}px sans-serif`;
       c2.fillText('★', x - s2 * 0.28, y - s2 * 0.28);
     }
-    if (s2 > 15 || ((ci.cap || ci.major) && s2 > 8)) {
-      c2.font = `600 ${Math.max(9, s2 * 0.26)}px "Microsoft YaHei",sans-serif`;
-      c2.fillStyle = 'rgba(0,0,0,.55)';
-      c2.fillText(ci.mapLabel || ci.n, x + 1, y + s2 * 0.78 + 1);
-      c2.fillStyle = ci.cap ? '#ffe9a8' : '#e8e4d8';
-      c2.fillText(ci.mapLabel || ci.n, x, y + s2 * 0.78);
-    }
   }
+}
+
+const mapLabelCache = {key:'',game:null,items:[]};
+function drawMapLabels(g) {
+  const cam=UI.cam, level=MapLabels.tier(cam.z,MAP_META);
+  const key=[cam.x,cam.y,cam.z,innerWidth,innerHeight].join('|');
+  if(mapLabelCache.key!==key||mapLabelCache.game!==g){
+    const items=MapLabels.candidates(MAP_META,g.cities,cam.z);
+    mapLabelCache.items=MapLabels.layout(items,{...cam,width:innerWidth,height:innerHeight},(text,size)=>{
+      cx.font=`600 ${size}px "Microsoft YaHei",sans-serif`;return cx.measureText(text).width;
+    });
+    mapLabelCache.key=key;mapLabelCache.game=g;
+  }
+  cx.save();cx.textAlign='center';cx.textBaseline='middle';cx.setLineDash([]);
+  for(const label of mapLabelCache.items){
+    const color=label.kind==='country'?'#faf1d7':label.kind==='sea'||label.kind==='canal'?'#b9e5f2':label.kind==='city'?(label.capital?'#ffe9a8':'#f0ebdf'):'#ead6a4';
+    if(label.leader){
+      cx.beginPath();cx.moveTo(label.ax,label.ay);cx.lineTo(label.x,label.y);
+      cx.strokeStyle=color;cx.lineWidth=.7;cx.stroke();
+    }
+    cx.font=`600 ${label.fontSize}px "Microsoft YaHei",sans-serif`;
+    cx.strokeStyle='#14222eee';cx.lineWidth=3;cx.lineJoin='round';cx.fillStyle=color;
+    label.lines.forEach((line,i)=>{
+      const y=label.y+(i-(label.lines.length-1)/2)*(label.fontSize+3);
+      cx.strokeText(line,label.x,y);cx.fillText(line,label.x,y);
+    });
+  }
+  cx.restore();
+  const status=document.getElementById('map-label-level');
+  const title=['国家与主要地区','次级地区与主要城市','局部地区与次级城市','全部城市名称'][level];
+  if(status&&status.textContent!==title)status.textContent=title;
 }
 
 function blitTerrain(z) {
@@ -430,6 +433,8 @@ function drawFrame(now) {
       cx.restore();
     }
   }
+
+  drawMapLabels(g);
 
   // ---- 悬停 ----
   if (UI.hover) {
@@ -869,7 +874,7 @@ function showCitySearch() {
     results.innerHTML = list.map(ci => `<button class="shop-item" style="width:100%;color:inherit;font:inherit;text-align:left" data-city="${ci.k}"><span><b>${ci.n}${ci.cap ? ' ★' : ''}</b><br><small>${COUNTRIES[ci.ct].name}${ci.region ? ' · ' + ci.region : ''}</small></span><span>定位 →</span></button>`).join('') || '<p class="p-sub">没有匹配的城市</p>';
     results.querySelectorAll('[data-city]').forEach(el => el.onclick = () => {
       const ci = g.cityByKey[el.dataset.city];
-      closeModal(); deselect(); UI.cam.z = 1; centerOn(ci.x, ci.y);
+      closeModal(); deselect(); UI.cam.z = MAP_META.labelZooms[2]; centerOn(ci.x, ci.y);
       terrainCache.key = ''; showCityPanel(ci);
       UI.anims.push({kind:'cap',c:ci.x,r:ci.y,t0:performance.now(),dur:1200});
     });

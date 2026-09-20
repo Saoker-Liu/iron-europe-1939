@@ -165,3 +165,17 @@ node test_logic.js
 - [土耳其官方旅游机构：卡斯塔莫努](https://kastamonu.goturkiye.com/)
 - [土耳其官方旅游机构：加济安泰普](https://goturkiye.com/tr/gaziantep)
 - [土耳其官方旅游机构：布尔萨](https://goturkiye.com/bursa/routes)
+
+## 分级地理标注（v8显示修订）
+
+新增海湾、岛屿、半岛与地区的文字锚点；文字不建立新国家、不改变任何城市或国界。乌克兰与白俄罗斯的大区锚点位于1939年8月苏联境内，未把西部波兰领土预先改划；比萨拉比亚仍在罗马尼亚境内。克里木半岛（克里米亚）当时归俄罗斯加盟共和国，亚美尼亚、格鲁吉亚与阿塞拜疆为苏联境内地区，均不作为独立国家。卡累利阿是地理区域标注，不用标签重绘1939年的芬苏边界。
+
+十二群岛使用爱琴海东南部群岛锚点，1939年意大利归属继续由地图母国层表达；爱琴群岛是地理集合名称，不代表群岛具有统一政权。马耳他与塞浦路斯的英国归属不变。科西嘉、撒丁、西西里、马略卡等标签直接使用岛内经纬度，博恩霍尔姆岛锚点为14.95°E、55.15°N；屏幕避让不改变锚点，必要时以引线连接。
+
+全览、次级地区、局部地区、全部城市四个文字层级互斥；标签密度限制会在前三层避让或省略碰撞文字，最大倍率则显示当前视野内全部城市名。名称层级是为地图阅读服务的设计，不是对1939行政区划级别的严格编码。苏格兰、威尔士、北爱尔兰与阿布哈兹等沿用地区名称，未推定独立国家地位。
+
+核对资料：
+
+- [英国国家档案馆：1939—1947年苏联领土变化](https://www.nationalarchives.gov.uk/education/resources/cold-war-on-file/soviet-territories-1939-1947/)
+- [英国皇家空军历史资料：十二群岛及1939边界](https://www.raf.mod.uk/what-we-do/our-history/air-historical-branch/second-world-war-campaign-narratives/operations-in-the-dodecanese-islands-sep-nov-1943/)
+- [美国国会图书馆：高加索地图史及1937—1939年地图集](https://guides.loc.gov/caucasus-maps/contents-history)
