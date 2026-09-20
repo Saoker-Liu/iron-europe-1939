@@ -5,13 +5,13 @@
  function candidates(meta,cities,z){
   const level=tier(z,meta);
   const names=meta.labels.filter(l=>l.level===level).map(l=>({...l,text:l.name,id:'geo:'+l.name,priority:l.kind==='country'?0:l.kind==='region'?1:2}));
-  if(level>0)for(const ci of cities)if(level===3||meta.cityLabelLevels[ci.k]===level)
-   names.push({id:'city:'+ci.k,text:ci.n,kind:'city',grid:[ci.x+.5*(ci.y&1),ci.y],priority:3,capital:!!ci.cap,all:level===3});
+  if(level>0)for(const ci of cities)if(level===3||meta.cityLabelLevels[ci.k]<=level)
+   names.push({id:'city:'+ci.k,text:ci.n,kind:'city',grid:[ci.x+.5*(ci.y&1),ci.y],priority:meta.cityLabelLevels[ci.k]-3,capital:!!ci.cap,required:true,all:level===3});
   if(level===2)for(const c of meta.canals||[])names.push({id:'canal:'+c.id,text:c.name,kind:'canal',grid:c.labelAnchor,priority:2});
   return names;
  }
  const intersects=(a,b)=>a[0]<b[2]&&a[2]>b[0]&&a[1]<b[3]&&a[3]>b[1];
- // Returns screen coordinates, preserving every visible city at maximum zoom.
+ // Returns screen coordinates, preserving every eligible visible city as zoom increases.
  function layout(items,{z,x,y,width,height},measure){
   const s=36*z,placed=[],boxes=[];
   const sorted=items.slice().sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id));
@@ -19,7 +19,7 @@
    const ax=item.grid[0]*s*Math.sqrt(3)+x,ay=item.grid[1]*s*1.5+y;
    if(ax<0||ax>width||ay<0||ay>height)continue;
    const fontSize=item.kind==='country'?14:item.kind==='city'?12:13;
-   const lines=item.all&&item.text.length>9?[item.text.slice(0,9),item.text.slice(9)]:[item.text];
+   const lines=item.kind==='city'&&item.text.length>9?[item.text.slice(0,9),item.text.slice(9)]:[item.text];
    const w=Math.max(...lines.map(t=>measure(t,fontSize)))+8,h=lines.length*(fontSize+3)+4;
    const gap=item.kind==='city'?s*.88:0;
    const offsets=item.kind==='city'?[[0,gap+h/2],[0,-gap-h/2],[s*.9+w/2,0],[-s*.9-w/2,0]]:
@@ -33,7 +33,7 @@
     if(overlap<bestOverlap){best={...item,ax,ay,x:lx,y:ly,box,lines,fontSize,leader:Math.hypot(lx-ax,ly-ay)>gap+h/2+4};bestOverlap=overlap;}
     if(!overlap)break;
    }
-   if(best&&(bestOverlap===0||item.all)){placed.push(best);boxes.push(best.box);}
+   if(best&&(bestOverlap===0||item.required||item.all)){placed.push(best);boxes.push(best.box);}
   }
   return placed;
  }

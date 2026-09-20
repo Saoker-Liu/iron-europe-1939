@@ -295,7 +295,7 @@ function drawMapLabels(g) {
   }
   cx.restore();
   const status=document.getElementById('map-label-level');
-  const title=['国家与主要地区','次级地区与主要城市','局部地区与次级城市','全部城市名称'][level];
+  const title=['国家与主要地区','次级地区与主要城市','局部地区与主次城市','全部城市名称'][level];
   if(status&&status.textContent!==title)status.textContent=title;
 }
 

@@ -1,6 +1,7 @@
 'use strict';
 // Cartographic hierarchy, not additional states or administrative boundaries.
-// Each name belongs to exactly one zoom band. Coordinates are WGS84 anchors.
+// Each geographic name belongs to one zoom band; city levels are minimum visibility.
+// Coordinates are WGS84 anchors.
 module.exports=function labelData(G,N){
  const labels=[];
  function add(level,kind,entries){
@@ -68,5 +69,5 @@ module.exports=function labelData(G,N){
  const keys=new Set(N.CITIES.map(ci=>ci.k));
  for(const k of [...primary,...secondary])if(!keys.has(k))throw Error('Unknown label city: '+k);
  const cityLabelLevels=Object.fromEntries(N.CITIES.map(ci=>[ci.k,ci.cap||primary.includes(ci.k)?1:secondary.includes(ci.k)?2:3]));
- return {labels,cityLabelLevels,labelZooms:[.24,.65,2.2],labelRevision:2};
+ return {labels,cityLabelLevels,labelZooms:[.24,.65,1.3],labelRevision:3};
 };
