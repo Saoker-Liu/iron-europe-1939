@@ -820,10 +820,11 @@ function execAttack(enemy) {
   const rec = g.attack(u, enemy);
   SFX.shot();
   UI.anims.push({ kind: 'flash', c1: rec.aC, r1: rec.aR, c2: rec.c, r2: rec.r, t0: performance.now(), dur: 300 });
+  for(const hit of rec.splash||[])UI.anims.push({kind:'dmg',c:hit.c,r:hit.r,text:'-'+hit.dmg,t0:performance.now(),dur:1000});
   UI.anims.push({ kind: 'dmg', c: rec.c, r: rec.r, text: '-' + rec.dmg, t0: performance.now(), dur: 1000 });
   setTimeout(() => {
     if (rec.killed || rec.attDied) { SFX.boom(); UI.anims.push({ kind: 'boom', c: rec.c, r: rec.r, t0: performance.now(), dur: 700 }); }
-    else if (rec.counter) {
+    if (rec.counter) {
       UI.anims.push({ kind: 'dmg', c: rec.aC, r: rec.aR, text: '-' + rec.counter, color: '#ffb14d', t0: performance.now(), dur: 1000 });
     }
   }, 260);
@@ -866,6 +867,7 @@ async function endTurnFlow() {
   // 回放战斗动画
   const battles = actions.filter(a => a.type === 'battle');
   for (const b of battles.slice(0, 14)) {
+    for(const hit of b.splash||[])UI.anims.push({kind:'dmg',c:hit.c,r:hit.r,text:'-'+hit.dmg,t0:performance.now(),dur:900});
     UI.anims.push({ kind: 'flash', c1: b.aC, r1: b.aR, c2: b.c, r2: b.r, t0: performance.now(), dur: 280 });
     UI.anims.push({ kind: 'dmg', c: b.c, r: b.r, text: '-' + b.dmg, t0: performance.now(), dur: 900 });
     if (b.killed || b.attDied) UI.anims.push({ kind: 'boom', c: b.killed ? b.c : b.aC, r: b.killed ? b.r : b.aR, t0: performance.now(), dur: 650 });
@@ -1027,7 +1029,7 @@ function showFactoryPanel(city) {
   const offers=g.factoryRoster(city),blocked=city.owner!==g.playerFaction||city.demilitarized||!!g.unitAt(city.x,city.y)||UI.busy;
   body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，城市格须无地面驻军，新部队下回合行动。</div>
     <button class="btn" id="factory-city">返回城市</button>
-    ${offers.map((o,i)=>`<div class="shop-item"><div>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov}</div><button class="btn gold" id="factory-build-${i}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
+    ${offers.map((o,i)=>`<div class="shop-item"><div>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${i}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
   document.getElementById('factory-city').onclick=()=>showCityPanel(city);
   offers.forEach((o,i)=>document.getElementById('factory-build-'+i).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
 }

@@ -248,3 +248,10 @@ assert(h.run("document.getElementById('panel-body').innerHTML.includes('炮兵�
 h.run("document.getElementById('factory-build-0').onclick()");
 assert(h.run("UI.sel.eq.cls==='art'&&UI.sel.moved&&UI.sel.attacked"));
 console.log('Infantry UI: latest infantry/unique roster, city separation and factory production passed.');
+h.run("UI.game=new Game('axis');UI.game.units=[];UI.game.gold.axis=10000;UI.game.cityByKey.berlin.factory=true;UI.sel=null;UI.busy=false;showFactoryPanel(UI.game.cityByKey.berlin)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('88mm防空炮')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('射程3')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('40%溅射')"));
+h.run("document.getElementById('factory-build-1').onclick()");
+assert(h.run("UI.sel.eq.artRole==='aa'"));
+console.log('Artillery UI: factory roles, national AA, range and special descriptions passed.');
