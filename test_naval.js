@@ -90,4 +90,27 @@ for(const passage of D.NAVAL.passages){
  assert.equal(channel.moveRange(vessel).cost.get(key(...passage.b)),hexDist(...passage.a,...passage.b),'strait costs geometric distance');
  assert(channel.moveUnit(vessel,...passage.b));assert(!vessel.embarked);
 }
-console.log(`Navy: ${g.harbors.length} adjacent, connected ports; eight classes, national unlocks, economy, occupancy, sea movement, combat, captures, repairs, saves and AI passed.`);
+// No AI-only limits on launches, treasury share, fleet size, or ships per harbor.
+for(const atWar of [false,true]){
+ const unlimited=new Game('axis');unlimited.units=[];
+ unlimited.cities.forEach(ci=>ci.owner='neutral');
+ unlimited.cityByKey.plymouth.owner='west';
+ for(let i=0;i<20;i++){
+  const ship=unlimited.spawnUnit('uk','uk:dd:0',i,1,{});
+  ship.moved=true;ship.attacked=true;
+ }
+ unlimited.gold.west=120;
+ unlimited.aiNavy('west',[],atWar);
+ assert.equal(unlimited.units.length,21,'one harbor may support more than twenty ships in war or peace');
+ assert.equal(unlimited.gold.west,0,'AI may spend its entire treasury on an affordable ship');
+}
+const multiple=new Game('axis');multiple.units=[];multiple.gold.west=10000;
+multiple.cities.forEach(ci=>ci.owner='neutral');
+for(const k of ['plymouth','portsmouth','scapaflow'])multiple.cityByKey[k].owner='west';
+multiple.aiNavy('west',[],false);
+assert.equal(multiple.units.length,3,'all three free ports launch in a single peace turn');
+assert(multiple.units.every(u=>u.moved&&u.attacked),'new ships still wait until next turn');
+const paid=multiple.units.reduce((n,u)=>n+u.eq.cost,0);
+assert.equal(multiple.gold.west,10000-paid);
+multiple.aiNavy('west',[],false);assert.equal(multiple.units.length,3,'occupied berths still prevent stacking');
+console.log(`Navy: ${g.harbors.length} ports; unlocks, economy, sea combat, saves, AI and unrestricted naval production passed.`);

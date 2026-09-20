@@ -722,15 +722,15 @@ class Game {
       if(best&&this.moveUnit(u,...best))acts.push({type:'move',unit:u,to:best});
       if(atWar&&this.units.includes(u))this.aiTryAttack(u,acts);
     }
-    const fleet=this.units.filter(u=>this.unitFaction(u)===f&&this.isNaval(u));
-    if(fleet.length>=Math.min(atWar?8:2,harbors.length*2)||!harbors.length)return;
+    let fleetSize=this.units.filter(u=>this.unitFaction(u)===f&&this.isNaval(u)).length;
     const preferred=['dd','sub','cl','bb','cve','ca','cv','bc'];
-    // At most one launch a turn; reserve most funds for existing land warfare.
-    const budget=Math.floor(this.gold[f]*.3);
-    for(const cls of [...preferred.slice(fleet.length%8),...preferred.slice(0,fleet.length%8)]){
-      for(const h of harbors){
-        const o=this.navalRoster(this.cityByKey[h.cityKey]).find(o=>o.eq.cls===cls&&!o.locked&&o.eq.cost<=budget);
-        if(o&&this.recruitNaval(h.cityKey,o.eqKey,f))return;
+    // Every free berth may launch, using the full remaining treasury in war or peace.
+    for(const h of harbors){
+      if(this.unitAt(h.c,h.r))continue;
+      const roster=this.navalRoster(this.cityByKey[h.cityKey]),offset=fleetSize%preferred.length;
+      for(const cls of [...preferred.slice(offset),...preferred.slice(0,offset)]){
+        const o=roster.find(o=>o.eq.cls===cls&&!o.locked&&o.eq.cost<=this.gold[f]);
+        if(o&&this.recruitNaval(h.cityKey,o.eqKey,f)){fleetSize++;break;}
       }
     }
   }
