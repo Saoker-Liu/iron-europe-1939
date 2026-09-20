@@ -286,9 +286,15 @@ h.run("toggleSound();showEndModal(false)");assert.equal(h.run('Music.current'),'
 h.run("showHelp()");assert(h.run("modalRoot.innerHTML.includes('Kevin MacLeod')&&modalRoot.innerHTML.includes('CC-BY 4.0')"));
 console.log('Music UI: scene transitions, shared mute and visible credits passed.');
 
-assert.equal(h.run('GENERALS.length'),23);
+assert.equal(h.run('GENERALS.length'),116);
 h.run("UI.game=new Game('axis');showGenerals()");
 assert(h.run("modalRoot.innerHTML.includes('龙德施泰特')&&modalRoot.innerHTML.includes('<svg')"));
 h.run("showUnitPanel(UI.game.units.find(u=>u.gen==='guderian'))");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('<svg')"));
 console.log('Generals UI: expanded roster, portraits and unit panel passed.');
+
+assert.equal(h.run("filterGeneralRoster(GENERALS,'Dowding').length"),1);
+assert.equal(h.run("filterGeneralRoster(GENERALS,'','de').length"),20);
+assert.equal(h.run("filterGeneralRoster(GENERALS,'曼纳海姆','de').length"),0);
+assert.equal(h.run("filterGeneralRoster(GENERALS,'毫无匹配').length"),0);
+console.log('Expanded general roster: Chinese/English search and country filtering passed.');

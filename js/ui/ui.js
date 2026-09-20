@@ -1270,6 +1270,10 @@ function genPortrait(gn) {
     <text x="44.5" y="47.8" text-anchor="middle" font-size="8.5" font-weight="700" fill="#d8b24a" font-family="inherit">${badge}</text>
   </svg>`;
 }
+function filterGeneralRoster(pool,query='',country='') {
+  const q=query.trim().toLocaleLowerCase();
+  return pool.filter(gn=>(!country||gn.ct===country)&&[gn.name,gn.en||'',gn.title,COUNTRIES[gn.ct].name,gn.skills.map(skillText).join(' ')].join(' ').toLocaleLowerCase().includes(q));
+}
 function showGenerals(targetUnit) {
   const g = UI.game;
   if(targetUnit&&g.isNaval(targetUnit))targetUnit=null;
@@ -1278,11 +1282,15 @@ function showGenerals(targetUnit) {
     <div class="modal" style="max-width:720px">
       <h1><span class="zh">🎖 将领名册</span></h1>
       <div class="sub">${FACTION_NAME[g.playerFaction]}阵营 · ${targetUnit ? `指派至：${targetUnit.eq.n}（${targetUnit.c},${targetUnit.r}）` : '在部队面板中点击"将领"可指派'} · 击杀3次晋升一阶（每阶攻防+4%） · 头像右下徽记＝兵种亲和（步/炮/坦/轰 · 盾＝防御系 · ★＝指挥系）</div>
+      <div class="row-btns">
+        <input id="general-query" aria-label="搜索将领" placeholder="姓名、外文名或技能" style="flex:1;min-width:120px;background:#101820;color:#eee;border:1px solid #637386;padding:8px">
+        <select id="general-country" aria-label="将领所属国家" style="background:#101820;color:#eee;padding:8px"><option value="">全部国家</option>${[...new Set(pool.map(gn=>gn.ct))].map(ct=>`<option value="${ct}">${COUNTRIES[ct].name}</option>`).join('')}</select>
+      </div><div class="p-sub" id="general-count">显示 ${pool.length} / ${pool.length} 位本阵营将领</div>
       ${pool.map(gn => {
         const uid = g.genUnit[gn.id];
         const unit = uid ? g.units.find(u => u.id === uid) : null;
         const rank = Math.min(5, 1 + Math.floor((g.genKills[gn.id] || 0) / 3));
-        return `<div class="gen-row">
+        return `<div class="gen-row" data-general-row="${gn.id}">
           <div class="gen-portrait" style="background:${COUNTRIES[gn.ct].color}">${genPortrait(gn)}</div>
           <div class="gen-info">
             <span class="gtitle">${gn.name}</span> <span style="color:#9aa4b0">${gn.title} · ${COUNTRIES[gn.ct].name}</span>
@@ -1298,6 +1306,13 @@ function showGenerals(targetUnit) {
       <div class="actions"><button class="btn" id="m-close">关 闭</button></div>
     </div>`);
   document.getElementById('m-close').onclick = closeModal;
+  const query=document.getElementById('general-query'),country=document.getElementById('general-country');
+  const filter=()=>{
+    const ids=new Set(filterGeneralRoster(pool,query.value||'',country.value||'').map(gn=>gn.id));
+    modalRoot.querySelectorAll('[data-general-row]').forEach(row=>{row.style.display=ids.has(row.dataset.generalRow)?'':'none';});
+    document.getElementById('general-count').textContent=`显示 ${ids.size} / ${pool.length} 位本阵营将领`;
+  };
+  query.oninput=filter;country.onchange=filter;
   modalRoot.querySelectorAll('[data-g]').forEach(b => b.onclick = () => {
     g.assignGeneral(b.dataset.g, targetUnit);
     SFX.cap(); closeModal();
@@ -1319,7 +1334,7 @@ function showHelp() {
         <h4>■ 战斗规则</h4>
         伤害 ≈ 42 × 攻/(攻+防)。防御方获得地形加成；兵力越低输出越低。<br>
         炮兵/空军无视地形防御加成；步兵/装甲在相邻格反击，海军可在自身射程和目标限制内反击，包括对来袭空军的防空还击。<br>
-        进入敌军相邻格会被<b>控制区(ZOC)</b>截停（古德里安、巴顿、空军除外）。<br>
+        进入敌军相邻格会被<b>控制区(ZOC)</b>截停（具有忽略控制区技能的将领与空军除外）。<br>
         <b>驻防</b>+30%防御，移动或攻击后解除。老练度（击杀获取经验）最多+24%攻防。
         <h4>■ 兵种克制（攻击修正）</h4>
         <table><tr><th>攻击方↓</th><th>步兵</th><th>炮兵</th><th>装甲</th><th>空军</th></tr>
