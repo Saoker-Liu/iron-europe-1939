@@ -97,6 +97,6 @@ build_map不再生成routes，ferryDestinations接口及UI虚线已删除。tran
 
 naval.js提供八舰种、国家舰型、39处军港候选和三处亚格网海峡。assemble合并独立的装备字典与完整克制矩阵；陆军rosterFor不变。Game.buildHarbors按稀缺泊位优先确定互不重叠的邻海格。recruitNaval每次复核控制权、当前最新型号、经济、科技与泊位，不接受旧舰型或陆军装备。占领军港使用占领阵营主要国家舰型，避免生产出敌阵营单位。
 
-isSeagoing同时涵盖独立海军与运输陆军；海军不触发上下船。seaNeighbors只额外连接真实海峡两端，按hexDist计费。seaDistances为带权水面距离场，AI不能越陆追敌。海军AI至多使用30%余额且每回合至多生产一舰，保留陆战预算。新舰当回合锁定行动，维修只发生于己方军港。
+isSeagoing同时涵盖独立海军与运输陆军；海军不触发上下船。seaNeighbors只额外连接真实海峡两端，按hexDist计费。seaDistances为带权水面距离场，AI不能越陆追敌。海军AI遍历所有己方空闲军港，按实时余额建造；不设置预算比例、每回合数量、舰队规模或军港数量衍生的舰队上限，和平与战争使用相同生产条件。新舰当回合锁定行动，维修只发生于己方军港。
 
 canStrikeFrom统一目标合法性，canCounter统一实际反击与AI预估。潜艇目标必须在海上；反潜仅限潜艇、驱逐舰、航母与空军。海军存档要求海格且没有陆军运输状态；旧河口陆军存档迁移至原地运输状态。test_naval和test_render覆盖引擎与真实UI按钮路径，CI均执行。
