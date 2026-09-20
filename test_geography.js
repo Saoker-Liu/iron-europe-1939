@@ -39,7 +39,7 @@ assert.equal(g.cf.it,'neutral'); assert.equal(g.cf.al,'neutral');
 assert.equal(g.cf.sk,'axis'); assert.equal(g.cf.bm,'axis');
 
 // City expansion: requested ports and battle locations are playable city objects.
-assert.equal(D.CITIES.length,278);
+assert.equal(D.CITIES.length,329);
 assert.equal(new Set(D.CITIES.map(ci=>ci.k)).size,D.CITIES.length,'unique city keys');
 for (const [k,ct] of Object.entries({genoa:'it',venice:'it',zara:'it',liverpool:'uk',dunkirk:'fr',caen:'fr',cherbourg:'fr',saintlo:'fr',split:'yu',brestlitovsk:'pl'})) {
   assert.equal(g.cityByKey[k].ct,ct,k+' 1939 owner');
@@ -81,6 +81,40 @@ for(const [a,b]of [['palma','barca'],['scapaflow','aberdeen'],['ronne','copenhag
 }
 
 // Projection round trips and bounds; local error is limited to hex discretisation.
+// v7: named 1939 places, including a separate Novgorod rather than modern Nizhny Novgorod.
+for(const k of ['sukhumi','kerch','sochi','novgorod','kazan','nikolaev','cherkassy','pskov','tikhvin','petrozavodsk','kalinin','yaroslavl','ryazan','tambov','penza','kuibyshev','ulyanovsk','kirov','vinnytsia','poltava','sumy','kherson','kremenchug','simferopol','maikop'])
+ assert.equal(g.cityByKey[k].ct,'su',k+' 1939 USSR');
+assert.equal(g.cities.filter(ci=>ci.ct==='su').length,64);
+assert.equal(g.cityByKey.gorky.n,'高尔基');
+assert(hexDist(...city('novgorod'),...city('gorky'))>15,'two different Novgorods');
+for(const [k,ct]of Object.entries({kuressaare:'ee',tartu:'ee',narva:'ee',liepaja:'lv',daugavpils:'lv',siauliai:'lt'}))
+ assert.equal(g.cityByKey[k].ct,ct,k+' independent Baltic state in August 1939');
+assert.deepEqual(city('kuressaare'),at(22.485,58.252),'Kuressaare on Saaremaa');
+assert(g.cityByKey.kuressaare.mapLabel.includes('萨列马岛'));
+assert.equal(route(city('kuressaare'),city('tallinn')),Infinity,'Saaremaa has no mainland land bridge');
+assert(Number.isFinite(route(city('kuressaare'),city('tallinn'),true)),'Saaremaa sea transport');
+// Kerch must be on the Crimean shore. The existing strait stays impassable on foot.
+assert.equal(g.homeCountryOf(...city('kerch')),'su');
+assert(g.cityByKey.kerch.lon>36&&g.cityByKey.kerch.lon<36.6);
+assert(geo.hexToGeo(...city('kerch'))[0]<36.5,'Kerch rendered on the western/Crimean side of the strait');
+const kerchOpposite=at(36.78,45.35);
+assert(route(city('kerch'),kerchOpposite)>20,'no shortcut from Kerch to Taman across the strait');
+const canal=D.MAP_META.canals.find(c=>c.k==='kielcanal');
+assert(canal && canal.name==='基尔运河' && canal.historicName==='威廉皇帝运河');
+assert.deepEqual(canal.endpoints,['brunsbuettel','kiel']);
+assert.deepEqual(canal.coordinates[0],[9.143,53.897],'western lock on Elbe estuary');
+assert.deepEqual(canal.coordinates.at(-1),[10.143,54.369],'eastern lock at Holtenau');
+let canalLength=0;
+for(let i=0;i<canal.coordinates.length;i++){
+ const [lon,lat]=canal.coordinates[i];
+ assert(lon>9&&lon<10.2&&lat>53.85&&lat<54.4,'canal in Schleswig-Holstein');
+ assert(canal.path[i].every((v,j)=>Math.abs(v-geo.geoToGrid(lon,lat)[j])<.000001),'canal projection');
+ if(i){const a=geo.project(...canal.coordinates[i-1]),b=geo.project(lon,lat);canalLength+=Math.hypot(a[0]-b[0],a[1]-b[1]);}
+}
+assert(canalLength>85&&canalLength<105,'generalised canal length about 99 km');
+assert.equal(g.cityByKey.brunsbuettel.ct,'de');
+assert(route(city('flensburg'),city('hamburg'))<10,'canal bridges preserve German land routes');
+
 // Regional expansion uses the 1939 border even where later wartime annexations differ.
 for(const [ct,keys]of Object.entries({
  uk:['douglas','cardiff','swansea','nottingham','leeds','southampton','exeter','inverness','norwich'],
@@ -186,5 +220,6 @@ assert.throws(()=>Game.deserialize(JSON.stringify({v:2})),/旧地图/);
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v3'})),/旧地图/);
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v4'})),/旧地图/);
 assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v5'})),/旧地图/);
+assert.throws(()=>Game.deserialize(JSON.stringify({v:3,mapVersion:'europe-1939-geographic-v6'})),/旧地图/);
 assert.equal(Game.deserialize(g.serialize()).units.length,g.units.length);
 console.log('Geography: historical checkpoints, projection, coastline, transport, river and save tests passed.');

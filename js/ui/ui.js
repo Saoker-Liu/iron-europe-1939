@@ -55,7 +55,7 @@ const SFX = (() => {
 })();
 
 /* ============================ 全局 UI 状态 ============================ */
-const SAVE_KEY = 'iron-europe-1939-geographic-v6-save';
+const SAVE_KEY = 'iron-europe-1939-geographic-v7-save';
 const UI = {
   game: null,
   sel: null,            // 选中的己方单位
@@ -239,8 +239,29 @@ function rebuildTerrain(g, z) {
     }
   }
   drawCities(c2, g, s2);
+  drawCanals(c2, s2);
   terrainCache.key = terrainKey(g) + '@' + cs.toFixed(3);
   terrainCache.pend = 0;
+}
+
+function drawCanals(c2, s2) {
+  for (const canal of MAP_META.canals || []) {
+    c2.save(); c2.setLineDash([]);
+    c2.beginPath();
+    canal.path.forEach(([col,row],i) => {
+      const x=s2*SQ3*col,y=s2*1.5*row;
+      i ? c2.lineTo(x,y) : c2.moveTo(x,y);
+    });
+    c2.strokeStyle='#193748';c2.lineWidth=Math.max(3,s2*.22);c2.stroke();
+    c2.strokeStyle='#8ce5ef';c2.lineWidth=Math.max(1.4,s2*.1);c2.stroke();
+    const [col,row]=canal.labelAnchor, [dx,dy]=canal.labelOffset;
+    const x=s2*SQ3*col,y=s2*1.5*row,lx=x+s2*dx,ly=y+s2*dy;
+    c2.beginPath();c2.moveTo(x,y);c2.lineTo(lx,ly+4);
+    c2.lineWidth=1;c2.stroke();
+    c2.textAlign='center';c2.font=`600 ${Math.max(9,s2*.32)}px "Microsoft YaHei",sans-serif`;
+    c2.strokeStyle='#193748';c2.lineWidth=3;c2.strokeText(canal.name,lx,ly);
+    c2.fillStyle='#b3f5ff';c2.fillText(canal.name,lx,ly);c2.restore();
+  }
 }
 
 function drawCities(c2, g, s2) {
