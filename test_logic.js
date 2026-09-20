@@ -107,7 +107,8 @@ for (const pf of ['axis', 'west', 'sov']) {
           assert(g.usedShipNames.has(nameKey),`[${pf}] 舰名未登记 ${nameKey}`);
           navalNames.add(nameKey);
         }
-        for (const u of g.units) { const k = key(u.c, u.r); unitsAt[k] = (unitsAt[k] || 0) + 1; }
+        for(const u of g.units.filter(u=>g.isAir(u))){const base=g.airBase(u);assert(base&&u.c===base.x&&u.r===base.y,`[${pf}] 空军失去机场 ${u.id}`);}
+        for (const u of g.units.filter(u=>!g.isAir(u))) { const k = key(u.c, u.r); unitsAt[k] = (unitsAt[k] || 0) + 1; }
         for (const k in unitsAt) assert(unitsAt[k] === 1, `[${pf}] 单位叠格 ${k} 回合${g.turn}`);
         for (const f of ['axis', 'west', 'sov']) assert(g.gold[f] >= 0, `[${pf}] ${f} 金币为负 回合${g.turn}`);
         if (g.over) break;

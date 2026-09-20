@@ -141,7 +141,7 @@
           { n: '老式野战炮', cls: 'art', atk: 30, def: 10, mov: 2, cost: 95, rng: 2, yr: 1939, nt: '库存火炮' },
         ],
         tank: [],
-        air: [],
+        air: [{ n:'基础型航空队', cls:'air', atk:26, def:8, mov:5, cost:160, yr:1939, nt:'通用早期航空队；机场系统的基础机型' }],
       },
     },
 
