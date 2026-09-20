@@ -103,6 +103,22 @@
     pointer-events: none; font-size: 34px; font-weight: 900; letter-spacing: 6px; color: #e8e4d8;
     text-shadow: 0 2px 12px #000, 0 0 4px #000; opacity: 0; transition: opacity .4s; }
 
+  #tutorial-coach { display: none; position: absolute; z-index: 22; left: 16px; bottom: 16px;
+    width: min(620px, calc(100% - 350px)); max-height: 215px; overflow-y: auto;
+    background: #161c25f5; border: 1px solid #d8b24a; border-radius: 8px; padding: 14px 18px; }
+  #tutorial-coach h3 { color: #ffdf70; margin: 7px 0; }
+  #tutorial-coach p { font-size: 14px; line-height: 1.7; margin-bottom: 8px; }
+  .tutorial-heading { font-size: 12px; color: #b8c3ce; }
+  .tutorial-heading span { float: right; }
+  .tutorial-mode #map-legend, .tutorial-mode #banner, .tutorial-mode #log, .tutorial-mode #btn-save, .tutorial-mode #btn-gen,
+  .tutorial-mode #btn-cities, .tutorial-mode #btn-units, .tutorial-mode #btn-mapmode,
+  .tutorial-mode #pb-dug, .tutorial-mode #pb-skip, .tutorial-mode #pb-gen,
+  .tutorial-mode [id^="pb-ship-"] { display: none !important; }
+  @media (max-width: 760px) {
+    #tutorial-coach { width: calc(100% - 24px); left: 12px; max-height: 190px; }
+    .tutorial-mode #panel { width: 240px; max-height: calc(100% - 285px); }
+  }
+
   /* ---- 模态 ---- */
   #modal-root { position: absolute; inset: 0; z-index: 50; display: none;
     background: rgba(6, 9, 13, .72); backdrop-filter: blur(2px); overflow-y: auto; padding: 40px 16px; align-items: flex-start; }
@@ -188,6 +204,7 @@
   地形：浅绿平原 · 深绿森林 · 褐色丘陵 · 灰色山地
 </div>
 <div id="banner"></div>
+<div id="tutorial-coach" aria-live="polite"></div>
 <div id="modal-root"></div>
 
 <div id="boot">

@@ -140,17 +140,18 @@ function terrainScale(z) {
 }
 
 function terrainKey(g) {
-  let k = (g.isWinter() ? 'w' : 's') + (UI.political ? 'p' : 't');
+  let k = (g.tutorial?'tutorial':'campaign') + (g.isWinter() ? 'w' : 's') + (UI.political ? 'p' : 't');
   for (const ci of g.cities) k += ci.owner[0];
   return k;
 }
 
 function rebuildTerrain(g, z) {
+  const mapWidth=g.tutorial?g.width:MAP_W, mapHeight=g.tutorial?g.height:MAP_H;
   const cs = terrainScale(z);
   const s2 = 36 * cs;
   const cv2 = terrainCache.cv;
-  cv2.width = Math.ceil(Math.sqrt(3) * s2 * MAP_W + s2 * 4);
-  cv2.height = Math.ceil(1.5 * s2 * MAP_H + s2 * 4);
+  cv2.width = Math.ceil(Math.sqrt(3) * s2 * mapWidth + s2 * 4);
+  cv2.height = Math.ceil(1.5 * s2 * mapHeight + s2 * 4);
   terrainCache.scale = cs;
   terrainCache.wx = -2 * 36;               // 缓存原点的世界坐标（36 系 px，与 z 无关）
   terrainCache.wy = -2 * 36;
@@ -159,7 +160,7 @@ function rebuildTerrain(g, z) {
   c2.setTransform(1, 0, 0, 1, 2 * s2, 2 * s2);   // 世界坐标 → 缓存像素（边距 2*s2 缓存px）
   const winter = g.isWinter();
   const fillPaths = new Map();
-  for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
+  for (let r = 0; r < mapHeight; r++) for (let c = 0; c < mapWidth; c++) {
     const t = g.tile(c, r); if (!t) continue;
     let col = t === 'c' ? '#8a8273' : TERRAIN[t].color;
     if (winter && (t === '.' || t === 'f' || t === 'c')) col = mix(col, '#dfe6ea', 0.38);
@@ -171,7 +172,7 @@ function rebuildTerrain(g, z) {
   c2.strokeStyle = 'rgba(0,0,0,.22)'; c2.lineWidth = Math.max(0.5, s2 * 0.03);
   for (const [, path] of fillPaths) c2.stroke(path);
   const terrPaths = new Map();
-  for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
+  for (let r = 0; r < mapHeight; r++) for (let c = 0; c < mapWidth; c++) {
     const t = g.tile(c, r);
     if (!t || !g.landPassable(c, r)) continue;
     const ct = g.homeCountryOf(c, r);
@@ -192,19 +193,19 @@ function rebuildTerrain(g, z) {
     c2.moveTo(x - dy / len * s2 / 2, y + dx / len * s2 / 2);
     c2.lineTo(x + dy / len * s2 / 2, y - dx / len * s2 / 2); c2.stroke();
   }
-  for (let r = 0; r < MAP_H; r++) for (let c = 0; c < MAP_W; c++) {
+  for (let r = 0; r < mapHeight; r++) for (let c = 0; c < mapWidth; c++) {
     if (!g.landPassable(c, r)) continue;
     for (const p of g.neighbors(c, r)) {
       if (!g.landPassable(...p)) edge([c, r], p, '#abc2c7', Math.max(.5, s2 * .055));
-      else if (r * MAP_W + c < p[1] * MAP_W + p[0] && g.homeCountryOf(c, r) !== g.homeCountryOf(...p)) edge([c, r], p, '#263039', Math.max(.8, s2 * .055));
+      else if (r * mapWidth + c < p[1] * mapWidth + p[0] && g.homeCountryOf(c, r) !== g.homeCountryOf(...p)) edge([c, r], p, '#263039', Math.max(.8, s2 * .055));
     }
   }
-  for (const k of MAP_META.blockedEdges) {
+  for (const k of (g.tutorial?[]:MAP_META.blockedEdges)) {
     const [a, b] = k.split('|').map(v => v.split(',').map(Number));
     edge(a, b, '#68a9d2', Math.max(2, s2 * .17));
   }
   // 河流图层；跨河消耗由引擎中的河流边处理。
-  if ((RIVERS || []).length) {
+  if (!g.tutorial && (RIVERS || []).length) {
     c2.strokeStyle = 'rgba(70,120,200,.55)';
     c2.lineWidth = Math.max(1, s2 * 0.10);
     c2.lineJoin = 'round'; c2.lineCap = 'round';
@@ -218,7 +219,7 @@ function rebuildTerrain(g, z) {
     }
   }
   drawCities(c2, g, s2);
-  drawCanals(c2, s2);
+  if(!g.tutorial)drawCanals(c2, s2);
   terrainCache.key = terrainKey(g) + '@' + cs.toFixed(3);
   terrainCache.pend = 0;
 }
@@ -264,6 +265,11 @@ function drawCities(c2, g, s2) {
 
 const mapLabelCache = {key:'',game:null,items:[]};
 function drawMapLabels(g) {
+  if(g.tutorial){
+    cx.save();cx.textAlign='center';cx.font='bold 15px "Microsoft YaHei",sans-serif';cx.fillStyle='#ffe9a8';
+    for(const city of g.cities){const [x,y]=hexToPix(city.x,city.y);cx.fillText(city.n,x,y+S()*1.1);}
+    cx.restore();document.getElementById('map-label-level').textContent='新手演习 · 虚构训练场';return;
+  }
   const cam=UI.cam, level=MapLabels.tier(cam.z,MAP_META);
   const key=[cam.x,cam.y,cam.z,innerWidth,innerHeight].join('|');
   if(mapLabelCache.key!==key||mapLabelCache.game!==g){
@@ -455,6 +461,7 @@ function drawFrame(now) {
 
   // ---- 动画 ----
   drawAnims(now);
+  if(g.tutorial)drawTutorial();
 
   // FPS 统计（控制台可查 window.__fps）
   render._fn = (render._fn || 0) + 1;
@@ -545,7 +552,7 @@ addEventListener('keydown', e => {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     endTurnFlow();
   }
-  else if (e.key === 'g' || e.key === 'G') showGenerals();
+  else if ((e.key === 'g' || e.key === 'G') && !g.tutorial) showGenerals();
   else if (e.key === 'h' || e.key === 'H') showHelp();
   else if (e.key === 'm' || e.key === 'M') toggleSound();
 }, true);
@@ -653,6 +660,7 @@ function drawConstruction(g) {
   cx.restore();
 }
 function constructionHTML(city) {
+  if(UI.game?.tutorial)return '';
   const g=UI.game;
   return `<div class="p-sub">城市设施 · 每种一座；不同设施可同时施工。费用开工时支付，城市易手后设施及工程由新控制方接管。</div>`+
     Object.entries(ECONOMY.construction).map(([kind,rule])=>{
@@ -743,6 +751,7 @@ function handleClick(sx, sy) {
 
 function select(u) {
   const g = UI.game;
+  if(g.tutorial&&g.lesson===1&&u===g.trainee)g.lesson=2;
   UI.sel = u;UI.airMission=null;
   SFX.click();
   if (!u.moved) UI.range = g.moveRange(u); else UI.range = null;
@@ -808,6 +817,7 @@ function doMove(c, r) {
 /* 攻击（必要时先自动移动接敌） */
 function doAttack(enemy) {
   const g = UI.game, u = UI.sel;
+  if(g.tutorial&&g.lesson!==3)return;
   const plan = UI.targets.get(enemy.id);
   if (plan) {  // 先移动到接敌格
     if (plan[0] === u.c && plan[1] === u.r) { execAttack(enemy); return; }
@@ -861,6 +871,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 async function endTurnFlow() {
   const g = UI.game;
   if (!g || UI.busy || g.over) return;
+  if(g.tutorial&&![4,7].includes(g.lesson))return;
   UI.busy = true;
   deselect(); updatePanel();
   document.getElementById('btn-end').disabled = true;
@@ -931,7 +942,7 @@ function updateTooltip(sx, sy, target) {
       if (t === 'c') { const ci = g.cityAt(c, r); ex = ci && ci.cap ? '（首都 防御+60%）' : ''; }
       const ct = g.homeCountryOf(c, r);
       const ll = Geography.hexToGeo(c, r);
-      html = `${T.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`;
+      html = `${T.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}${g.tutorial?'<br>虚构演习地图':`<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`}`;
     }
   }
   const airport=showFacilityIcons()&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
@@ -952,7 +963,7 @@ function updateTooltip(sx, sy, target) {
 function updateTopbar() {
   const g = UI.game; if (!g) return;
   document.getElementById('fac-dot').style.background = FACTION_COLOR[g.playerFaction];
-  document.getElementById('fac-name').textContent = FACTION_NAME[g.playerFaction];
+  document.getElementById('fac-name').textContent = g.tutorial?'新手演习':FACTION_NAME[g.playerFaction];
   document.getElementById('gold').innerHTML = `💰 ${g.gold[g.playerFaction]} <small>(+${g.factionIncome(g.playerFaction)}/回合)</small>`;
   document.getElementById('date').textContent = `${g.dateLabel()} · 第 ${g.turn + 1} 回合${g.isWinter() ? ' ❄' : ''}`;
 }
@@ -961,6 +972,7 @@ function updatePanel() {
   const g = UI.game;
   const body = document.getElementById('panel-body');
   if (!g) { body.innerHTML = ''; return; }
+  if(g.tutorial&&!UI.sel){body.innerHTML='<div class="p-sub">按左下角提示完成练习；黄色圈标记当前目标。点击部队查看属性，点击空闲训练营招募援军。</div>';return;}
   if (UI.sel) { showUnitPanel(UI.sel); return; }
   body.innerHTML = `<div class="p-sub">点击部队下达命令 · 点击空城招募 · 点击 ⚓ 军港建造海军 · N 下一部队 · E 结束回合</div>`;
 }
@@ -975,7 +987,7 @@ function showUnitPanel(u) {
   const rank = gen ? Math.min(5, 1 + Math.floor((g.genKills[gen.id] || 0) / 3)) : 0;
   const ship=g.transportOf(u),atSea=g.isEmbarked(u);
   const airborneCargo=g.cargoOf(u),base=g.airBase(u),waitingPara=base?g.unitAt(base.x,base.y):null;
-  const transportPanel=my&&!g.isNaval(u)&&u.eq.cls!=='air'?`<div class="p-sub">运输装备：${ship?ship.name:'未配备'} · ${atSea?'航行中':'陆上'}<br>沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="价格${t.cost}金；海上移动${t.move}，防御${t.defense}，攻击保留${Math.round(t.attackMultiplier*100)}%" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?t.year+'年解锁':ship&&ship.cost>=t.cost?(ship.id===t.id?'已配备':'已有更高级'):g.transportPrice(u,t.id)+'金'}</button>`).join('')}</div>`:'';
+  const transportPanel=my&&!g.tutorial&&!g.isNaval(u)&&u.eq.cls!=='air'?`<div class="p-sub">运输装备：${ship?ship.name:'未配备'} · ${atSea?'航行中':'陆上'}<br>沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="价格${t.cost}金；海上移动${t.move}，防御${t.defense}，攻击保留${Math.round(t.attackMultiplier*100)}%" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?t.year+'年解锁':ship&&ship.cost>=t.cost?(ship.id===t.id?'已配备':'已有更高级'):g.transportPrice(u,t.id)+'金'}</button>`).join('')}</div>`:'';
   body.innerHTML = `
     <div class="p-title"><span>${g.unitName(u)}</span><span class="tag" style="border-color:${FACTION_COLOR[g.unitFaction(u)]}">${FACTION_NAME[g.unitFaction(u)]}</span></div>
     <div class="p-sub">${g.isNaval(u)?g.navalIdentity(u):COUNTRIES[u.ct].name+' · '+CLASSES[u.eq.cls].name} · ${u.eq.nt || ''}</div>
@@ -1050,7 +1062,7 @@ function showFactoryPanel(city) {
 function showCityPanel(city) {
   const g = UI.game;
   const body = document.getElementById('panel-body');
-  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy;
+  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy && (!g.tutorial || (g.lesson===6 && city.k==='training-base'));
   const groups=['民兵','徒步步兵','机动步兵'];
   const category=groups.includes(UI.cityRecruitCategory)?UI.cityRecruitCategory:groups[0];
   const roster = canRecruit ? g.rosterFor(city).filter(it=>it.eq.group===category) : [];
@@ -1163,6 +1175,7 @@ function showStart(fac = 'axis', diff = 'normal') {
       <div class="actions">
         <button class="btn primary" id="m-start" style="font-size:16px;padding:10px 34px">开 始 战 役</button>
         ${hasSave ? '<button class="btn gold" id="m-continue">继续上次战役</button>' : ''}
+        <button class="btn gold" id="m-tutorial">新手教程 · 约5分钟</button>
         <button class="btn" id="m-help2">玩法说明</button>
       </div>
     </div>`);
@@ -1176,6 +1189,7 @@ function showStart(fac = 'axis', diff = 'normal') {
     modalRoot.querySelectorAll('.diff-opt').forEach(x => x.classList.toggle('sel', x === el));
     SFX.click();
   });
+  document.getElementById('m-tutorial').onclick = startTutorial;
   document.getElementById('m-start').onclick = () => { closeModal(); startGame(fac, diff); };
   const c = document.getElementById('m-continue');
   if (c) c.onclick = () => {
@@ -1189,6 +1203,7 @@ function showStart(fac = 'axis', diff = 'normal') {
 }
 
 function startGame(fac, diff, loaded) {
+  tutorialMode(!!loaded?.tutorial);
   Music.play(loaded?.over==='victory'?'victory':loaded?.over==='defeat'?'defeat':'battle',!loaded?.over);
   UI.showUnits = true; document.getElementById('btn-units').textContent = '隐藏部队';
   UI.game = loaded || new Game(fac, diff);
@@ -1392,6 +1407,7 @@ function showEndModal(win) {
 
 /* ---- 横幅 ---- */
 function banner(text, dur) {
+  if(UI.game?.tutorial)return;
   const b = document.getElementById('banner');
   b.textContent = text;
   b.style.opacity = 1;
@@ -1410,6 +1426,7 @@ document.getElementById('log-head').onclick = () => document.getElementById('log
 
 /* ---- 顶栏按钮 ---- */
 function fitMap() {
+  if(UI.game?.tutorial){fitTutorial();return;}
   UI.cam.z = Math.max(.025, Math.min((innerWidth - 330) / (BASE_S * SQ3 * MAP_W), (innerHeight - 100) / (BASE_S * 1.5 * MAP_H)));
   UI.cam.x = 20; UI.cam.y = 70;
   document.getElementById('log-body').classList.add('collapsed');
@@ -1426,7 +1443,7 @@ document.getElementById('btn-save').onclick = () => { if (autoSave()) banner('�
 function toggleSound() { const on = SFX.toggle(); Music.setEnabled(on); document.getElementById('btn-sound').textContent = on ? '🔊' : '🔇'; }
 document.getElementById('btn-sound').onclick = toggleSound;
 function autoSave() {
-  if (!UI.game) return false;
+  if (!UI.game || UI.game.tutorial) return false;
   try { localStorage.setItem(SAVE_KEY, UI.game.serialize()); return true; } catch (e) { return false; }
 }
 

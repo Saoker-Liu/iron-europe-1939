@@ -16,7 +16,7 @@ function harness() {
     drawImage(...args) { if (failBlit) { failBlit = false; throw Error('transient canvas failure'); } blits.push(args); },
   }, {get: (o,k) => k in o ? o[k] : () => {}});
   function element(canvas = false) {
-    return {style:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
+    return {style:{},dataset:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
       set width(v){this._width=v;if(canvas)resizes++;}, get width(){return this._width;},height:0};
   }
   const sandbox = {...D, MapLabels:require('./js/ui/map-labels'), Game, hexDist, HexMath:globalThis.HexMath, console,
@@ -29,6 +29,8 @@ function harness() {
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync('js/ui/unit-icons.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/music.js','utf8'),sandbox);
+  vm.runInContext(fs.readFileSync('js/engine/tutorial.js','utf8'),sandbox);
+  vm.runInContext(fs.readFileSync('js/ui/tutorial.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/ui.js','utf8'),sandbox);
   const run = code => vm.runInContext(code,sandbox);
   run(`UI.game = new Game('axis'); UI.cam = {x:0,y:0,z:1};
@@ -316,3 +318,15 @@ assert.equal(h.run("UnitIcons.svg('bb',18)"),'');
 h.run("UI.game=new Game('axis');UI.game.units=[];UI.cityRecruitCategory='徒步步兵';showCityPanel(UI.game.cityByKey.berlin)");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('class=\"u-icon\"')"));
 console.log('Artwork UI: vector recruitment, naval text fallback and transported-army distinction passed.');
+
+// Tutorial UI must never overwrite a campaign save or leave its end-turn button disabled.
+h.run("UI.busy=false;startTutorial();updateTutorial()");
+assert(h.run("UI.game.tutorial&&UI.game.units.length===2"));
+h.run("let tutorialSaveWrites=0;globalThis.localStorage={setItem(){tutorialSaveWrites++;},getItem(){return null;}};autoSave()");
+assert.equal(h.run('tutorialSaveWrites'),0);
+h.run("document.getElementById('tutorial-begin').onclick();select(UI.game.trainee);drawFrame(9000)");
+assert.equal(h.run('UI.game.lesson'),2);
+h.run("exitTutorial();startGame('axis','normal',new Game('axis'))");
+assert.equal(h.run("document.getElementById('btn-end').disabled"),false);
+assert(!h.run('UI.game.tutorial'));
+console.log('Tutorial UI: guided selection, small-map rendering, save protection and campaign controls restored passed.');
