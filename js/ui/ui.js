@@ -576,6 +576,7 @@ function airMissionTarget(c,r) {
     if(result){UI.anims.push({kind:'boom',c,r,t0:performance.now(),dur:1300});SFX.boom();if(g.units.includes(u))select(u);else deselect();updatePanel();updateTopbar();renderLog();checkEnd();}
   };
 }
+function showFacilityIcons() { return MapLabels.tier(UI.cam.z,MAP_META)>=2; }
 function airfieldScreen(ci) {
   const [x,y]=hexToPix(ci.x,ci.y),d=Math.max(14,S()*.7);return [x+d,y+d];
 }
@@ -589,7 +590,7 @@ function drawAirfields(g) {
     }
     cx.fillStyle='rgba(100,220,240,.12)';cx.fill(area);cx.strokeStyle='rgba(100,220,240,.3)';cx.lineWidth=1;cx.stroke(area);
   }
-  if(UI.cam.z>=.24)for(const ci of g.airfields){
+  if(showFacilityIcons())for(const ci of g.airfields){
     const [x,y]=airfieldScreen(ci);if(x<-20||x>innerWidth+20||y<-20||y>innerHeight+20)continue;
     cx.fillStyle='#102535';cx.fillRect(x-10,y-10,20,20);
     cx.strokeStyle=UI.sel?.airbase===ci.k?'#ffe285':FACTION_COLOR[ci.owner];cx.lineWidth=2;cx.strokeRect(x-10,y-10,20,20);
@@ -628,7 +629,7 @@ function drawHarbors(g) {
     const a=hexToPix(...p.a),b=hexToPix(...p.b);
     cx.beginPath();cx.moveTo(...a);cx.lineTo(...b);cx.stroke();
   }
-  for(const h of g.harbors){
+  if(showFacilityIcons())for(const h of g.harbors){
     const [x,y]=harborScreen(h);
     if(x<-20||x>innerWidth+20||y<-20||y>innerHeight+20)continue;
     cx.fillStyle='#102535';cx.fillRect(x-9,y-9,18,18);
@@ -638,7 +639,7 @@ function drawHarbors(g) {
   cx.restore();
 }
 function drawConstruction(g) {
-  if(UI.cam.z<.4)return;
+  if(!showFacilityIcons())return;
   cx.save();cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillStyle='#ffe285';
   for(const ci of g.cities)if(ci.factory){const [x,y]=hexToPix(ci.x,ci.y);cx.fillText('⚒',x-Math.max(14,S()*.7),y+Math.max(14,S()*.7));}
   for(const p of g.construction){
@@ -707,9 +708,9 @@ function handleClick(sx, sy) {
   const [c, r] = pixToHex(wx, wy);
   if (!g.inMap(c, r)) return;
   if(UI.airMission&&UI.sel){airMissionTarget(c,r);return;}
-  const airIcon=UI.cam.z>=.24&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
+  const airIcon=showFacilityIcons()&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(airIcon){showAirfieldPanel(airIcon);return;}
-  const harborIcon=g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
+  const harborIcon=showFacilityIcons()&&g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(harborIcon){deselect();showHarborPanel(harborIcon);return;}
   const u = g.unitAt(c, r);
   const city = g.cityAt(c, r);
@@ -729,9 +730,9 @@ function handleClick(sx, sy) {
   if (u) { UI.sel = null; UI.range = null; UI.targets.clear(); showUnitInfo(u); return; }
   // 5) 城市信息；只有己方空城可以招募。
   if (city) { deselect(); showCityPanel(city); return; }
-  const harbor=g.harborAt(c,r);
+  const harbor=showFacilityIcons()&&g.harborAt(c,r);
   if(harbor){deselect();showHarborPanel(harbor);return;}
-  const work=g.construction.find(p=>p.kind==='harbor'&&p.c===c&&p.r===r);
+  const work=showFacilityIcons()&&g.construction.find(p=>p.kind==='harbor'&&p.c===c&&p.r===r);
   if(work){deselect();showCityPanel(g.cityByKey[work.cityKey]);return;}
   deselect(); updatePanel();
 }
@@ -927,9 +928,9 @@ function updateTooltip(sx, sy, target) {
       html = `${T.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`;
     }
   }
-  const airport=UI.cam.z>=.24&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
+  const airport=showFacilityIcons()&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(airport)html=`<b>✈ ${airport.n}机场</b><br>${FACTION_NAME[airport.owner]}控制 · 驻扎${g.airUnitsAt(airport.k).length}支空军<br>点击打开机场 · 组建／选择空军`;
-  const harbor=g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
+  const harbor=showFacilityIcons()&&g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
   if(harbor){const ci=g.cityByKey[harbor.cityKey];html=`<b>⚓ ${ci.n}军港</b><br>${FACTION_NAME[ci.owner]}控制 · 点击建造海军<br>泊位需空闲；新舰下回合行动`;}
   if(g.contamination(c,r))html+=`<br>☢ 核污染：剩余${g.contamination(c,r)}回合，每回合-${AIR.nuclear.damage}兵力；城市收入为0，暂停补员。`;
   if (html) {
