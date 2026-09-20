@@ -3,7 +3,7 @@
  *
  * 用可辨识的"侧影"替代原先的兵种汉字（步/炮/坦/轰 + 舰种字）：
  *   步兵 = 钢盔士兵侧影  ·  炮兵 = 野战炮侧影
- *   装甲 = 坦克侧影      ·  空军 = 俯视轰炸机
+ *   装甲 = 坦克侧影      ·  空军 = 俯视机群（通用形 + air.js 七机种角色各一形）
  *   海军 = 八舰种侧影（sub 潜艇 · dd 驱逐舰 · cl/ca 巡洋舰 · bc/bb 主力舰 ·
  *          cve/cv 航母）  ·  海运陆军 = 运输船侧影
  * 收益：任何缩放级别下都能一眼分辨兵种，同时省掉每帧的中文描边文本开销
@@ -107,7 +107,16 @@ const UnitIcons = (() => {
     'M -21 38 L -8 38 L -7 44 L -21 44 Z',                  // 后靴
   ].join(' ');
 
-  /* 空军：俯视轰炸机（圆钝机头 + 后掠翼 + 平尾），机头朝上 */
+  /* ---- 空军：俯视侧影，机头朝上 ----
+   * 通用形（air，兜底用）+ air.js 七个机种角色各一形。图标只表达"机型类别"，
+   * 具体型号（Bf 109 / 飓风 / 零战……）在面板里点名——这正是设计取舍：
+   * 同一角色下各国机型轮廓相似（单发制空机就是单发制空机），画型号必然画不准；
+   * 而角色之间的差异（单发/双发/四发、鸥翼、鱼雷、双垂尾）是俯视轮廓上一眼可辨的。
+   * 每个角色一个一眼可辨的主特征：
+   *   fighter 轻型战斗机=小翼展单发  · heavy 重型战斗机=双发短舱前伸+双垂尾
+   *   cas 近地支援机=鸥翼折角+翼炮吊舱 · naval 海军轰炸机=鱼雷前伸过机头
+   *   tactical 战术轰炸机=宽玻璃机头双发 · strategic 战略轰炸机=四发全图最宽
+   *   transport 运输机=等弦长直翼+粗钝机身 */
   const AIR = [
     'M -9 -16 C -9 -34 -6 -46 0 -46 C 6 -46 9 -34 9 -16 ' +
     'L 9 20 L 13 34 L 4 44 L -4 44 L -13 34 L -9 20 Z',     // 机身
@@ -115,6 +124,93 @@ const UnitIcons = (() => {
     'M 9 -6 L 48 16 L 48 23 L 9 10 Z',                      // 右翼
     'M -7 26 L -25 37 L -25 42 L -7 33 Z',                  // 左平尾
     'M 7 26 L 25 37 L 25 42 L 7 33 Z',                      // 右平尾
+  ].join(' ');
+
+  /* 轻型战斗机：全图最小翼展（Bf 109／飓风／零战的原型学——单发、纤细、灵巧） */
+  const AIR_FIGHTER = [
+    'M 0 -45 L 3.5 -40 L 5 -30 L 5 -8 L 4 12 L 2.5 30 L 1 40 L 0 44 ' +
+    'L -1 40 L -2.5 30 L -4 12 L -5 -8 L -5 -30 L -3.5 -40 Z',  // 机身（细长锥尾）
+    'M -2 -12 L -33 -3 L -35 6 L -2 10 Z',                  // 左翼（梯形，略后掠）
+    'M 2 -12 L 33 -3 L 35 6 L 2 10 Z',                      // 右翼
+    'M -1.5 28 L -19 35 L -19 40 L -1.5 34 Z',              // 左平尾
+    'M 1.5 28 L 19 35 L 19 40 L 1.5 34 Z',                  // 右平尾
+  ].join(' ');
+
+  /* 重型战斗机：双发短舱大幅前伸 + 平尾双垂尾（Bf 110／英俊战士的原型学） */
+  const AIR_HEAVY = [
+    'M 0 -44 L 4.5 -38 L 5 -18 L 4 4 L 2.5 24 L 1.5 42 L 0 45 ' +
+    'L -1.5 42 L -2.5 24 L -4 4 L -5 -18 L -4.5 -38 Z',     // 机身（比轻型机略粗）
+    'M -3 -6 L -36 1 L -38 9 L -3 13 Z',                    // 左翼
+    'M 3 -6 L 36 1 L 38 9 L 3 13 Z',                        // 右翼
+    'M -12 -28 L -23 -23 L -26 6 L -15 9 Z',                // 左短舱（前伸出翼前缘，主特征）
+    'M 12 -28 L 23 -23 L 26 6 L 15 9 Z',                    // 右短舱
+    'M -2 28 L -17 35 L -17 40 L -2 33 Z',                  // 左平尾
+    'M 2 28 L 17 35 L 17 40 L 2 33 Z',                      // 右平尾
+    'M -13 36 L -18 46 L -13 48 L -10 40 Z',                // 双垂尾（主特征）左
+    'M 13 36 L 18 46 L 13 48 L 10 40 Z',                    // 右
+  ].join(' ');
+
+  /* 近地支援机：鸥翼折角 + 翼炮吊舱（Ju 87 斯图卡／Il-2 的原型学——对地攻击的视觉符号） */
+  const AIR_CAS = [
+    'M 0 -46 L 5.5 -40 L 6 -34 L 6.5 -20 L 5 10 L 3 26 L 1.5 40 L 0 44 ' +
+    'L -1.5 40 L -3 26 L -5 10 L -6.5 -20 L -6 -34 L -5.5 -40 Z',  // 机身（宽机鼻散热器）
+    'M -3 -18 L -17 -8 L -18 3 L -3 7 Z',                   // 左内翼（上反，前缘前伸）
+    'M 3 -18 L 17 -8 L 18 3 L 3 7 Z',                       // 右内翼
+    'M -17 -5 L -37 1 L -38 9 L -18 9 Z',                   // 左外翼（下反，方翼尖）
+    'M 17 -5 L 37 1 L 38 9 L 18 9 Z',                       // 右外翼
+    'M -19 -9 L -25 -6 L -24 -1 L -18 -2 Z',                // 左翼炮吊舱（前伸过前缘，主特征）
+    'M 19 -9 L 25 -6 L 24 -1 L 18 -2 Z',                    // 右翼炮吊舱
+    'M -1.5 30 L -18 37 L -18 42 L -1.5 35 Z',              // 左平尾
+    'M 1.5 30 L 18 37 L 18 42 L 1.5 35 Z',                  // 右平尾
+  ].join(' ');
+
+  /* 海军轰炸机：鱼雷挂在机腹、前伸超出机头（剑鱼／复仇者／SM.79 的原型学） */
+  const AIR_NAVAL = [
+    'M 0 -42 L 5 -36 L 6 -14 L 4.5 12 L 3 28 L 1.5 42 L 0 45 ' +
+    'L -1.5 42 L -3 28 L -4.5 12 L -6 -14 L -5 -36 Z',      // 机身
+    bar(0, -45, 0, -16, 4) + ' ' + circle(0, -45, 4),       // 鱼雷（主特征：圆头前伸过机头）
+    'M -3 -10 L -38 -2 L -41 9 L -3 12 Z',                  // 左翼（宽翼展，圆钝翼形）
+    'M 3 -10 L 38 -2 L 41 9 L 3 12 Z',                      // 右翼
+    'M -1.5 30 L -19 37 L -19 42 L -1.5 35 Z',              // 左平尾
+    'M 1.5 30 L 19 37 L 19 42 L 1.5 35 Z',                  // 右平尾
+  ].join(' ');
+
+  /* 战术轰炸机：宽玻璃机头 + 两台半埋短舱（He 111／B-25／Pe-2 的原型学） */
+  const AIR_TACTICAL = [
+    'M 0 -44 L 6 -38 L 7.5 -24 L 6.5 6 L 4 26 L 2 40 L 0 45 ' +
+    'L -2 40 L -4 26 L -6.5 6 L -7.5 -24 L -6 -38 Z',       // 机身（比重型机粗，机头宽=玻璃机鼻）
+    'M -4 -8 L -41 0 L -43 9 L -4 13 Z',                    // 左翼
+    'M 4 -8 L 41 0 L 43 9 L 4 13 Z',                        // 右翼
+    'M -12 -22 L -21 -18 L -23 6 L -14 8 Z',                // 左短舱（半埋，前伸少于重型机）
+    'M 12 -22 L 21 -18 L 23 6 L 14 8 Z',                    // 右短舱
+    'M -2 28 L -19 35 L -19 40 L -2 33 Z',                  // 左平尾
+    'M 2 28 L 19 35 L 19 40 L 2 33 Z',                      // 右平尾
+  ].join(' ');
+
+  /* 战略轰炸机：四发、全图最宽翼展（B-17／兰开斯特／He 177 的原型学） */
+  const AIR_STRATEGIC = [
+    'M 0 -46 L 6.5 -40 L 8 -22 L 7 8 L 4.5 30 L 2 44 L 0 47 ' +
+    'L -2 44 L -4.5 30 L -7 8 L -8 -22 L -6.5 -40 Z',       // 机身（全图最长）
+    'M -5 -10 L -47 -1 L -49 10 L -5 14 Z',                 // 左翼（±49：顶满坐标盒）
+    'M 5 -10 L 47 -1 L 49 10 L 5 14 Z',                     // 右翼
+    'M -9 -30 L -19 -26 L -21 4 L -11 6 Z',                 // 左内短舱
+    'M 9 -30 L 19 -26 L 21 4 L 11 6 Z',                     // 右内短舱
+    'M -29 -22 L -38 -19 L -40 8 L -31 10 Z',               // 左外短舱（四发＝主特征）
+    'M 29 -22 L 38 -19 L 40 8 L 31 10 Z',                   // 右外短舱
+    'M -2 32 L -22 39 L -22 44 L -2 37 Z',                  // 左平尾（宽）
+    'M 2 32 L 22 39 L 22 44 L 2 37 Z',                      // 右平尾
+  ].join(' ');
+
+  /* 运输机：等弦长直翼 + 粗钝机身（Ju 52／C-47／Li-2 的原型学——货机的方盒子气质） */
+  const AIR_TRANSPORT = [
+    'M 0 -42 L 7 -35 L 8.5 -18 L 8 10 L 6 28 L 3 42 L 0 46 ' +
+    'L -3 42 L -6 28 L -8 10 L -8.5 -18 L -7 -35 Z',        // 机身（全机种最粗）
+    'M -4 -14 L -44 -9 L -45 7 L -4 10 Z',                  // 左翼（等弦长直翼：前缘后缘平行）
+    'M 4 -14 L 44 -9 L 45 7 L 4 10 Z',                      // 右翼
+    'M -12 -26 L -22 -23 L -23 8 L -13 9 Z',                // 左短舱
+    'M 12 -26 L 22 -23 L 23 8 L 13 9 Z',                    // 右短舱
+    'M -2 30 L -22 37 L -22 43 L -2 36 Z',                  // 左平尾（大）
+    'M 2 30 L 22 37 L 22 43 L 2 36 Z',                      // 右平尾
   ].join(' ');
 
   /* ---- 独立海军（naval.js 八舰种）+ 海运陆军（economy.transports） ----
@@ -201,6 +297,13 @@ const UnitIcons = (() => {
     art: normalizeWinding(ART),
     tank: normalizeWinding(TANK),
     air: normalizeWinding(AIR),
+    airFighter: normalizeWinding(AIR_FIGHTER),
+    airHeavy: normalizeWinding(AIR_HEAVY),
+    airCas: normalizeWinding(AIR_CAS),
+    airNaval: normalizeWinding(AIR_NAVAL),
+    airTactical: normalizeWinding(AIR_TACTICAL),
+    airStrategic: normalizeWinding(AIR_STRATEGIC),
+    airTransport: normalizeWinding(AIR_TRANSPORT),
     sub: normalizeWinding(NAVAL_SUB),
     dd: normalizeWinding(NAVAL_DD),
     cl: normalizeWinding(NAVAL_CL),
@@ -225,10 +328,28 @@ const UnitIcons = (() => {
   /* 步兵：钢盔下沿 + 腰带 */
   const INF_DETAIL = 'M -13 -24 L 10 -24 L 10 -21 L -13 -21 Z ' +
     'M -12 0 L 14 0 L 14 3 L -12 3 Z';
-  /* 空军：驾驶舱 + 每侧 2 台发动机短舱（共 4 发，重型轰炸机配置） */
+  /* 空军（通用兜底形）：驾驶舱 + 每侧 2 台发动机短舱（共 4 发，重型轰炸机配置） */
   const AIR_DETAIL = circle(0, -28, 5) +
     [15, 31].map(x => circle(x, 2.5 + (x - 10) * 0.45, 4.5)).join(' ') +
     [15, 31].map(x => circle(-x, 2.5 + (x - 10) * 0.45, 4.5)).join(' ');
+  /* 各机种角色：螺旋桨桨盘 + 座舱盖等（保持轻量，细节只在 s>=18 出现） */
+  const AIR_FIGHTER_DETAIL = circle(0, -42, 3) + ' ' + circle(0, -4, 4.5) + ' ' + // 桨盘 + 座舱盖
+    bar(-5, -20, 5, -20, 1.2);                                        // 天线桅横杆
+  const AIR_HEAVY_DETAIL = circle(-19, -26, 3.5) + ' ' + circle(19, -26, 3.5) + ' ' + // 双桨盘
+    bar(-3.5, -8, 3.5, -2, 4.5);                                      // 串列座舱盖
+  const AIR_CAS_DETAIL = bar(-4, -26, 4, -14, 4) + ' ' + circle(0, -42, 4) + ' ' +  // 长座舱盖 + 散热器
+    bar(-24, -6.5, -19, -5, 1.6) + ' ' + bar(24, -6.5, 19, -5, 1.6);  // 翼炮炮管
+  const AIR_NAVAL_DETAIL = bar(-3.5, -20, 3.5, -34, 4) + ' ' + circle(0, -45, 2) + ' ' + // 座舱 + 鱼雷圆头
+    circle(0, -37, 3);                                                // 螺旋桨桨盘
+  const AIR_TACTICAL_DETAIL = circle(0, -37, 5) + ' ' + bar(-4, -14, 4, -8, 4.5) + ' ' + // 玻璃机鼻 + 座舱
+    circle(-17, -20, 3.5) + ' ' + circle(17, -20, 3.5);               // 双桨盘
+  const AIR_STRATEGIC_DETAIL = bar(-4, -16, 4, -10, 5) + ' ' +                       // 机头座舱
+    circle(-15, -28, 3.5) + ' ' + circle(15, -28, 3.5) + ' ' +       // 内侧桨盘
+    circle(-34, -20.5, 3.5) + ' ' + circle(34, -20.5, 3.5) + ' ' +   // 外侧桨盘
+    circle(0, 44, 2.5);                                               // 尾炮位
+  const AIR_TRANSPORT_DETAIL = bar(-5, -30, 5, -24, 4.5) + ' ' +                     // 座舱
+    circle(-17, -25, 3.5) + ' ' + circle(17, -25, 3.5) + ' ' +       // 双桨盘
+    bar(-8.5, 0, 8.5, 0, 1.4);                                        // 机身蒙皮分段线
   /* 海军：主炮炮管 / 测距仪 / 甲板中线等（炮管一律指向舰艏方向外侧） */
   const NAVAL_SUB_DETAIL = bar(20, -6, 32, -11, 1.8) + ' ' +          // 甲板炮
     circle(-20, 3, 2) + ' ' + circle(-13, 3, 2);                      // 舷侧通海阀
@@ -253,6 +374,9 @@ const UnitIcons = (() => {
 
   const DETAILS = {
     tank: TANK_DETAIL, art: ART_DETAIL, inf: INF_DETAIL, air: AIR_DETAIL,
+    airFighter: AIR_FIGHTER_DETAIL, airHeavy: AIR_HEAVY_DETAIL, airCas: AIR_CAS_DETAIL,
+    airNaval: AIR_NAVAL_DETAIL, airTactical: AIR_TACTICAL_DETAIL,
+    airStrategic: AIR_STRATEGIC_DETAIL, airTransport: AIR_TRANSPORT_DETAIL,
     sub: NAVAL_SUB_DETAIL, dd: NAVAL_DD_DETAIL, cl: NAVAL_CL_DETAIL,
     ca: NAVAL_CA_DETAIL, bc: NAVAL_BC_DETAIL, bb: NAVAL_BB_DETAIL,
     cve: NAVAL_CVE_DETAIL, cv: NAVAL_CV_DETAIL, transport: TRANSPORT_DETAIL,
@@ -279,7 +403,8 @@ const UnitIcons = (() => {
   /**
    * 在 (x,y) 处画一枚兵种图标。
    * @param {CanvasRenderingContext2D} cx
-   * @param {string} cls   兵种键：inf/art/tank/air、naval.js 八舰种、transport（海运陆军）
+   * @param {string} cls   兵种键：inf/art/tank/air（+ airFighter 等 air.js 七机种）、
+   *                       naval.js 八舰种、transport（海运陆军）
    * @param {number} x,y   屏幕坐标（图标中心）
    * @param {number} box   图标外接盒边长（像素）
    * @param {object} [o]   { detail:boolean 画细节层, dark:string 描边与细节色 }

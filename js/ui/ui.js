@@ -8,6 +8,11 @@
  * 这里兜底成空实现：缺模块时地图不画图标、面板不出内联 SVG，逻辑照常跑。 */
 const Icons = typeof UnitIcons !== 'undefined' ? UnitIcons
   : { BOX_RATIO: 0.85, draw() {}, svg() { return ''; } };
+/* 空军按角色选侧影（键=air.js roles，图形=unit-icons.js air* 形）。
+ * 兜底 undefined → u.eq.cls='air' 通用形；角色细分是"看得懂的类别"，型号留给面板点名。 */
+const AIR_ICON = { fighter:'airFighter', heavy:'airHeavy', cas:'airCas',
+  naval:'airNaval', tactical:'airTactical', strategic:'airStrategic', transport:'airTransport' };
+const airIconKey = eq => AIR_ICON[eq && eq.airRole] || 'air';
 
 /* ============================ 音效（WebAudio 合成） ============================ */
 const SFX = (() => {
@@ -402,7 +407,9 @@ function drawFrame(now) {
     // 低倍速也照画：图标比汉字耐缩，这正是替换汉字的主要收益。
     // 细节层（负重轮/发动机短舱等）只在格宽足够大时叠加，否则糊成一团。
     // 海运中的陆军画运输船侧影：装载的具体部队点开面板可见。
-    Icons.draw(cx, g.isEmbarked(u) ? 'transport' : u.eq.cls, x, y, s * Icons.BOX_RATIO, { detail: s >= 18 });
+    // 空军按机种角色选形（airIconKey），地图上就能数出发动机、认出鸥翼和鱼雷。
+    Icons.draw(cx, g.isEmbarked(u) ? 'transport' : g.isAir(u) ? airIconKey(u.eq) : u.eq.cls,
+      x, y, s * Icons.BOX_RATIO, { detail: s >= 18 });
     if (!simple) {
       // 将领星
       if (u.gen) {
@@ -615,9 +622,9 @@ function showAirfieldPanel(ci) {
     <button class="btn" id="airfield-city">查看所属城市</button>
     ${transfer?`<button class="btn gold" id="airfield-transfer">将选中空军转场至${ci.n}</button>`:''}
     <div class="p-sub">驻扎空军（机场失守时，未撤离的飞机损失）</div>
-    ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${g.airRoleName(u)} · ${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
+    ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}"><span class="ico">${Icons.svg(airIconKey(u.eq), 15)}</span>${g.airRoleName(u)} · ${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
     <div class="p-sub">组建空军</div>
-    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${Icons.svg('air', 15)}</span>${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
+    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${Icons.svg(airIconKey(o.eq), 15)}</span>${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
   document.getElementById('airfield-city').onclick=()=>showCityPanel(ci);
   const transferButton=document.getElementById('airfield-transfer');if(transferButton)transferButton.onclick=()=>{if(!UI.busy&&g.rebaseAir(selected,ci.k)){select(selected);updateTopbar();renderLog();}};
   units.forEach((u,i)=>{document.getElementById('airfield-unit-'+i).onclick=()=>{if(UI.busy||!g.units.includes(u))return;if(UI.sel&&UI.targets.has(u.id)){doAttack(u);return;}if(g.unitFaction(u)===g.playerFaction)select(u);else showUnitInfo(u);};});
