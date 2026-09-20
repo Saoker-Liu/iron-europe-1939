@@ -6,6 +6,9 @@
 (function () {
   'use strict';
 
+  // 跳转介绍页期间不启动地图加载。
+  if (new URLSearchParams(window.location.search).get('play') !== '1') return;
+
   const STAGES = [
     { label: '加载六边形地图',     files: ['js/core/hex.js', 'js/core/geography.js', 'js/data/map.js'] },
     { label: '加载地形与河流',     files: ['js/data/terrain.js'] },

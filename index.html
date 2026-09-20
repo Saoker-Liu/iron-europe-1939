@@ -2,6 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<script>
+  // 默认先展示介绍页；只有主动点击开战才加载游戏和阵营选择。
+  if (new URLSearchParams(window.location.search).get('play') !== '1') {
+    document.documentElement.style.visibility = 'hidden';
+    window.location.replace(new URL('landing/index.html', window.location.href).href);
+  }
+</script>
 <title>钢铁欧陆 1939 · 二战六边形战棋</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
