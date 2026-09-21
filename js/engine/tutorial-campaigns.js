@@ -12,7 +12,7 @@ class TutorialCampaign extends Base {
     this.units=[];this.nextId=1;this.log=[];this.pendingEvents=[];this.over=null;this.lastMove=null;
     this.airfields=[];this.harbors=[];this.construction=[];this.fallout={};this.usaIn=false;
     this.gold={axis:1200,west:0,sov:1200};this.genUnit=Object.fromEntries(Object.keys(this.genUnit).map(k=>[k,null]));
-    this.wars=new Set(['axis|west']);this.blockedEdges=new Set();this.riverEdges=new Set();this.navalPassages=new Map();
+    this.wars=new Set(['axis|west']);this.blockedEdges=new Set();this.riverEdges=new Set();
     this.terr={};this.trainingHomes={};this.history=[];this.inspected=[];this.tabs=[];this.highlights=[];this.trainingReady=false;
     const id=this.checkpoint().id,neutral=id==='neutral',own=neutral?'su':'de',other=neutral?'fi':'pl';
     for(let r=0;r<this.height;r++)for(let c=0;c<this.width;c++){
