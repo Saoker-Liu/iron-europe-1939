@@ -709,7 +709,7 @@ function chooseHarborSite(city) {
   const g=UI.game,sites=g.harborSites(city),rule=ECONOMY.construction.harbor;
   const [x,y]=hexToPix(city.x,city.y);
   openModal(`<div class="modal"><h1>${F('{0} · 选择港址', city.n)}</h1><p>${F('费用{0}金，工期{1}回合。选择城市相邻的空闲海格开工；非己方部队占据工地时暂停施工。', rule.cost, rule.turns)}</p>${sites.map((p,i)=>{
-    const [sx,sy]=hexToPix(...p),direction=T((sx>x?T('东'):T('西'))+(sy<y?T('北'):sy>y?T('南'):''));
+    const [sx,sy]=hexToPix(...p),direction=T((sx>x?'东':'西')+(sy<y?'北':sy>y?'南':''));
     return `<button class="btn" id="harbor-site-${i}">${F('在{0}侧海域建设（{1}）', direction, p.join(','))}</button>`;
   }).join('')||'<p>'+T('没有可用的相邻海域。')+'</p>'}<button class="btn" id="harbor-site-cancel">${T("取消")}</button></div>`);
   sites.forEach((p,i)=>document.getElementById('harbor-site-'+i).onclick=()=>beginConstruction(city,'harbor',p));

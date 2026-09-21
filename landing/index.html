@@ -579,6 +579,10 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
 .lang-en .en,.lang-en .stat .e,.lang-en .mech h4 span:not([data-i18n]),.lang-en .tech span b,
 .lang-en .tle .ten,.lang-en .side .s-en,.lang-en .finale .fen{display:none}
 
+@media(max-width:600px){
+  .nav{gap:8px;padding-inline:12px}.nav .brand{gap:7px;min-width:0;flex:1}.nav .brand .bt b{font-size:13px;letter-spacing:.03em}.nav .brand .bt span{font-size:9px;letter-spacing:.15em}.nav .btn{padding:8px 10px;margin-left:0!important;letter-spacing:.03em}.nav .brand svg{width:26px;height:26px}
+  .mechs{grid-template-columns:1fr}
+}
 /* ---------- reveal ---------- */
 .rv{opacity:0;transform:translateY(30px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--d,0)*90ms)}
 .rv.on{opacity:1;transform:none}
@@ -646,7 +650,7 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
     <p class="hero-tag"><span data-i18n="六边形回合制二战战棋">六边形回合制二战战棋</span> —— <em data-i18n="改写 1939–1945 的欧洲命运">改写 1939–1945 的欧洲命运</em>
       <span class="en">A HEX-GRID TURN-BASED WWII WARGAME · REWRITE THE FATE OF EUROPE</span>
     </p>
-    <p class="hero-sub"><b><span data-i18n="占领敌方首都，触发投降与领土移交；冬季战争采用特别停战条款。">占领敌方首都，触发投降与领土移交；冬季战争采用特别停战条款。</span></b>Take a capital, and a nation falls.</p>
+    <p class="hero-sub"><b><span data-i18n="占领敌方首都，触发投降与领土移交；冬季战争采用特别停战条款。">占领敌方首都，触发投降与领土移交；冬季战争采用特别停战条款。</span></b></p>
     <div class="hero-cta">
       <a class="btn btn-gold" href="../index.html?play=1"><span data-i18n="免费开战 · PLAY FREE">免费开战 · PLAY FREE</span> <span class="arr">▸</span></a>
       <a class="btn btn-ghost" href="#map"><span data-i18n="检阅战场">检阅战场</span> <span class="arr">↓</span></a>
@@ -689,7 +693,7 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
       </h2>
     </header>
     <p class="sec-lede rv" style="--d:1"><span data-i18n="128×112 六边形，每格约 45 公里，兰伯特等角圆锥投影。">128×112 六边形，每格约 45 公里，兰伯特等角圆锥投影。</span><b><span data-i18n="以1939年8月31日国界开局，占领与条约改变疆界">以1939年8月31日国界开局，占领与条约改变疆界</span></b>。
-      128×112 hexes at ~45 km each. Coastlines from Natural Earth; starting borders reflect Aug 31, 1939 and change with occupation and treaties.</p>
+      <span class="en">128×112 hexes at ~45 km each. Coastlines from Natural Earth; starting borders reflect Aug 31, 1939 and change with occupation and treaties.</span></p>
 
     <div class="map-grid" style="margin-top:clamp(36px,5vw,56px)">
       <figure class="frame rv" style="--d:1" data-full="img/03-campaign-fullmap.jpg" data-alt="战役地图全景当前版本实机截图" role="button" tabindex="0" aria-label="放大查看战役地图全景" data-i18n-aria-label="放大查看战役地图全景">
@@ -1058,6 +1062,15 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
 /* 与游戏共用 localStorage 键：landing 切 EN → 游戏开局即 EN，反之亦然 */
 document.documentElement.classList.toggle('lang-en', typeof I18N !== 'undefined' && I18N.lang === 'en');
 document.documentElement.setAttribute('lang', (typeof I18N !== 'undefined' && I18N.lang === 'en') ? 'en' : 'zh-CN');
+if (I18N.lang === 'en') {
+  document.querySelectorAll('img[src^="img/"], [data-full^="img/"]').forEach(el => {
+    const attr=el.hasAttribute('data-full')?'data-full':'src';
+    el.setAttribute(attr,el.getAttribute(attr).replace(/\.jpg$/,'-en.jpg'));
+    if(el.hasAttribute('data-alt'))el.setAttribute('data-alt',el.getAttribute('aria-label')||'Game screenshot');
+  });
+  document.querySelector('meta[name="description"]').content='A free, turn-based WWII hex wargame: 436 cities, three playable factions, combined arms, historical commanders and a guided tutorial. Play in English or Chinese.';
+}
+
 </script>
 <script>
 (function(){

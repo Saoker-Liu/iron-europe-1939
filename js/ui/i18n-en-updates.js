@@ -235,3 +235,13 @@ I18N.add({
 });
 
 I18N.add({"试玩反馈":"Playtest Feedback","工厂":"Factory"});
+
+I18N.add({
+  '反击伤害 +{0}%': 'Counterattack coefficient +{0} percentage points',
+  '钢铁欧陆 1939 · IRON EUROPE 1939-1945 — 六边形回合制二战战棋': 'Iron Europe 1939 · A Turn-Based WWII Hex Wargame',
+  '📜 战报（点击折叠）': '📜 Dispatches (click to collapse)',
+  '攻击演习对手': 'Attack the Training Target',
+  '拥有最精良的装备与将领，开局即与英法波全面开战。闪击波兰、击溃法国，但 1941 年巴巴罗萨行动将把你拖入双线消耗的深渊。适合喜欢进攻的指挥官。': 'Start at war with Britain, France and Poland, backed by strong equipment and commanders. Strike quickly in Poland and France, but prepare for a second front when Barbarossa begins in June 1941. Suits an aggressive playstyle.',
+  '开局在大陆处于劣势，马奇诺防线能否挡住装甲洪流？守住伦敦与巴黎，等待美国参战与诺曼底登陆的翻盘时刻。适合喜欢防守反击的指挥官。': 'Begin on the defensive in continental Europe. Hold London and Paris, contain the Axis advance and build toward American entry and the Normandy landings. Suits players who enjoy defence and counterattacks.',
+  '你已掌握选中、移动、攻击、占城、招募和回合结算。主战役还包含工厂、机场、军港与将领，可随时打开玩法说明。': 'You have practised selection, movement, undo, combat, capture, recruitment and turn resolution. The main campaign adds factories, airfields, naval ports and generals. Press H whenever you need the manual.'
+});
