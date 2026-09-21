@@ -56,7 +56,6 @@ jobs:
           cp DIPLOMACY.md GENERAL_CATALOG.md MUSIC.md index.html README.md MAP_NOTES.md CITY_CATALOG.md NAVAL_CATALOG.md NAVAL_NAMES.md AIR_CATALOG.md _site/
           cp -R js map_sources music docs landing tools _site/
           cp artifacts/europe-1939-political.png artifacts/europe-1939-terrain.png artifacts/label-levels.png artifacts/naval-ports-detail.png artifacts/coast-river-detail.png _site/artifacts/
-          cp artifacts/unit-icons-preview.png artifacts/artwork-landing-preview.png _site/artifacts/
           touch _site/.nojekyll
           node -e "const fs=require('fs'),p='_site/index.html';fs.writeFileSync(p,fs.readFileSync(p,'utf8').replace(/js\/loader\.js\?v=[^\"]+/,'js/loader.js?v='+process.env.GITHUB_SHA));"
           node -e "const fs=require('fs'),D=require('./js/data/load-node');fs.writeFileSync('_site/version.json',JSON.stringify({commit:process.env.GITHUB_SHA,mapVersion:D.MAP_META.version,cities:D.CITIES.length})+'\n');"

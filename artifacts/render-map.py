@@ -68,7 +68,6 @@ for mode in ['political','terrain']:
  d.text((52,h-73),'海岸/河湖：Natural Earth 1:50m  ·  国界：Historical Basemaps 1938 + 1939校订  ·  北非/近东灰色陆地为战区外',font=f(18),fill='#bacbd0')
  d.text((52,h-47),'★ 首都  |  保护国与占领地单独标注；小国、狭窄海峡按六边形尺度概化。地形为区域示意，非1939逐地块植被复原。',font=f(17),fill='#a6bbc4')
  im.save('artifacts/europe-1939-'+mode+'.png')
- if mode=='political':im.resize((1340,round(h*1340/w))).save('artifacts/map-inspection.png')
 print(w,h)
 
 # Six fixed viewports show the production label policy without browser automation.
