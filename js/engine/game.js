@@ -57,6 +57,8 @@ class Game {
     this.harbors = this.buildHarbors();
     // Major-city airports are scenario abstractions, not individual historical airfields.
     this.airfields = this.cities.filter(ci=>!ci.demilitarized && (ci.cap || MAP_META.cityLabelLevels[ci.k]<=1));
+    // Main scenario: the same major-city tier as airports starts with industry.
+    if(options.initialFactories!==false)for(const ci of this.cities)if(!ci.demilitarized&&(ci.cap||MAP_META.cityLabelLevels[ci.k]<=1))ci.factory=true;
     this.terrDirty = true; this._terrCache = null;
     this.blockedEdges = new Set(MAP_META.blockedEdges);
     this.riverEdges = new Set(MAP_META.riverEdges || []);
@@ -85,10 +87,43 @@ class Game {
       if(this.equipOf(d.eq).cls==='air')continue; // Replaced by the national air scenario.
       this.spawnUnit(d.ct, d.eq, d.x, d.y, { gen: d.gen, silent: true });
     }
+    if(options.initialGround!==false)this.deployInitialGroundForces();
     if(options.initialFleet!==false)this.deployInitialFleets();
     if(options.initialAir!==false)this.deployInitialAirForces();
+    if(options.initialGenerals!==false)this.deployInitialGenerals();
     this.pushLog(`1939年9月，德国入侵波兰，英法对德宣战——第二次世界大战爆发！`, 'war');
     this.checkVictory();
+  }
+
+  // Assign the roster to existing national units; never add units or overwrite a commander.
+  deployInitialGenerals() {
+    const preferences = {
+      student:['airborne'],dietl:['mountain'],ringel:['mountain'],meretskov:['mountain','ranger'],
+      juin:['mountain'],anders:['mountain'],sosabowski:['airborne'],siilasvuo:['ranger'],
+      avramescu:['mountain'],keyaerts:['ranger','cavalry'],kocha:['irregular'],
+      dowding:['fighter','heavy'],park:['fighter','heavy'],harris:['strategic'],
+      richthofen:['cas','tactical'],coningham:['cas','tactical'],golovanov:['strategic']
+    };
+    const pending = GENERALS.filter(g=>!g.initialReserve && this.genUnit[g.id]===null);
+    // Place specialists first so general-purpose commanders cannot consume their units.
+    const priority = g => g.skills.some(s=>s.cls) ? 1 : 0;
+    pending.sort((a,b)=>priority(b)-priority(a));
+    for(const g of pending){
+      const classes=[...new Set(g.skills.map(s=>s.cls).filter(Boolean))];
+      const candidates=this.units.filter(u=>u.ct===g.ct && !u.gen && !this.isNaval(u) &&
+        !this.isEmbarked(u) && !u.carrierId && (classes.length?classes.includes(u.eq.cls):!this.isAir(u)));
+      const score=u=>{
+        let n=g.skills.filter(s=>s.cls===u.eq.cls).length*100;
+        if(preferences[g.id]?.includes(u.eq.infRole||u.eq.airRole))n+=50;
+        if(g.skills.some(s=>s.k==='rng')&&u.eq.cls==='art')n+=40;
+        if(g.skills.some(s=>s.k==='citydef')&&this.cityAt(u.c,u.r))n+=40;
+        // Prefer field formations to militia when either can use the same skills.
+        if(u.eq.cls==='inf'&&['militia','garrison','irregular'].includes(u.eq.infRole))n-=10;
+        return n;
+      };
+      candidates.sort((a,b)=>score(b)-score(a)||a.id-b.id);
+      if(candidates.length)this.assignGeneral(g.id,candidates[0]);
+    }
   }
 
   /* ------------------------------ 基础查询 ------------------------------ */
@@ -242,6 +277,72 @@ class Game {
   }
   shipNameInfo(u) {
     return this.shipNamePool(u.ct,u.eqKey).find(e=>e.n===u.shipName)||{n:u.shipName,kind:'generic'};
+  }
+  groundBorderCells() {
+    const cells=[];
+    const sovereign=ct=>COUNTRIES[ct]?.controller||ct;
+    for(let r=0;r<MAP_H;r++)for(let c=0;c<MAP_W;c++){
+      const ct=this.homeCountryOf(c,r);
+      if(!ct||ct==='xx'||!this.cityByKey||!this.cities.some(ci=>ci.ct===ct&&!ci.demilitarized)||!this.landPassable(c,r)||this.cityAt(c,r)?.demilitarized)continue;
+      const across=this.landNeighbors(c,r).map(p=>this.homeCountryOf(...p)).filter(other=>other&&other!=='xx'&&sovereign(other)!==sovereign(ct));
+      if(across.length)cells.push({c,r,ct,active:across.some(other=>this.atWar(this.cf[ct],this.cf[other]))});
+    }
+    return cells;
+  }
+  deployInitialGroundForces() {
+    const occupied=new Map(this.units.filter(u=>!this.isAir(u)&&!this.isNaval(u)).map(u=>[key(u.c,u.r),u]));
+    const majors=this.cities.filter(ci=>!ci.demilitarized&&(ci.cap||MAP_META.cityLabelLevels[ci.k]<=1));
+    const reserved=new Set(majors.map(ci=>key(ci.x,ci.y)));
+    const nationalKey=(ct,role)=>`${EQUIP[ct]?.[role]?ct:'neutral'}:${role}:0`;
+    const freeNear=(ci,radius=3)=>{
+      const queue=[[ci.x,ci.y]],seen=new Set([key(ci.x,ci.y)]);
+      for(let i=0;i<queue.length;i++){
+        const p=queue[i];
+        if(!occupied.has(key(...p))&&!reserved.has(key(...p))&&!this.cityAt(...p)?.demilitarized)return p;
+        for(const q of this.landNeighbors(...p))if(this.homeCountryOf(...q)===ci.ct&&hexDist(ci.x,ci.y,...q)<=radius&&!seen.has(key(...q))){seen.add(key(...q));queue.push(q);}
+      }
+      return null;
+    };
+    const deploy=(ct,role,c,r)=>{
+      const u=this.spawnUnit(ct,nationalKey(ct,role),c,r,{silent:true});occupied.set(key(c,r),u);return u;
+    };
+    for(const ci of majors){
+      const existing=occupied.get(key(ci.x,ci.y));
+      if(existing){
+        const p=freeNear(ci);
+        if(p){occupied.delete(key(existing.c,existing.r));[existing.c,existing.r]=p;occupied.set(key(...p),existing);}
+        else {existing.dug=true;continue;}
+      }
+      const guard=deploy(ci.ct,'garrison',ci.x,ci.y);guard.dug=true;
+    }
+    // Active fronts get a soldier on every border hex; other borders have no uncovered land approach.
+    for(const p of this.groundBorderCells().sort((a,b)=>Number(b.active)-Number(a.active)||a.r-b.r||a.c-b.c)){
+      if(occupied.has(key(p.c,p.r)))continue;
+      const covered=this.landNeighbors(p.c,p.r).some(q=>{const u=occupied.get(key(...q));return u&&u.ct===p.ct;});
+      if(!p.active&&covered)continue;
+      const role=this.tile(p.c,p.r)==='m'?'mountain':'infantry';
+      const u=deploy(p.ct,role,p.c,p.r);u.dug=true;
+    }
+    // Capitals of the major powers receive a dedicated adjacent anti-air battery.
+    for(const ct of ['de','su','fr','uk','it','pl']){
+      const ci=majors.find(c=>c.ct===ct&&c.cap);if(!ci)continue;
+      let p=this.landNeighbors(ci.x,ci.y).find(p=>this.homeCountryOf(...p)===ct&&!occupied.has(key(...p))&&!reserved.has(key(...p)));
+      if(!p){
+        const candidate=this.landNeighbors(ci.x,ci.y).find(q=>{const u=occupied.get(key(...q));return u&&u.ct===ct&&!reserved.has(key(...q));});
+        const destination=freeNear(ci,4);
+        if(candidate&&destination){const u=occupied.get(key(...candidate));occupied.delete(key(...candidate));[u.c,u.r]=destination;occupied.set(key(...destination),u);p=candidate;}
+      }
+      if(p)deploy(ct,'gun_aa',...p);
+    }
+    const reserves={de:28,su:34,fr:22,uk:18,it:18,pl:12,es:8,ro:6,yu:6,tr:6,fi:4,se:4,nl:4,be:4,hu:4,gr:4,bg:4};
+    const roles=['infantry','gun_gun','armor_light','motorized','gun_at','gun_aa','armor_medium'];
+    for(const [ct,count]of Object.entries(reserves)){
+      const bases=majors.filter(ci=>ci.ct===ct);
+      for(let i=0;i<count&&bases.length;i++){
+        const ci=bases[i%bases.length],p=freeNear(ci,4);if(p)deploy(ct,roles[i%roles.length],...p);
+      }
+    }
+
   }
   deployInitialAirForces() {
     for(const d of AIR.initialUnits){
@@ -462,6 +563,9 @@ class Game {
       if(base)for(const ci of this.airfields)if(ci!==base&&ci.owner===this.unitFaction(u)&&hexDist(base.x,base.y,ci.x,ci.y)<=this.airRadius(u)){cost.set(key(ci.x,ci.y),hexDist(base.x,base.y,ci.x,ci.y));prev.set(key(ci.x,ci.y),key(u.c,u.r));}
       return {cost,prev};
     }
+    // Per-query snapshot: movement queries do not mutate units; avoid repeated full-army scans.
+    const occupancy=new Map();for(const unit of this.units)if(!this.isAir(unit)&&!unit.carrierId&&!occupancy.has(key(unit.c,unit.r)))occupancy.set(key(unit.c,unit.r),unit);
+    const at=(c,r)=>occupancy.get(key(c,r));
     const start = key(u.c, u.r);
     const cost = new Map([[start, 0]]), prev = new Map(), zocStop = new Set();
     const visited = new Set();
@@ -477,7 +581,7 @@ class Game {
         const nk = key(nc, nr), t = this.tile(nc, nr);
         if (!t || (!CLASSES[u.eq.cls].fly && !(this.isSeagoing(u) ? this.ocean(nc,nr) : this.landPassable(nc,nr)))) continue;
         if (!CLASSES[u.eq.cls].fly && this.blockedEdges.has(this.edgeKey([c, r], [nc, nr]))) continue;
-        const occ = this.unitAt(nc, nr);
+        const occ = at(nc, nr);
         if (occ && this.unitFaction(occ) !== this.unitFaction(u)) continue;   // 敌方格阻挡
         const step = this.terrainCost(u, nc, nr) + (this.isSeagoing(u)?hexDist(c,r,nc,nr)-1:0) +
           (!CLASSES[u.eq.cls].fly && !this.isSeagoing(u) && u.eq.infRole!=='marine' && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
@@ -487,7 +591,7 @@ class Game {
         // 进入敌方控制区 → 移动终止于该格
         if (!this.hasNoZOC(u)) {
           const nearEnemy = (this.isSeagoing(u) ? this.neighbors(nc,nr) : this.landNeighbors(nc, nr)).some(([ec, er]) => {
-            const e = this.unitAt(ec, er);
+            const e = at(ec, er);
             return e && this.atWar(this.unitFaction(u), this.unitFaction(e)) && this.canStrikeFrom(e,ec,er,{...u,c:nc,r:nr});
           });
           if (nearEnemy) zocStop.add(nk);
@@ -499,12 +603,12 @@ class Game {
     const ends = new Map();
     for (const [k, v] of cost) {
       const p = k.split(',').map(Number);
-      if ((this.isSeagoing(u) ? this.ocean(...p) : this.landPassable(...p)) && !this.unitAt(...p)) ends.set(k, v);
+      if ((this.isSeagoing(u) ? this.ocean(...p) : this.landPassable(...p)) && !at(...p)) ends.set(k, v);
     }
     // A shore transition is a separate adjacent move and ends both actions.
     if(!this.isNaval(u) && !CLASSES[u.eq.cls].fly && this.transportOf(u))for(const p of this.neighbors(u.c,u.r)){
       const valid=this.isEmbarked(u)?this.landPassable(...p):this.ocean(...p);
-      if(valid&&!this.unitAt(...p)){ends.set(key(...p),mov);prev.set(key(...p),start);}
+      if(valid&&!at(...p)){ends.set(key(...p),mov);prev.set(key(...p),start);}
     }
     return { cost: ends, prev };
   }
@@ -562,17 +666,21 @@ class Game {
       m*=this.isAir(target)?(u.eq.artRole==='aa'?3:.15):this.isSeagoing(target)?.5:target.eq.cls==='tank'||target.eq.infRole==='mechanized'?u.eq.armor:u.eq.soft;
     } else if (target && !this.isEmbarked(u)) m *= ATK_MOD[u.eq.cls][this.isEmbarked(target)?'inf':target.eq.cls];     // 兵种克制
     if(u.eq.mountainGun&&!this.isEmbarked(u)&&target&&(this.tile(u.c,u.r)==='m'||this.tile(target.c,target.r)==='m'))m*=1.15;
+    if(target&&!this.isEmbarked(u)&&!this.isSeagoing(target)){
+      if(u.eq.antiInfantry&&target.eq.cls==='inf')m*=u.eq.antiInfantry;
+      if(u.eq.antiArmor&&(target.eq.cls==='tank'||target.eq.infRole==='mechanized'))m*=u.eq.antiArmor;
+    }
     const vs = this.genSkill(u, 'vs');
     if (vs && target && target.eq.cls === vs.tgt) m *= 1 + vs.m;
-    if (this.genSkill(u, 'rage') && u.hp < 50) m *= 1.15;
-    // 光环：相邻友军将领(艾森豪威尔)
-    for (const [ec, er] of this.neighbors(u.c, u.r)) {
-      const a = this.unitAt(ec, er);
-      if (a && this.unitFaction(a) === f && a.gen) {
-        const ag = this.genOf(a);
-        if (ag && ag.skills.some(s => s.k === 'aura')) { m *= 1.1; break; }
-      }
+    const rage=this.genSkill(u,'rage');
+    if(rage&&u.hp<50)m*=1+(rage.m??.15);
+    // Airports can host commanders alongside ground troops; inspect every unit layer.
+    let aura=0;
+    for(const a of this.units){
+      if(a===u||a.carrierId||a.hp<=0||!a.gen||this.unitFaction(a)!==f||hexDist(u.c,u.r,a.c,a.r)!==1)continue;
+      const skill=this.genSkill(a,'aura');if(skill)aura=Math.max(aura,skill.m??.1);
     }
+    m*=1+aura;
     if (f !== this.playerFaction) m *= this.aiMult.atk;
     if(target&&u.eq.cls==='inf'&&!this.isSeagoing(u)&&hexDist(u.c,u.r,target.c,target.r)===1&&this.riverEdges.has(this.edgeKey([u.c,u.r],[target.c,target.r])))m*=u.eq.infRole==='marine'?.9:.7;
     let seaMultiplier=this.isEmbarked(u)?this.transportOf(u).attackMultiplier:1;
@@ -645,12 +753,16 @@ class Game {
     if(!this.canStrikeFrom(def,def.c,def.r,att))return false;
     return !!def.eq.artRole&&!this.isEmbarked(def) || this.isNaval(def) || (hexDist(att.c,att.r,def.c,def.r)===1 && (this.isEmbarked(def)||['inf','tank'].includes(def.eq.cls)));
   }
-  targetsOf(u) {
+  canTargetFaction(u, target, includeNeutral=false) {
+    const attacker=this.unitFaction(u), defender=this.unitFaction(target);
+    return this.atWar(attacker,defender) || (includeNeutral && attacker===this.playerFaction && attacker!=='neutral' && defender==='neutral' && !COUNTRIES[target.ct]?.context && !COUNTRIES[target.ct]?.controller);
+  }
+  targetsOf(u, includeNeutral=false) {
     if(!this.canAttackNow(u))return [];
-    return this.units.filter(e=>this.atWar(this.unitFaction(u),this.unitFaction(e))&&this.canStrikeFrom(u,u.c,u.r,e));
+    return this.units.filter(e=>this.canTargetFaction(u,e,includeNeutral)&&this.canStrikeFrom(u,u.c,u.r,e));
   }
   attack(att, def) {
-    if(!this.units.includes(att)||!this.units.includes(def)||!this.targetsOf(att).includes(def))return null;
+    if(!this.units.includes(att)||!this.units.includes(def)||!this.targetsOf(att,true).includes(def))return null;
     const rec = { type: 'battle', aC: att.c, aR: att.r, c: def.c, r: def.r, killed: false, counter: 0 };
     const fA = this.unitFaction(att), fD = this.unitFaction(def);
     // 中立国被攻击 → 倒向攻击者的敌对阵营
@@ -671,7 +783,7 @@ class Game {
       // 反击：近战 & 防守方为步兵/装甲
       const dist = hexDist(att.c, att.r, def.c, def.r);
       if (this.canCounter(def,att)&&!(this.isAir(att)&&def.eq.artRole==='aa')) {
-        let cm = def.eq.counterMultiplier||0.55;
+        let cm = !this.isEmbarked(def)&&def.eq.counterMultiplier||0.55;
         const cs = this.genSkill(def, 'counter'); if (cs) cm += cs.m;
         const a2 = this.effAtk(def, att);
         const d2 = this.effDef(att) * (1 + ((att.eq.cls === 'art' || att.eq.cls === 'air') ? 0 : this.terrainDefBonus(att.c, att.r)));
@@ -757,16 +869,20 @@ class Game {
   factionCityCount(f) { return this.cities.filter(ci => ci.owner === f).length; }
 
   /* 招募：返回单位或 null */
+  recruitmentSite(city) {
+    return this.unitAt(city.x,city.y)?null:[city.x,city.y];
+  }
   recruit(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,false); }
   recruitFactory(cityK,eqKey,faction=this.playerFaction) { return this.recruitGround(cityK,eqKey,faction,true); }
   recruitGround(cityK,eqKey,faction,factory) {
     const city=this.cityByKey[cityK];
-    if(!city||city.demilitarized||city.owner!==faction||!['axis','west','sov'].includes(faction)||this.unitAt(city.x,city.y))return null;
+    if(!city||city.demilitarized||city.owner!==faction||!['axis','west','sov'].includes(faction))return null;
+    const site=this.recruitmentSite(city);if(!site)return null;
     const offer=(factory?this.factoryRoster(city):this.rosterFor(city)).find(o=>o.eqKey===eqKey&&!o.locked);
     if(!offer||this.gold[faction]<offer.eq.cost)return null;
     const country=eqKey.split(':')[0],ct=this.cf[city.ct]===faction?city.ct:({axis:'de',west:'uk',sov:'su'}[faction]);
     this.gold[faction]-=offer.eq.cost;
-    const u=this.spawnUnit(country==='us'?'us':ct,eqKey,city.x,city.y,{});u.moved=true;u.attacked=true;
+    const u=this.spawnUnit(country==='us'?'us':ct,eqKey,...site,{});u.moved=true;u.attacked=true;
     this.pushLog(`${city.n}${factory?'工厂':''}组建${u.eq.n}（-${u.eq.cost}金）。`,'econ');return u;
   }
   spawnUnit(ct, eqKey, x, y, opt) {
@@ -823,6 +939,12 @@ class Game {
       }
       if (city && city.owner === f) heal = 25;
       else if (this.territoryOwner(u.c, u.r) === f) heal = 12;
+      if(u.eq.fastRecovery){
+        const owner=this.territoryOwner(u.c,u.r);
+        if(city&&city.owner===f)heal=35;
+        else if(owner===f)heal=20;
+        else if(owner&&this.atWar(f,owner))heal=10;
+      }
       if (heal) u.hp = Math.min(100, u.hp + heal);
     }
   }
@@ -1184,7 +1306,7 @@ class Game {
     const peaceCap = cities.length * 2;
     if (myUnits >= (atWar ? cap : peaceCap)) return;
     for (const ci of cities) {
-      if (this.unitAt(ci.x, ci.y)) continue;
+      if (!this.recruitmentSite(ci)) continue;
       const opts=[...this.rosterFor(ci),...this.factoryRoster(ci)].filter(o=>!o.locked&&o.eq.cost<=this.gold[f]).map(o=>o.eqKey);
       if (!opts.length) continue;
       // 地面部队构成偏好：装甲 4 / 炮兵 2.5 / 步兵 2.5；空军由机场逻辑组建。
@@ -1233,7 +1355,7 @@ class Game {
   rosterFor(city) {
     return this.latestGroundRoster(city,['militia','garrison','irregular','infantry','mountain','marine','ranger','airborne','cavalry','motorized','mechanized']);
   }
-  factoryRoster(city) { return city.factory?this.latestGroundRoster(city,['gun_gun','gun_aa','gun_at','gun_field','gun_rocket','tank']):[]; }
+  factoryRoster(city) { return city.factory?this.latestGroundRoster(city,['gun_gun','gun_aa','gun_at','gun_field','gun_rocket','armor_car','armor_light','armor_medium','armor_heavy','armor_superheavy']):[]; }
 
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {
@@ -1259,7 +1381,7 @@ class Game {
   static deserialize(str) {
     const d = JSON.parse(str);
     if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
-    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false});
+    const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false,initialFactories:false,initialGround:false,initialGenerals:false});
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;
     g.wars = new Set(d.wars); g.cf = d.cf;
@@ -1292,11 +1414,12 @@ class Game {
       g.construction.push({cityKey:p.cityKey,kind:p.kind,remaining:p.remaining,...(p.kind==='harbor'?{c:p.c,r:p.r}:{})});
     }
     g.stats = d.stats;
-    g.genUnit = d.genUnit; g.genKills = d.genKills;
+    g.genUnit = {...g.genUnit,...d.genUnit}; g.genKills = {...g.genKills,...d.genKills};
     const coastCorrections=new Set(['54,27','55,27','47,37','44,57','76,107','78,107','79,107','77,108','79,108']);
     const reservedCells=new Set(d.units.map(u=>key(u.c,u.r))),coastMigrations=[];
     g.units = d.units.map(u => {
       const unit={...u,transport:u.transport||null,embarked:!!u.embarked,eq:g.equipOf(u.eqKey)};
+      delete unit.guardCity; // Discard the retired dedicated-garrison assignment from older saves.
       if(!unit.eq)throw Error('存档中的装备无效');
       if(unit.carrierId){
         if(!unit.eq.para||unit.embarked)throw Error('存档中的空运部队无效');

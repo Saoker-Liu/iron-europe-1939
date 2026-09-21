@@ -4,14 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>钢铁欧陆 1939 · IRON EUROPE 1939-1945 — 六边形回合制二战战棋</title>
-<meta name="description" content="钢铁欧陆 1939（IRON EUROPE 1939-1945）：128×112 六边形真实欧洲，436 座城市，33 个国家，91 艘史实名舰，16 位史实将领。一回合一个月，改写 1939–1945 的欧洲命运。浏览器免费开战。">
+<meta name="description" content="钢铁欧陆 1939（IRON EUROPE 1939-1945）：128×112 六边形真实欧洲，436 座城市，33 个国家，91 艘开局舰艇，116 位史实将领。一回合一个月，改写 1939–1945 的欧洲命运。浏览器免费开战。">
 <meta property="og:title" content="钢铁欧陆 1939 · IRON EUROPE 1939-1945">
-<meta property="og:description" content="一回合 · 一个月 · 一场大战。128×112 六边形真实欧洲，91 艘史实名舰，16 位史实将领。改写 1939–1945 的欧洲命运。">
+<meta property="og:description" content="一回合 · 一个月 · 一场大战。128×112 六边形真实欧洲，91 艘开局舰艇，116 位史实将领。改写 1939–1945 的欧洲命运。">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 4 L92 28 V72 L50 96 L8 72 V28 Z' fill='%2310141a' stroke='%23d8b24a' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23d8b24a'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    IRON EUROPE 1939 — LANDING
@@ -621,7 +618,7 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
     <a href="#sides">阵营</a>
     <a href="#timeline">战史</a>
   </nav>
-  <a class="btn btn-gold btn-small" href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">开战 <span class="arr">▸</span></a>
+  <a class="btn btn-gold btn-small" href="../index.html?play=1">开战 <span class="arr">▸</span></a>
 </header>
 
 <main id="top">
@@ -646,7 +643,7 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
     </p>
     <p class="hero-sub"><b>占领敌方首都，令其全国崩溃。</b>Take a capital, and a nation falls.</p>
     <div class="hero-cta">
-      <a class="btn btn-gold" href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">免费开战 · PLAY FREE <span class="arr">▸</span></a>
+      <a class="btn btn-gold" href="../index.html?play=1">免费开战 · PLAY FREE <span class="arr">▸</span></a>
       <a class="btn btn-ghost" href="#map">检阅战场 <span class="arr">↓</span></a>
     </div>
   </div>
@@ -658,8 +655,8 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
       <div class="stat"><div class="n"><span data-count="128">0</span>×<span data-count="112">0</span></div><div class="l">六边形战区</div><div class="e">HEX BATTLEFIELD</div></div>
       <div class="stat"><div class="n"><span data-count="436">0</span></div><div class="l">城市与港口</div><div class="e">CITIES &amp; PORTS</div></div>
       <div class="stat"><div class="n"><span data-count="33">0</span></div><div class="l">国家政权</div><div class="e">NATIONS</div></div>
-      <div class="stat"><div class="n"><span data-count="91">0</span></div><div class="l">史实名舰</div><div class="e">HISTORIC WARSHIPS</div></div>
-      <div class="stat"><div class="n"><span data-count="16">0</span></div><div class="l">史实将领</div><div class="e">LEGENDARY GENERALS</div></div>
+      <div class="stat"><div class="n"><span data-count="91">0</span></div><div class="l">开局舰艇</div><div class="e">STARTING WARSHIPS</div></div>
+      <div class="stat"><div class="n"><span data-count="116">0</span></div><div class="l">史实将领</div><div class="e">LEGENDARY GENERALS</div></div>
       <div class="stat"><div class="n"><span data-count="10">0</span></div><div class="l">历史事件脚本</div><div class="e">HISTORIC EVENTS</div></div>
     </div>
   </div>
@@ -691,9 +688,9 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
       128×112 hexes at ~45 km each. Coastlines from Natural Earth; borders frozen on the eve of war, Aug 31, 1939.</p>
 
     <div class="map-grid" style="margin-top:clamp(36px,5vw,56px)">
-      <figure class="frame rv" style="--d:1" data-full="img/03-campaign-fullmap.jpg" data-alt="战役地图全景实机截图" role="button" tabindex="0" aria-label="放大查看战役地图全景">
-        <img src="img/03-campaign-fullmap.jpg" alt="钢铁欧陆 1939 战役地图全景实机截图：从伦敦到莫斯科的完整欧洲战场" width="1600" height="1000" loading="lazy">
-        <figcaption class="cap"><b>实机截图 · CAMPAIGN MAP, FULL THEATER</b><span>europe-1939-geographic-v8</span></figcaption>
+      <figure class="frame rv" style="--d:1" data-full="img/03-campaign-fullmap.jpg" data-alt="战役地图全景历史版本截图" role="button" tabindex="0" aria-label="放大查看战役地图全景">
+        <img src="img/03-campaign-fullmap.jpg" alt="钢铁欧陆 1939 战役地图全景历史版本截图：从伦敦到莫斯科的完整欧洲战场" width="1600" height="1000" loading="lazy">
+        <figcaption class="cap"><b>历史版本截图 · CAMPAIGN MAP, FULL THEATER</b><span>europe-1939-geographic-v8</span></figcaption>
       </figure>
       <div class="facts">
         <div class="fact rv" style="--d:2">
@@ -720,17 +717,17 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
     </div>
 
     <div class="thumb-row">
-      <figure class="thumb rv" style="--d:1" data-full="img/01-start-screen.jpg" data-alt="开始界面实机截图" role="button" tabindex="0" aria-label="放大查看开始界面">
+      <figure class="thumb rv" style="--d:1" data-full="img/01-start-screen.jpg" data-alt="开始界面历史版本截图" role="button" tabindex="0" aria-label="放大查看开始界面">
         <img src="img/01-start-screen.jpg" alt="开始界面：三阵营选择" width="1600" height="1000" loading="lazy">
         <figcaption>开始界面 · 阵营与难度 START SCREEN</figcaption>
       </figure>
-      <figure class="thumb rv" style="--d:2" data-full="img/06-berlin-maxzoom.jpg" data-alt="柏林最大缩放实机截图" role="button" tabindex="0" aria-label="放大查看柏林细节">
+      <figure class="thumb rv" style="--d:2" data-full="img/06-berlin-maxzoom.jpg" data-alt="柏林最大缩放历史版本截图" role="button" tabindex="0" aria-label="放大查看柏林细节">
         <img src="img/06-berlin-maxzoom.jpg" alt="柏林，最大缩放下的城市与单位细节" width="1600" height="1000" loading="lazy">
         <figcaption>柏林 · 最大缩放 BERLIN, MAX ZOOM</figcaption>
       </figure>
-      <figure class="thumb rv" style="--d:3" data-full="img/04-unit-selected-panzer.jpg" data-alt="选中III号坦克的实机截图" role="button" tabindex="0" aria-label="放大查看选中部队画面">
+      <figure class="thumb rv" style="--d:3" data-full="img/04-unit-selected-panzer.jpg" data-alt="选中III号坦克的历史版本截图" role="button" tabindex="0" aria-label="放大查看选中部队画面">
         <img src="img/04-unit-selected-panzer.jpg" alt="选中III号坦克，金色高亮显示 79 格机动范围" width="1600" height="1000" loading="lazy">
-        <figcaption>选中部队 · III号坦克，机动范围 79 格 UNIT SELECTED</figcaption>
+        <figcaption>选中部队 · III号坦克 UNIT SELECTED</figcaption>
       </figure>
     </div>
   </div>
@@ -745,66 +742,31 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
         <span class="sec-en">ROCK, PAPER, SIEGE</span>
       </h2>
     </header>
-    <p class="sec-lede rv" style="--d:1">步兵、炮兵、装甲、空军——<b>四种兵种，一张克制表</b>。
+    <p class="sec-lede rv" style="--d:1">步兵、炮兵、装甲、空军——<b>多类装备，各有分工</b>。
       山地固守、装甲突穿、炮兵覆盖、空军越顶，胜负全在你的排兵布阵。
-      INFANTRY, ARTILLERY, ARMOR, AIR — four unit types, one counter table.</p>
+      INFANTRY, ARTILLERY, ARMOR, AIR — specialized roles and equipment.</p>
 
     <div class="arms-grid" style="margin-top:clamp(36px,5vw,56px)">
       <div class="rv" style="--d:2">
-        <table class="ctype" aria-label="兵种克制表：攻击方对防守方的伤害修正">
-          <thead>
-            <tr>
-              <th scope="col">攻 ↓ 防守 →</th>
-              <th scope="col">步兵</th><th scope="col">炮兵</th><th scope="col">装甲</th><th scope="col">空军</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -15 -27 A 14 13 0 0 1 11 -27 Z  M 9 -30 L 20 -26 L 9 -21 Z  M -8 -30 L 3 -30 L 3 -20 L -8 -20 Z  M -13 -22 L 12 -22 L 15 -2 L 12 8 L -11 8 L -13 -2 Z  M -9.4 -4.4 L 35.4 -28.4 L 32.6 -23.6 L -6.6 0.4 Z  M 0 6 L 10 6 L 17 41 L 6 43 Z  M -11 6 L -2 6 L -9 41 L -20 39 Z  M 5 40 L 18 40 L 19 46 L 5 46 Z  M -21 38 L -8 38 L -7 44 L -21 44 Z" fill="currentColor"/><path d="M -13 -24 L 10 -24 L 10 -21 L -13 -21 Z M -12 0 L 14 0 L 14 3 L -12 3 Z" fill="#10141a" fill-opacity=".55"/></svg>步兵<span class="ren">INFANTRY</span></span></th>
-              <td class="c100"><span class="v">100</span></td>
-              <td class="c130"><span class="v">130</span></td>
-              <td class="c65"><span class="v">65</span></td>
-              <td class="c50"><span class="v">50</span></td>
-            </tr>
-            <tr>
-              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -6 -16 L 46 -32 L 49 -25 L -3 -9 Z  M -22 -17 L -2 -17 L -2 1 L -22 1 Z  M -16 -10 L 2 -10 L 7 6 L -20 6 Z  M -15 15 A 16 16 0 1 0 17 15 A 16 16 0 1 0 -15 15 Z M -4.5 15 A 5.5 5.5 0 1 1 6.5 15 A 5.5 5.5 0 1 1 -4.5 15 Z  M 2 27 L -46 41 L -46 34 L -4 19 Z" fill="currentColor"/><path d="M 0.3843637420137964 16.691446717414635 L 15.419445674588331 22.163769010625334 L 16.650718190560738 18.780875575796063 L 1.6156362579862036 13.308553282585365 Z M -0.1570176974357711 13.62112000238584 L -12.413728787339418 23.905721757370472 L -10.099693392467875 26.66348175259879 L 2.157017697435771 16.37887999761416 Z M 2.7726539554219745 14.687433280199524 L -0.005716887248910618 -1.069490767995803 L -3.55102479809286 -0.44435732839485365 L -0.7726539554219747 15.312566719800476 Z M 41.9085896873365 -25.634358749346006 L 47.9085896873365 -24.134358749346006 L 50.0914103126635 -32.865641250653994 L 44.0914103126635 -34.365641250653994 Z" fill="#10141a" fill-opacity=".55"/></svg>炮兵<span class="ren">ARTILLERY</span></span></th>
-              <td class="c100"><span class="v">100</span></td>
-              <td class="c110"><span class="v">110</span></td>
-              <td class="c115"><span class="v">115</span></td>
-              <td class="c60"><span class="v">60</span></td>
-            </tr>
-            <tr>
-              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -40 -7 L 26 -7 L 38 6 L -40 6 Z  M -19 -7 L -13 -27 L 9 -27 L 15 -7 Z  M 6 -24 L 48 -24 L 48 -17 L 6 -17 Z  M -34 6 L 32 6 A 9 9 0 0 1 41 15 A 9 9 0 0 1 32 24 L -34 24 A 9 9 0 0 1 -43 15 A 9 9 0 0 1 -34 6 Z" fill="currentColor"/><path d="M -36 15 A 6 6 0 1 0 -24 15 A 6 6 0 1 0 -36 15 Z M -21 15 A 6 6 0 1 0 -9 15 A 6 6 0 1 0 -21 15 Z M -6 15 A 6 6 0 1 0 6 15 A 6 6 0 1 0 -6 15 Z M 9 15 A 6 6 0 1 0 21 15 A 6 6 0 1 0 9 15 Z M 24 15 A 6 6 0 1 0 36 15 A 6 6 0 1 0 24 15 Z" fill="#10141a" fill-opacity=".55"/></svg>装甲<span class="ren">ARMOR</span></span></th>
-              <td class="c115"><span class="v">115</span></td>
-              <td class="c140"><span class="v">140</span></td>
-              <td class="c100"><span class="v">100</span></td>
-              <td class="c40"><span class="v">40</span></td>
-            </tr>
-            <tr>
-              <th scope="row"><span class="rlab"><svg class="uicon" viewBox="-50 -50 100 100" aria-hidden="true"><path d="M -9 -16 C -9 -34 -6 -46 0 -46 C 6 -46 9 -34 9 -16 L 9 20 L 13 34 L 4 44 L -4 44 L -13 34 L -9 20 Z  M -9 10 L -48 23 L -48 16 L -9 -6 Z M 9 -6 L 48 16 L 48 23 L 9 10 Z  M -7 33 L -25 42 L -25 37 L -7 26 Z M 7 26 L 25 37 L 25 42 L 7 33 Z" fill="currentColor"/><path d="M -5 -28 A 5 5 0 1 0 5 -28 A 5 5 0 1 0 -5 -28 ZM 10.5 4.75 A 4.5 4.5 0 1 0 19.5 4.75 A 4.5 4.5 0 1 0 10.5 4.75 Z M 26.5 11.95 A 4.5 4.5 0 1 0 35.5 11.95 A 4.5 4.5 0 1 0 26.5 11.95 ZM -19.5 4.75 A 4.5 4.5 0 1 0 -10.5 4.75 A 4.5 4.5 0 1 0 -19.5 4.75 Z M -35.5 11.95 A 4.5 4.5 0 1 0 -26.5 11.95 A 4.5 4.5 0 1 0 -35.5 11.95 Z" fill="#10141a" fill-opacity=".55"/></svg>空军<span class="ren">AIR</span></span></th>
-              <td class="c115"><span class="v">115</span></td>
-              <td class="c130"><span class="v">130</span></td>
-              <td class="c110"><span class="v">110</span></td>
-              <td class="cna"><span class="v">—</span></td>
-            </tr>
-          </tbody>
-        </table>
+        <table class="ctype" aria-label="当前陆空军类别与生产方式">
+          <thead><tr><th>类别</th><th>分支</th><th>组建地点</th><th>作战定位</th></tr></thead>
+          <tbody><tr><th>步兵</th><td>11类</td><td>城市</td><td>占领与守备</td></tr>
+          <tr><th>炮兵</th><td>5类</td><td>工厂</td><td>火力／防空／反坦克</td></tr>
+          <tr><th>装甲</th><td>5类</td><td>工厂</td><td>突击与机动</td></tr>
+          <tr><th>空军</th><td>7类</td><td>机场</td><td>制空／轰炸／运输</td></tr></tbody></table>
         <div class="tnote">
-          <i><span class="sw" style="background:rgba(216,178,74,.48)"></span>强克制 COUNTER</i>
-          <i><span class="sw" style="background:rgba(216,178,74,.14)"></span>优势 EDGE</i>
-          <i><span class="sw" style="background:rgba(192,80,56,.3)"></span>劣势 WEAK</i>
-          <i>攻击方 → 防守方 · 伤害修正 %</i>
+          <i>实际战斗修正按当前装备类别与目标计算</i>
         </div>
         <div class="mechs">
-          <div class="mech"><span class="mn">①</span><h4>控制区 ZOC<span>ZONES OF CONTROL</span></h4><p>装甲集群与空军可无视封锁——复现 1940 年的纵深穿插。</p></div>
-          <div class="mech"><span class="mn">②</span><h4>驻防工事<span>ENTRENCHMENT</span></h4><p>城市固守 +30%，首都 +60%，山地 +60%。地形不是背景板，是武器。</p></div>
+          <div class="mech"><span class="mn">①</span><h4>控制区 ZOC<span>ZONES OF CONTROL</span></h4><p>空军与具有忽略控制区技能的将领可无视封锁，普通装甲仍受控制区影响。</p></div>
+          <div class="mech"><span class="mn">②</span><h4>驻防工事<span>ENTRENCHMENT</span></h4><p>城市地形防御 +40%，首都 +60%；主动驻防另加30%。地形不是背景板，是武器。</p></div>
           <div class="mech"><span class="mn">③</span><h4>老练度<span>VETERANCY</span></h4><p>部队越战越强，最高 +24% 攻防——老兵营值得守护。</p></div>
-          <div class="mech"><span class="mn">④</span><h4>将领技能<span>GENERALS</span></h4><p>16 位史实名将各怀绝技，击杀晋升，最高五星。</p></div>
+          <div class="mech"><span class="mn">④</span><h4>将领技能<span>GENERALS</span></h4><p>116 位史实名将各怀绝技，击杀晋升，最高五星。</p></div>
         </div>
       </div>
       <figure class="frame rv" style="--d:3" data-full="img/02-help-countertable.jpg" data-alt="游戏内帮助面板：兵种克制表" role="button" tabindex="0" aria-label="放大查看游戏内帮助面板">
-        <img src="img/02-help-countertable.jpg" alt="游戏内帮助面板，展示兵种克制表与地形加成" width="1600" height="1000" loading="lazy">
-        <figcaption class="cap"><b>实机截图 · IN-GAME HELP</b><span>按 H 随时查阅</span></figcaption>
+        <img src="img/02-help-countertable.jpg" alt="历史版本帮助面板，规则以当前游戏为准" width="1600" height="1000" loading="lazy">
+        <figcaption class="cap"><b>历史版本截图 · IN-GAME HELP</b><span>按 H 随时查阅</span></figcaption>
       </figure>
     </div>
   </div>
@@ -822,23 +784,23 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
 
     <div class="navy-grid">
       <div>
-        <p class="sec-lede rv" style="--d:1"><b>91 艘有名有姓的史实军舰</b>已就位于 1939 年的锚地。
+        <p class="sec-lede rv" style="--d:1"><b>91 艘采用舰名系统的开局军舰</b>组成欧洲战区的缩编舰队。
           俾斯麦、胡德、贝尔法斯特、U-47——建造它们、指挥它们、击沉它们。
-          91 individually named warships sit in their 1939 anchorages. Build them, command them, sink them.</p>
+          91 individually named ships form the starting scenario fleets. Build them, command them, sink them.</p>
         <div class="classes rv" style="--d:2" aria-label="八种舰型">
           <span>潜艇 SUBS</span><span>驱逐舰 DESTROYERS</span><span>轻巡洋舰 LIGHT CRUISERS</span><span>重巡洋舰 HEAVY CRUISERS</span><span>战列巡洋舰 BATTLECRUISERS</span><span>战列舰 BATTLESHIPS</span><span>护航航母 ESCORT CARRIERS</span><span>航空母舰 FLEET CARRIERS</span>
         </div>
         <div class="ncards rv" style="--d:3">
           <div class="mech"><span class="mn">⚓ ①</span><h4>军港建造<span>SHIPYARDS</span></h4><p>点击军港 ⚓ 造舰，泊位与城市易手实时联动；六国舰型逐年解锁：1939 德意志级 → 1941 俾斯麦级 → 1943 H 级计划。</p></div>
-          <div class="mech"><span class="mn">②</span><h4>反潜博弈<span>ASW WARFARE</span></h4><p>只有驱逐舰、潜艇、航母与陆基航空兵能猎杀水下目标——护航驱逐舰不是装饰品。</p></div>
+          <div class="mech"><span class="mn">②</span><h4>反潜博弈<span>ASW WARFARE</span></h4><p>驱逐舰、潜艇、航母与具备攻击能力的陆基航空兵可打击潜艇——护航驱逐舰不是装饰品。</p></div>
           <div class="mech"><span class="mn">③</span><h4>舰炮岸轰<span>SHORE BOMBARDMENT</span></h4><p>水面舰压制海岸守军，航母舰载机打击纵深；大舰巨炮重新有了意义。</p></div>
           <div class="mech"><span class="mn">④</span><h4>两栖登陆<span>AMPHIBIOUS ASSAULT</span></h4><p>运输船队载陆军跨海抢滩——1944 年的登陆日，可以由你重演，也可以让它不再发生。</p></div>
         </div>
-        <p class="navy-foot rv" style="--d:4"><b>考据彩蛋：</b>每艘开局军舰标注舰名来源——史实舰名 / 计划舰名 / 游戏拟名，分级呈现，绝不张冠李戴。AI 与你使用同一套造舰与海战规则，无作弊。</p>
+        <p class="navy-foot rv" style="--d:4"><b>考据彩蛋：</b>每艘开局军舰标注舰名来源——史实舰名 / 计划舰名 / 游戏拟名，分级呈现，绝不张冠李戴。AI与玩家共用造舰规则，难度设置会影响AI收入与战斗加成。</p>
       </div>
-      <figure class="frame rv" style="--d:2" data-full="img/05-naval-fleet-deutschland.jpg" data-alt="军港与舰队实机截图：德意志号" role="button" tabindex="0" aria-label="放大查看舰队画面">
-        <img src="img/05-naval-fleet-deutschland.jpg" alt="实机截图：选中德意志号装甲舰，舰队停泊于军港，海上六边形战场清晰可见" width="1600" height="1000" loading="lazy">
-        <figcaption class="cap"><b>实机截图 · FLEET AT ANCHOR</b><span>德意志号 DEUTSCHLAND · ⚓ 军港</span></figcaption>
+      <figure class="frame rv" style="--d:2" data-full="img/05-naval-fleet-deutschland.jpg" data-alt="军港与舰队历史版本截图：德意志号" role="button" tabindex="0" aria-label="放大查看舰队画面">
+        <img src="img/05-naval-fleet-deutschland.jpg" alt="历史版本截图：选中德意志号装甲舰，舰队停泊于军港，海上六边形战场清晰可见" width="1600" height="1000" loading="lazy">
+        <figcaption class="cap"><b>历史版本截图 · FLEET AT ANCHOR</b><span>德意志号 DEUTSCHLAND · ⚓ 军港</span></figcaption>
       </figure>
     </div>
   </div>
@@ -853,8 +815,9 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
         <span class="sec-en">COMMANDERS OF HISTORY</span>
       </h2>
     </header>
-    <p class="sec-lede rv" style="--d:1">16 位史实将领全部实装。每个人的技能都译自他的战绩——<b>技能表就是一页微缩战史</b>。</p>
+    <p class="sec-lede rv" style="--d:1">116 位史实将领全部实装。按人物履历设计游戏技能——<b>完整数值与设计理由可供审阅</b>。</p>
 
+    <p class="sec-lede"><a href="../GENERAL_CATALOG.md">查看116位将领的完整审阅名录 →</a></p>
     <div class="gen-grid" style="margin-top:clamp(32px,4vw,48px)">
       <article class="gen rv" style="--d:1;--fc:#9aa3ab">
         <span class="gfac">德国 GERMANY</span>
@@ -877,13 +840,13 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
       <article class="gen rv" style="--d:4;--fc:#cf5340">
         <span class="gfac">苏联 USSR</span>
         <h3>崔可夫</h3><span class="gen-en">VASYLY CHUIKOV</span>
-        <p class="skill">驻城防御 +50% · 反击 +30%</p>
+        <p class="skill">驻城防御 +50% · 反击系数 +30个百分点</p>
         <p class="bio">斯大林格勒第 62 集团军——「贴身紧逼」的城市战之神。</p>
       </article>
       <article class="gen rv" style="--d:5;--fc:#5b8ac9">
         <span class="gfac">英国 BRITAIN</span>
         <h3>蒙哥马利</h3><span class="gen-en">B. MONTGOMERY</span>
-        <p class="skill">防御 +25% · 反击 +30%</p>
+        <p class="skill">防御 +25% · 反击系数 +30个百分点</p>
         <p class="bio">阿拉曼的先胜后战：不打好准备，一步也不动。</p>
       </article>
       <article class="gen rv" style="--d:6;--fc:#5b8ac9">
@@ -1018,14 +981,14 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
           <span>纯原生 Canvas 渲染<b>VANILLA CANVAS</b></span>
           <span>离线可玩 · 单机<b>OFFLINE-READY · SINGLE-PLAYER</b></span>
           <span>自动存档 · 续玩<b>SAVE &amp; RESUME</b></span>
-          <span>AI 与玩家同一套规则<b>AI PLAYS BY THE RULES</b></span>
+          <span>共享规则 · 难度影响AI加成<b>AI PLAYS BY THE RULES</b></span>
           <span>政区 / 地形双渲染<b>POLITICAL / TERRAIN MODES</b></span>
         </div>
         <div class="runbox" style="margin-top:26px" aria-label="工程笔记">
           <div class="rb-t"><i></i><i></i><i></i>&nbsp;工程笔记 ENGINEERING NOTES</div>
           <pre><span class="c">// 逻辑与表现完全分离</span>
 game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</span>
-离屏缓存分层渲染 <span class="c">→</span> 单帧 <span class="g">0.65ms</span>（初版 4 FPS 的 45 倍）
+离屏缓存分层渲染 <span class="c">→</span> 地形缓存复用、动态单位视口剔除
 <em id="fpsp">window.__fps</em> <span class="c">控制台可读实时帧率</span></pre>
         </div>
       </div>
@@ -1040,7 +1003,7 @@ game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</sp
   <h2 class="rv">历史已经写好。<br><em>该写你的了。</em></h2>
   <p class="fen rv" style="--d:1">HISTORY IS WRITTEN. NOW WRITE YOURS.</p>
   <div class="cta rv" style="--d:2">
-    <a class="btn btn-gold" href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">免费开战 · PLAY FREE <span class="arr">▸</span></a>
+    <a class="btn btn-gold" href="../index.html?play=1">免费开战 · PLAY FREE <span class="arr">▸</span></a>
     <a class="btn btn-ghost" href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener">GitHub 仓库</a>
   </div>
   <p class="fmono rv" style="--d:3">FREE · PLAYS IN YOUR BROWSER · OFFLINE-READY</p>
@@ -1061,7 +1024,7 @@ game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</sp
     <div class="fmeta">
       MAP europe-1939-geographic-v8<br>
       TURN = 1 MONTH · SEPT 1939 — 1945<br>
-      <a href="https://ttdnx2999-cmd.github.io/test_collab/" target="_blank" rel="noopener">PLAY ONLINE ↗</a>&nbsp;&nbsp;<a href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener">GITHUB ↗</a><br>
+      <a href="../index.html?play=1">PLAY ONLINE ↗</a>&nbsp;&nbsp;<a href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener">GITHUB ↗</a><br>
       © 2026 钢铁欧陆 1939
     </div>
   </div>

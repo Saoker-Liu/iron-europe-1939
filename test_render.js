@@ -16,10 +16,15 @@ function harness() {
     drawImage(...args) { if (failBlit) { failBlit = false; throw Error('transient canvas failure'); } blits.push(args); },
   }, {get: (o,k) => k in o ? o[k] : () => {}});
   function element(canvas = false) {
-    return {style:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
+    return {style:{},dataset:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
       set width(v){this._width=v;if(canvas)resizes++;}, get width(){return this._width;},height:0};
   }
   const iconDraws = [];
+  // 真图标表只用来取 SHAPES 键集（unitIconClass 的 hasOwn 判断需要），
+  // 不直接载入沙盒：文件顶层 const UnitIcons 会遮蔽下面的记录型替身。
+  const ictx={Path2D:class{constructor(d){this.d=d;}}};vm.createContext(ictx);
+  vm.runInContext(fs.readFileSync('js/ui/unit-icons.js','utf8'),ictx);
+  const iconShapeStub=Object.fromEntries(Object.keys(vm.runInContext('UnitIcons.SHAPES',ictx)).map(k=>[k,1]));
   const sandbox = {...D, MapLabels:require('./js/ui/map-labels'), Game, hexDist, HexMath:globalThis.HexMath, console,
     innerWidth:1280,innerHeight:900,performance:{now:()=>1005},
     document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element(true)},
@@ -27,12 +32,15 @@ function harness() {
     Path2D:class {moveTo(){} lineTo(){} closePath(){}},
     // 单位侧影（js/ui/unit-icons.js）在浏览器由 loader 先载入；这里用记录型替身，
     // 既能断言"舰艇/部队画了图标"，又不依赖真实光栅化。
-    UnitIcons:{BOX_RATIO:0.85,
+    UnitIcons:{BOX_RATIO:0.85, SHAPES:iconShapeStub,
       draw(cx,cls,x,y,box){assert([x,y,box].every(Number.isFinite),'valid icon coordinates');iconDraws.push([cls,x,y,box]);},
-      svg:()=>''},
+      svg:cls=>iconShapeStub[cls]?'<svg class="u-icon"></svg>':''},
   };
   sandbox.window=sandbox;
   vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync('js/ui/music.js','utf8'),sandbox);
+  vm.runInContext(fs.readFileSync('js/engine/tutorial.js','utf8'),sandbox);
+  vm.runInContext(fs.readFileSync('js/ui/tutorial.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/ui.js','utf8'),sandbox);
   const run = code => vm.runInContext(code,sandbox);
   run(`UI.game = new Game('axis'); UI.cam = {x:0,y:0,z:1};
@@ -119,7 +127,7 @@ h.run(`UI.game=new Game('axis');UI.game.units=[];UI.busy=false;UI.sel=null;
    UI.sel=UI.game.spawnUnit('de','de:inf:0',port.x,port.y,{});}
   showUnitPanel(UI.sel);document.getElementById('pb-ship-0').onclick();`);
 assert.equal(h.run('UI.sel.transport'),'transport','purchase button equips selected army');
-assert.equal(h.run('UI.game.gold.axis'),95,'purchase button charges correct amount');
+assert.equal(h.run('UI.game.gold.axis'),D.START_GOLD.axis-D.ECONOMY.transports[0].cost,'purchase button charges correct amount');
 h.run(`{const p=UI.game.neighbors(UI.sel.c,UI.sel.r).find(p=>UI.game.ocean(...p));
   UI.game.moveUnit(UI.sel,...p);showUnitPanel(UI.sel);}`);
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('航行中')"));
@@ -246,7 +254,12 @@ h.run("document.getElementById('airfield-unit-0').onclick()");
 assert(h.run("UI.game.isAir(UI.sel)&&UI.sel.ct==='de'&&UI.sel.airbase==='berlin'"));
 console.log('Initial air UI: deployed aircraft display, airport roster and selection passed.');
 h.run("UI.game=new Game('axis');UI.game.units=[];UI.game.gold.axis=10000;UI.sel=null;UI.busy=false;showCityPanel(UI.game.cityByKey.berlin)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('1939型普通民兵')&&!document.getElementById('panel-body').innerHTML.includes('1939型普通步兵师')"));
+h.run("document.getElementById('city-recruit-tab-1').onclick()");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('1939型普通步兵师')&&!document.getElementById('panel-body').innerHTML.includes('1939型普通民兵')"));
+h.run("document.getElementById('city-recruit-tab-2').onclick()");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('1939型武装党卫军师')"));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('1939型普通步兵师')"));
 assert(!h.run("document.getElementById('panel-body').innerHTML.includes('data-eq=\"de:art:')"));
 assert(!h.run("document.getElementById('panel-body').innerHTML.includes('data-eq=\"de:tank:')"));
 h.run("UI.game.cityByKey.berlin.factory=true;showCityPanel(UI.game.cityByKey.berlin);document.getElementById('city-factory').onclick()");
@@ -261,3 +274,85 @@ assert(h.run("document.getElementById('panel-body').innerHTML.includes('40%溅�
 h.run("document.getElementById('factory-build-1').onclick()");
 assert(h.run("UI.sel.eq.artRole==='aa'"));
 console.log('Artillery UI: factory roles, national AA, range and special descriptions passed.');
+h.run("UI.game=new Game('axis');UI.game.units=[];UI.game.gold.axis=10000;UI.game.cityByKey.berlin.factory=true;UI.sel=null;UI.busy=false;showFactoryPanel(UI.game.cityByKey.berlin)");
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('1939型虎式坦克')"));
+h.run("document.getElementById('factory-tab-1').onclick()");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('1939型虎式坦克')"));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('88mm防空炮')"));
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('超重型坦克')"));
+h.run("document.getElementById('factory-build-8').onclick()");
+assert(h.run("UI.sel.eq.armorRole==='heavy'&&UI.sel.eq.counterMultiplier===.8"));
+console.log('Armor UI: five factory categories, Tiger replacement and recruitment passed.');
+h.run("UI.game=new Game('axis');UI.sel=null;UI.busy=false;UI.game.gold.axis=10000;const occupiedCity=UI.game.cityByKey.berlin;showFactoryPanel(occupiedCity);document.getElementById('factory-tab-0').onclick()");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('factory-build-0')&&document.getElementById('panel-body').innerHTML.includes('disabled')"));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('专职守军')"));
+h.run("UI.game.killUnit(UI.game.unitAt(occupiedCity.x,occupiedCity.y));showFactoryPanel(occupiedCity);document.getElementById('factory-build-0').onclick()");
+assert(h.run("UI.sel.eq.artRole==='gun'&&UI.sel.c===occupiedCity.x&&UI.sel.r===occupiedCity.y&&UI.sel.moved&&UI.sel.attacked"));
+console.log('Ground scenario UI: occupied cities block production; new units deploy inside the empty city.');
+
+h.run("showStart()");assert.equal(h.run('Music.current'),'lobby');
+assert(!h.run("modalRoot.innerHTML.includes('m-atlas')"));
+h.run("startGame(null,null,new Game('axis'))");assert.equal(h.run('Music.current'),'battle');
+h.run("toggleSound()");assert.equal(h.run('Music.enabled'),false);
+h.run("showEndModal(true)");assert.equal(h.run('Music.current'),'victory');assert.equal(h.run('Music.enabled'),false);
+h.run("toggleSound();showEndModal(false)");assert.equal(h.run('Music.current'),'defeat');assert.equal(h.run('Music.enabled'),true);
+h.run("showHelp()");assert(h.run("modalRoot.innerHTML.includes('Kevin MacLeod')&&modalRoot.innerHTML.includes('CC-BY 4.0')"));
+console.log('Music UI: scene transitions, shared mute and visible credits passed.');
+// Help dismisses to its caller instead of leaving the pre-game canvas empty.
+h.run("showStart('sov','hard');document.getElementById('m-help2').onclick()");
+assert(!h.run("modalRoot.innerHTML.includes('开始指挥')"));
+h.run("document.getElementById('help-close').onclick()");
+assert(h.run("modalRoot.innerHTML.includes('fac-card sel\" data-f=\"sov')&&modalRoot.innerHTML.includes('diff-opt sel\" data-d=\"hard')"));
+h.run("closeModal();showHelp();modalRoot.onkeydown({key:'Escape',preventDefault(){},stopPropagation(){}})");
+assert.equal(h.run('modalOpen()'),false);
+console.log('Help: close returns to chosen faction/difficulty; Escape closes in-game help.');
+
+
+assert.equal(h.run('GENERALS.length'),116);
+h.run("UI.game=new Game('axis');showGenerals()");
+assert(h.run("modalRoot.innerHTML.includes('龙德施泰特')&&modalRoot.innerHTML.includes('<svg')"));
+h.run("showUnitPanel(UI.game.units.find(u=>u.gen==='guderian'))");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('<svg')"));
+console.log('Generals UI: expanded roster, portraits and unit panel passed.');
+
+assert.equal(h.run("filterGeneralRoster(GENERALS,'Dowding').length"),1);
+assert.equal(h.run("filterGeneralRoster(GENERALS,'','de').length"),20);
+assert.equal(h.run("filterGeneralRoster(GENERALS,'曼纳海姆','de').length"),0);
+assert.equal(h.run("filterGeneralRoster(GENERALS,'毫无匹配').length"),0);
+console.log('Expanded general roster: Chinese/English search and country filtering passed.');
+
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'tank'}})"),'tank');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'bb'}})"),'bb','naval classes draw vector silhouettes');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'air',airRole:'cas'}})"),'airCas','air roles pick their own silhouette');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'no-such'}})"),null,'unknown classes keep the glyph fallback');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'inf'},embarked:true,transport:'transport'})"),'transport','transported armies draw the ship silhouette');
+h.run("UI.game=new Game('axis');UI.game.units=[];UI.cityRecruitCategory='徒步步兵';showCityPanel(UI.game.cityByKey.berlin)");
+assert(h.run("document.getElementById('panel-body').innerHTML.includes('class=\"u-icon\"')"));
+console.log('Artwork UI: vector recruitment, per-role air silhouettes, naval vector silhouettes and transported-army ship silhouette passed.');
+
+// Tutorial UI must never overwrite a campaign save or leave its end-turn button disabled.
+h.run("UI.busy=false;startTutorial();updateTutorial()");
+assert(h.run("UI.game.tutorial&&UI.game.units.length===2"));
+h.run("let tutorialSaveWrites=0;globalThis.localStorage={setItem(){tutorialSaveWrites++;},getItem(){return null;}};autoSave()");
+assert.equal(h.run('tutorialSaveWrites'),0);
+h.run("document.getElementById('tutorial-begin').onclick();select(UI.game.trainee);drawFrame(9000)");
+assert.equal(h.run('UI.game.lesson'),2);
+h.run("exitTutorial();startGame('axis','normal',new Game('axis'))");
+assert.equal(h.run("document.getElementById('btn-end').disabled"),false);
+assert(!h.run('UI.game.tutorial'));
+console.log('Tutorial UI: guided selection, small-map rendering, save protection and campaign controls restored passed.');
+
+h.run("globalThis.localStorage={getItem(){return 'existing-campaign';}};showStart()");
+assert(h.run("modalRoot.innerHTML.includes('id=\"m-continue\"')&&modalRoot.innerHTML.includes('id=\"m-tutorial\"')"));
+console.log('Start menu: continue and tutorial coexist with a saved campaign.');
+
+h.run("let menuSave=null;globalThis.localStorage={setItem(k,v){menuSave=v;},getItem(){return menuSave;}};closeModal();UI.game=new Game('axis');UI.game.gold.axis=987;UI.busy=true");
+assert.equal(h.run('returnToMainMenu()'),false);assert.equal(h.run('menuSave'),null);
+h.run('UI.busy=false');assert(h.run('returnToMainMenu()'));
+assert.equal(h.run('UI.game'),null);assert.equal(h.run('JSON.parse(menuSave).gold.axis'),987);
+h.run("document.getElementById('m-continue').onclick()");assert.equal(h.run('UI.game.gold.axis'),987);
+h.run("localStorage.setItem=()=>{throw Error('quota');}");assert.equal(h.run('returnToMainMenu()'),false);
+assert(h.run("UI.game!==null&&modalRoot.innerHTML.includes('暂时无法保存')"));
+h.run("document.getElementById('menu-save-back').onclick();startTutorial()");
+assert(h.run('returnToMainMenu()'));assert.equal(h.run('JSON.parse(menuSave).gold.axis'),987);
+console.log('Main menu: waits for actions, saves and resumes campaign, preserves play on storage failure, tutorial does not overwrite save.');

@@ -403,7 +403,8 @@ const UnitIcons = (() => {
   /* ------------------------ 懒加载的 Path2D 缓存 ------------------------ */
   const cShape = {}, cDetail = {};
   function shape(cls) {
-    const d = SHAPES[cls] || SHAPES.inf;
+    const d = SHAPES[cls];
+    if(!d)return null;
     if (!cShape[d]) cShape[d] = new Path2D(d);
     return cShape[d];
   }
@@ -431,6 +432,7 @@ const UnitIcons = (() => {
     const opt = o || {};
     const k = (box * (opt.scale || 1)) / (VB * 2);      // 归一化坐标 → 像素
     const p = shape(cls);
+    if(!p)return;
     cx.save();
     cx.translate(x, y);
     cx.scale(k, k);
@@ -454,7 +456,8 @@ const UnitIcons = (() => {
 
   /* 内联 SVG 版：DOM 场合（招募面板等）用，与 Canvas 同源同形 */
   function svg(cls, size, fill) {
-    const d = SHAPES[cls] || SHAPES.inf;
+    const d = SHAPES[cls];
+    if(!d)return '';
     return `<svg class="u-icon" width="${size}" height="${size}" viewBox="${-VB} ${-VB} ${VB * 2} ${VB * 2}" ` +
       `aria-hidden="true"><path d="${d}" fill="${fill || 'currentColor'}"/></svg>`;
   }

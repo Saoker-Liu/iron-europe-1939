@@ -47,7 +47,7 @@
 
 当前地图版本europe-1939-geographic-v8，共436处城市与基地；序列化结构现为v4（读取旧v3陆上存档），地图版本独立校验。城市的note、region、major分别用于历史说明、地区搜索和中等缩放下的重点标签。UI新增城市搜索与任意城市的信息面板，只有己方空城显示招募选项。城市坐标生成保持独立格位和小于60公里的检查上限；敦刻尔克、扎拉及新加入的小岛／阜姆作为显式历史边界锚点。新增7处节点另有精确落格、海运连通、无陆桥及柯尼斯堡苏联飞地回归检查，详见MAP_NOTES.md。
 
-经济文件的countryIncomeBudget记录扩充前国家总收入，各城市的分配值总和必须与其一致。城市扩充后须重新生成地图、更新静态图与离线ZIP，而非仅修改显示名称。
+经济文件的countryIncomeBudget记录当前国家总收入，各城市的分配值总和必须与其一致。城市扩充后须重新生成地图、更新静态图与离线ZIP，而非仅修改显示名称。
 
 
 ## v6 地区节点与海岸拓扑
@@ -134,11 +134,12 @@ deserialize以initialFleet:false构造，再恢复原单位；两遍处理舰名
 
 `test_air_equipment.js`验证角色、升级、载运、伞降占城、核爆全层毁伤、六回合伤害和收入恢复、存档非法数据；`test_render.js`验证真实装载／伞降／核打击取消与确认按钮路径及污染显示。AI可选用航空装备、载运机场伞兵，并仅在足够资金、敌军集中且无己方受波及时尝试核打击。
 
+
 ## 单位矢量图标：性能铁律与事故记录（feature/unit-artwork 分支）
 
 兵种图标改造（`js/ui/unit-icons.js`）沉淀的三条铁律与事故记录，合并时保留备查。
 
-覆盖范围与数据全集对齐：4 个陆空兵种（inf/art/tank/air）+ air.js 七个机种角色各一形（airFighter/airHeavy/airCas/airNaval/airTactical/airStrategic/airTransport，ui.js 的 `AIR_ICON` 映射、`airIconKey()` 兜底回通用形）+ naval.js 八舰种（sub/dd/cl/ca/bc/bb/cve/cv）+ transport（`economy.transports` 海运陆军的地图侧影，键不属于 CLASSES）。新增舰种、机种角色或兵种时同步扩 `SHAPES`/`DETAILS`，否则会静默回退成步兵侧影；`tools/icon-preview.html` 全量列出自查。空军按"角色"而非"型号"画形：图标只到机型类别（单发/双发/四发、鸥翼、鱼雷、双垂尾），具体型号由面板文字点名——同一角色下各国机型俯视轮廓本就相似，画型号必然画不准。
+覆盖范围与数据全集对齐：4 个陆空兵种（inf/art/tank/air）+ air.js 七个机种角色各一形（airFighter/airHeavy/airCas/airNaval/airTactical/airStrategic/airTransport，ui.js 的 `AIR_ICON` 映射、`airIconKey()` 兜底回通用形）+ naval.js 八舰种（sub/dd/cl/ca/bc/bb/cve/cv）+ transport（`economy.transports` 海运陆军的地图侧影，键不属于 CLASSES）。新增舰种、机种角色或兵种时同步扩 `SHAPES`/`DETAILS`，否则 `unitIconClass` 返回 null、地图回退成汉字兵种符；`tools/icon-preview.html` 全量列出自查。空军按"角色"而非"型号"画形：图标只到机型类别（单发/双发/四发、鸥翼、鱼雷、双垂尾），具体型号由面板文字点名——同一角色下各国机型俯视轮廓本就相似，画型号必然画不准。
 
 1. **禁止每帧重建地形几何**——曾每帧为可见格重建 Path2D（全图构建 332ms），是 4FPS 卡顿的根源。任何新增的"画地图上的东西"都应进 `rebuildTerrain` 的缓存层，而不是 render 主循环
 2. **主画布文本是贵操作**——CJK `strokeText/fillText` 很贵；低倍速（`simple = s < 11`）已自动省略单位小字，新增文字标记请放进同一分支。单位兵种现已改为**矢量图标**（`js/ui/unit-icons.js`），不再逐帧绘制中文，所以图标在低倍速下照常绘制（这正是替换的收益）。但图标描边必须用「`stroke` → `fill` 共用同一 transform」：**禁止把同一个 `Path2D` 换个 transform 再填一遍**来描边——实测会让 Chrome 无法复用光栅化缓存，从 6.6µs 暴涨到 62µs/单位。另：`lineJoin='round'` 下先 stroke 后 fill，线宽内半会被白色主体盖住，接缝也一并盖住，因此不会出现脏线。
@@ -167,3 +168,6 @@ deserialize以initialFleet:false构造，再恢复原单位；两遍处理舰名
 - **改兵种图标**：双击 `tools/icon-preview.html` 自检——①尺寸梯度看是否耐缩 ②最亮国家色上看对比度 ③「纯色填充」视图看是否破形
 - **微基准的坑**：把多个绘制变体塞进同一页顺序跑，测出来的数会被"实现切换导致的光栅化缓存失效"污染（同一份代码同页测到 111µs、单独进程测到 7.7µs）。比较两种实现时要**每个变体跑一个全新的浏览器进程**，并在同一进程内取多轮最优值——同一进程内的"旧 vs 新"比值才可信
 - 本地联调服务器：后台进程可能随会话结束被回收，端口 8631 探活失败就重启（脚本见 §9.1）
+
+
+整合适配：本节性能数字是原分支历史测量，不代表当前所有设备的帧耗时。矢量全集映射 20 键（陆空四类＋七个机种角色＋八舰种＋海运运输船），`unitIconClass` 统一按兵种／角色取键，未知键才回退汉字兵种符。圆形外轮廓与多边形统一环绕方向，内环反向保留镂空。

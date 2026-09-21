@@ -39,7 +39,7 @@ assert.throws(()=>Game.deserialize(JSON.stringify(bad)),/舰名无效/);
 const start=new Game('axis'),navy=start.units.filter(u=>start.isNaval(u));
 const counts=Object.fromEntries(Object.keys(D.COUNTRIES).map(ct=>[ct,navy.filter(u=>u.ct===ct).length]).filter(x=>x[1]));
 assert.deepEqual(Object.fromEntries(['uk','us','fr','it','de','su'].map(ct=>[ct,counts[ct]])),{uk:20,us:16,fr:12,it:10,de:9,su:7});
-assert.equal(navy.length,91);assert.equal(start.units.length,D.INITIAL_UNITS.filter(u=>start.equipOf(u.eq).cls!=='air').length+91+D.AIR.initialUnits.length);
+assert.equal(navy.length,91);assert.equal(start.units.length,start.units.filter(u=>!start.isAir(u)&&!start.isNaval(u)).length+91+D.AIR.initialUnits.length);
 const surface=start.units.filter(u=>!start.isAir(u));
 assert.equal(new Set(surface.map(u=>key(u.c,u.r))).size,surface.length);
 assert.equal(new Set(navy.map(u=>u.ct+':'+u.shipName)).size,navy.length);
