@@ -178,13 +178,13 @@ const UnitIcons = (() => {
 
   const ART_ROCKET = [
     'M 22 -14 L 38 -12 L 42 -2 L 22 -2 Z',                  // 车头驾驶室（右前）
-    'M -40 -10 L 20 -10 L 20 0 L -40 0 Z',                  // 货斗平板
+    'M -40 -10 L 24 -10 L 24 0 L -40 0 Z',                  // 货斗平板
     bar(-36, -14, 30, -34, 1.6),                            // 发射轨（上扬，主特征）
     bar(-36, -20, 30, -40, 1.6),                            // 第二根轨
     bar(-6, -10, 0, -24, 1.5),                              // 轨架支撑
-    circle(-28, 6, 6.5),                                    // 后双轮
-    circle(-14, 6, 6.5),                                    // 后双轮
-    circle(32, 6, 6.5),                                     // 前轮
+    circle(-28, 5, 6.5),                                    // 后双轮
+    circle(-14, 5, 6.5),                                    // 后双轮
+    circle(32, 5, 6.5),                                     // 前轮
   ].join(' ');
 
   /* 步兵：1939—45 步枪手（侧视，朝右，持枪前进）。
@@ -203,6 +203,40 @@ const UnitIcons = (() => {
     'M -13 10 L -2 10 L -6 26 L -18 32 L -20 26 L -12 20 Z',// 后腿（蹬地，脚跟离地）
     'M 10 44 L 24 44 L 24 49 L 10 49 Z',                    // 前靴
     'M -23 26 L -9 31 L -11 37 L -25 32 Z',                 // 后靴（随腿抬起）
+  ].join(' ');
+
+  /* ---- 步兵角色（infantry.js 的 infRole，侧视朝右，与通用形同一语法）----
+   * 通用形 inf 是徒步步兵原型（infRole 的民兵/山地/空降等徒步类直接回退，不另立键）。
+   * 真正换了"坐骑/载具"的角色各一形：
+   *   cavalry 骑兵=马+骑手（主特征：马头马腿）
+   *   motorized 摩托化=帆布货厢卡车
+   *   mechanized 机械化=半履带装甲车（前轮后履带，主特征） */
+  const INF_CAVALRY = [
+    'M -28 -16 L 14 -18 L 22 -12 L 20 -2 L -24 0 L -32 -8 Z',  // 马身
+    'M 10 -18 L 22 -36 L 29 -29 L 20 -10 Z',                // 马颈
+    'M 20 -36 L 34 -33 L 36 -28 L 24 -25 Z',                // 马头（口鼻前伸）
+    'M 24 -40 L 27 -34 L 22 -34 Z',                         // 马耳
+    'M -28 -12 L -38 0 L -34 3 L -25 -6 Z',                 // 尾巴
+    bar(10, -4, 24, 14, 2.6),                               // 前腿（迈步向前）
+    bar(-16, -4, -26, 14, 2.6),                             // 后腿（蹬地向后）
+    'M -10 -32 L 2 -32 L 4 -16 L -12 -16 Z',                // 骑手躯干（坐进马背）
+    circle(-3, -35.5, 4.5),                                 // 骑手钢盔
+    bar(-2, -20, 6, -13, 3),                                // 骑手腿（贴马腹）
+  ].join(' ');
+
+  const INF_MOTORIZED = [
+    'M 24 -18 L 38 -15 L 42 -2 L 24 -2 Z',                  // 驾驶室（右前）
+    'M -42 -14 L 26 -12 L 26 -4 L -40 -2 Z',                // 帆布货厢（后部略低）
+    circle(-30, 2.5, 7),                                    // 后双轮
+    circle(-15, 2.5, 7),                                    // 后双轮
+    circle(32, 2.5, 7),                                     // 前轮
+  ].join(' ');
+
+  const INF_MECHANIZED = [
+    'M -44 -10 L 18 -13 L 40 -6 L 42 0 L -44 2 Z',          // 低矮车身（斜艏装甲）
+    circle(30, 3, 5.5),                                     // 前轮（方向盘驱动）
+    'M -42 0 L 10 0 A 6.5 6.5 0 0 1 10 13 ' +
+    'L -42 13 A 6.5 6.5 0 0 1 -48.5 6.5 A 6.5 6.5 0 0 1 -42 0 Z',  // 后履带（主特征）
   ].join(' ');
 
   /* ---- 空军：俯视侧影，机头朝上 ----
@@ -397,6 +431,8 @@ const UnitIcons = (() => {
     art: normalizeWinding(ART),
     tank: normalizeWinding(TANK),
     tankCar: normalizeWinding(TANK_CAR),
+    infCavalry: normalizeWinding(INF_CAVALRY), infMotorized: normalizeWinding(INF_MOTORIZED),
+    infMechanized: normalizeWinding(INF_MECHANIZED),
     artAa: normalizeWinding(ART_AA), artAt: normalizeWinding(ART_AT),
     artField: normalizeWinding(ART_FIELD), artRocket: normalizeWinding(ART_ROCKET),
     tankLight: normalizeWinding(TANK_LIGHT),
@@ -436,6 +472,16 @@ const UnitIcons = (() => {
   /* 重型坦克：交错负重轮 + 炮口制退器（虎式的年代特征） */
   const TANK_HEAVY_DETAIL = [-32, -16, 0, 16, 32].map(x => circle(x, 16.5, 4.4)).join(' ') + ' ' +
     bar(46.5, -17, 46.5, -9, 2.4);
+  /* 骑兵：缰绳 + 马鞍 + 马眼 */
+  const INF_CAVALRY_DETAIL = bar(22, -28, 5, -24, 1) + ' ' +
+    bar(-12, -18, 5, -18, 1.6) + ' ' + circle(28, -31, 1.2);
+  /* 摩托化：货厢篷布撑杆 + 车窗 + 轮毂 */
+  const INF_MOTORIZED_DETAIL = [-30, -15, 0, 15].map(x => bar(x, -12.5, x, -8, 1.2)).join(' ') + ' ' +
+    bar(30, -13, 36, -12, 1.4) + ' ' +
+    circle(-30, 2.5, 2.8) + ' ' + circle(-15, 2.5, 2.8) + ' ' + circle(32, 2.5, 2.8);
+  /* 机械化：驾驶观察缝 + 履带负重轮 + 前轮毂 */
+  const INF_MECHANIZED_DETAIL = bar(28, -8, 36, -6.5, 1.3) + ' ' +
+    [-30, -18, -6, 6].map(x => circle(x, 6.5, 2.8)).join(' ') + ' ' + circle(30, 3, 2.2);
   /* 防空炮：测距条 + 支腿驻锄 */
   const ART_AA_DETAIL = bar(-8, -20, 12, -20, 1.4) + ' ' +
     circle(-22, 18, 2.2) + ' ' + circle(24, 18, 2.2);
@@ -450,7 +496,7 @@ const UnitIcons = (() => {
   const ART_ROCKET_DETAIL = bar(-19, -18.5, -19, -26, 1.2) + ' ' +
     bar(0, -24, 0, -31.5, 1.2) + ' ' + bar(18, -29.5, 18, -37, 1.2) + ' ' +
     bar(28, -9, 34, -9, 1.4) + ' ' +
-    circle(-28, 6, 2.6) + ' ' + circle(-14, 6, 2.6) + ' ' + circle(32, 6, 2.6);
+    circle(-28, 5, 2.6) + ' ' + circle(-14, 5, 2.6) + ' ' + circle(32, 5, 2.6);
   /* 超重型：6 轮 + 炮口制退器 + 尾部发动机格栅（鼠式原型学） */
   const TANK_SUPERHEAVY_DETAIL = [-32, -19, -6, 7, 20, 33].map(x => circle(x, 18, 4.4)).join(' ') + ' ' +
     bar(45.5, -26, 45.5, -18, 2.6) + ' ' +
@@ -516,6 +562,7 @@ const UnitIcons = (() => {
     tankCar: TANK_CAR_DETAIL, tankLight: TANK_LIGHT_DETAIL,
     tankHeavy: TANK_HEAVY_DETAIL, tankSuperheavy: TANK_SUPERHEAVY_DETAIL,
     artAa: ART_AA_DETAIL, artAt: ART_AT_DETAIL, artField: ART_FIELD_DETAIL, artRocket: ART_ROCKET_DETAIL,
+    infCavalry: INF_CAVALRY_DETAIL, infMotorized: INF_MOTORIZED_DETAIL, infMechanized: INF_MECHANIZED_DETAIL,
     airFighter: AIR_FIGHTER_DETAIL, airHeavy: AIR_HEAVY_DETAIL, airCas: AIR_CAS_DETAIL,
     airNaval: AIR_NAVAL_DETAIL, airTactical: AIR_TACTICAL_DETAIL,
     airStrategic: AIR_STRATEGIC_DETAIL, airTransport: AIR_TRANSPORT_DETAIL,
