@@ -105,7 +105,12 @@ function install(Game){Object.assign(Game.prototype,{
     // Other nations' armies survive even when stationed inside the transferred territory.
     for(const u of [...this.units])if(nations.has(u.ct))this.killUnit(u);
     for(const ci of holdings){ci.ct=to;ci.controlCt=to;ci.owner=this.cf[to];ci.cap=false;}
-    for(const ct of nations)this.annexed[ct]=to;this.lastMove=null;this.rebuildDependencies();
+    for(const ct of nations){
+      this.annexed[ct]=to;
+      for(const war of [...this.wars])if(war.split('|').includes('local:'+ct))this.wars.delete(war);
+    }
+    if(nations.has('fi')&&this.winterWar?.status==='active')this.winterWar={status:'peace',outcome:'finland-annexed'};
+    this.lastMove=null;this.rebuildDependencies();
     this.pushLog(`${COUNTRIES[to].name}吞并${COUNTRIES[from].name}，其全部领土移交，原国家军事单位解散。`,'war');return true;
   },
   finishWinterWar(sovietVictory){
@@ -123,7 +128,7 @@ function install(Game){Object.assign(Game.prototype,{
     this.pendingEvents.push({title,text});this.pushLog(title+'。'+text,'event');
   },
   partitionPoland(){
-    if(this.diplomacyEvents.poland||this.annexed.pl!=='de'||this.turn>=turnOf(1941,6)||this.annexed.su)return;
+    if(this.diplomacyEvents.poland||this.annexed.pl!=='de'||this.turn>=turnOf(1941,6)||this.atWar('axis','sov')||this.annexed.su)return;
     this.diplomacyEvents.poland=true;
     this.cedeTerritory('de','su',['lwow','wilno','brestlitovsk','grodno','bialystok','luck','rowno','pinsk','tarnopol']);
     const ev={title:'莫洛托夫·里宾特洛甫条约：瓜分波兰',text:'德国迫使波兰投降后，按约定将波兰东部地区割让给苏联，德军撤出割让区。边界按现有城市附属领土概化。'};

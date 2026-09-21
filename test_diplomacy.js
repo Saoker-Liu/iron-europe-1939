@@ -61,3 +61,6 @@ g.relocateNationalUnits('fi',[air]);assert(air.evacuated);g.removeLostAirfields(
 g=Game.deserialize(g.serialize());const reserve=g.units.find(u=>u.id===air.id);assert(reserve.evacuated);
 g.airfields.push(g.cityByKey.helsinki);g.beginLocalWar('fi');g.startTurnFor('local:fi');assert(!reserve.evacuated);assert(g.airBase(reserve));
 console.log('Diplomacy edge cases: undo/partition, occupied holdings, national recruitment, evacuation/base recovery passed.');
+
+g=new Game('sov');g.beginLocalWar('ro');g.annexCountry('ro','su');
+assert(!g.atWar('sov','local:ro'));assert(!g.anyWar('sov'),'annexation ends the defeated local war');
