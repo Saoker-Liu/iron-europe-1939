@@ -1020,7 +1020,7 @@ function showUnitPanel(u) {
     <div class="hpbar"><div style="width:${Math.max(0, u.hp)}%;background:${u.hp > 60 ? '#67d13d' : u.hp > 30 ? '#e8c33a' : '#e05338'}"></div></div>
     <div class="grid2">
       <span>攻击 <b>${atSea?Math.round(u.eq.atk*ship.attackMultiplier):u.eq.atk}</b></span><span>防御 <b>${atSea?ship.defense:u.eq.def}</b></span>
-      <span>${g.isAir(u)?T('作战半径'):T('移动力')} <b>${g.movOf(u)}</b></span><span>${(u.eq.cls === 'art'||g.isNaval(u)) ? '射程 <b>' + g.rangeOf(u) + '</b>' : '经验 <b>' + u.xp + '</b>'}</span>
+      <span>${g.isAir(u)?T('作战半径'):T('移动力')} <b>${g.movOf(u)}</b></span><span>${(u.eq.cls === 'art'||g.isNaval(u)) ? F('射程 <b>{0}</b>', g.rangeOf(u)) : F('经验 <b>{0}</b>', u.xp)}</span>
       <span>兵力 <b>${u.hp}/100</b></span><span>老练 <b>+${u.vet * 8}%</b></span>
     </div>
     ${atSea?`<div class="p-sub">${F('🚢 {0} · 海上攻击保留{1}% · 射程1', ship.name, Math.round(ship.attackMultiplier*100))}<br>${F('航行移动力固定{0}；海上无法驻防或自动补员。', ship.move)}</div>`:''}
@@ -1158,7 +1158,7 @@ function showCitySearch() {
 }
 function showModalAsync(html) {
   return new Promise(res => {
-    openModal(html + `<div class="actions"><button class="btn primary" id="m-ok">继 续</button></div>`);
+    openModal(html + `<div class="actions"><button class="btn primary" id="m-ok">${T('继 续')}</button></div>`);
     document.getElementById('m-ok').onclick = () => { closeModal(); res(); };
   });
 }
