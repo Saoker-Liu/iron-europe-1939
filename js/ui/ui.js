@@ -1240,9 +1240,8 @@ function showStart(fac = 'axis', diff = 'normal') {
       <div class="actions">
         <button class="btn primary" id="m-start" style="font-size:16px;padding:10px 34px">${T('开 始 战 役')}</button>
         ${hasSave ? '<button class="btn gold" id="m-continue">'+T('继续上次战役')+'</button>' : ''}
-        <button class="btn gold" id="m-tutorial">${T('新手教程 · 约5分钟')}</button>
+        <button class="btn gold" id="m-tutorial">${T('新手教程')}</button>
         <button class="btn" id="m-help2">${T('玩法说明')}</button>
-        <a class="btn" href="survey.html?lang=${typeof I18N!=='undefined'?I18N.lang:'zh'}" target="_blank" rel="noopener">${T('试玩反馈')}</a>
         <button class="btn" id="m-lang" title="${T("Switch language / 切换语言")}">${(typeof I18N !== 'undefined' && I18N.lang === 'en') ? '中文' : 'EN'}</button>
       </div>
     </div>`);

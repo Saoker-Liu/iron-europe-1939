@@ -239,7 +239,7 @@
     '总参谋部（AI +12%，收入+20%）': 'General Staff (AI +12%, income +20%)',
     '开 始 战 役': 'START CAMPAIGN',
     '继续上次战役': 'Continue campaign',
-    '新手教程 · 约5分钟': 'Tutorial · about 5 min',
+    '新手教程': 'Tutorial',
     '玩法说明': 'How to play',
     '存档损坏：': 'Save corrupted: ',
     '显示部队': 'Show Units',

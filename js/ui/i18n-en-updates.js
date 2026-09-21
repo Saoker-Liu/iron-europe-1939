@@ -234,7 +234,7 @@ I18N.add({
   "罗马尼亚向苏联割让基希讷乌及其比萨拉比亚附属地区，当地罗马尼亚部队撤回本国。": "Romania cedes Chișinău and its dependent Bessarabian territory to the Soviet Union. Romanian units in the ceded territory withdraw to their remaining homeland."
 });
 
-I18N.add({"试玩反馈":"Playtest Feedback","工厂":"Factory"});
+I18N.add({"工厂":"Factory"});
 
 I18N.add({
   '反击伤害 +{0}%': 'Counterattack coefficient +{0} percentage points',

@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: 打包游戏（zip）
-        run: zip -r "iron-europe-1939-${GITHUB_REF_NAME}.zip" index.html survey.html README.en.md DIPLOMACY.en.md js landing music map_sources README.md DIPLOMACY.md MAP_NOTES.md CITY_CATALOG.md GENERAL_CATALOG.md NAVAL_CATALOG.md NAVAL_NAMES.md AIR_CATALOG.md MUSIC.md DEVELOPMENT.md docs tools artifacts -x "artifacts/*.zip" "artifacts/render-map.py"
+        run: zip -r "iron-europe-1939-${GITHUB_REF_NAME}.zip" index.html README.en.md DIPLOMACY.en.md js landing music map_sources README.md DIPLOMACY.md MAP_NOTES.md CITY_CATALOG.md GENERAL_CATALOG.md NAVAL_CATALOG.md NAVAL_NAMES.md AIR_CATALOG.md MUSIC.md DEVELOPMENT.md docs tools artifacts -x "artifacts/*.zip" "artifacts/render-map.py"
       - name: 创建 Release 并附上游戏包
         env:
           GH_TOKEN: ${{ github.token }}

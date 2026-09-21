@@ -1,6 +1,6 @@
 # Iron Europe 1939
 
-[Play](https://ttdnx2999-cmd.github.io/test_collab/?lang=en) · [中文说明](README.md) · [Playtest feedback](survey.html?lang=en)
+[Play](https://ttdnx2999-cmd.github.io/test_collab/?lang=en) · [中文说明](README.md)
 
 A single-player, turn-based hex wargame covering the European theatre. Runs in your browser, including offline: extract the complete game package and open `index.html`. Choose **English** on the introduction page, then **Play Free**. Choose the Axis, Allies or Soviet Union, or try the tutorial first.
 
@@ -89,8 +89,7 @@ From 1945, only strategic bombers can launch nuclear strikes, costing 2,000 gold
 
 Read [Diplomacy and Treaties](DIPLOMACY.en.md) for territorial rules, limited wars and conditional events. Capturing a capital normally forces that country to surrender and be annexed. The Winter War is an exception. Defeat all major hostile factions to win; losing all your faction's capitals means defeat. Winning one limited war does not win the entire campaign.
 
-## Feedback and credits
+## Credits
 
-The [playtest survey](survey.html?lang=en) takes about three minutes. It saves a draft locally and lets you download your answers. It does not upload them: send the file yourself to the person who invited you to play.
 
 Music by Kevin MacLeod, licensed under CC BY 4.0. Full credits: [music/credits.txt](music/credits.txt). Audio starts after a click or keypress and pauses in the background. Map data uses Natural Earth and historical boundary sources; retain the source manifest and licences in `map_sources/` when redistributing.
