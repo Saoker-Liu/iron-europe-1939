@@ -817,7 +817,7 @@ function doMove(c, r) {
 /* 攻击（必要时先自动移动接敌） */
 function doAttack(enemy) {
   const g = UI.game, u = UI.sel;
-  if(g.tutorial&&g.lesson!==3)return;
+  if(g.tutorial&&g.lesson!==5)return;
   const plan = UI.targets.get(enemy.id);
   if (plan) {  // 先移动到接敌格
     if (plan[0] === u.c && plan[1] === u.r) { execAttack(enemy); return; }
@@ -871,7 +871,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 async function endTurnFlow() {
   const g = UI.game;
   if (!g || UI.busy || g.over) return;
-  if(g.tutorial&&![4,7].includes(g.lesson))return;
+  if(g.tutorial&&![6,9].includes(g.lesson))return;
   UI.busy = true;
   deselect(); updatePanel();
   document.getElementById('btn-end').disabled = true;
@@ -1020,6 +1020,7 @@ function showUnitPanel(u) {
       ${idle && !u.dug && !u.attacked && !atSea && !g.isNaval(u) && !g.isAir(u) ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
       ${idle && !u.dug ? '<button class="btn" id="pb-skip">⏭ 待命</button>' : ''}
       ${idle&&!g.isNaval(u) ? '<button class="btn gold" id="pb-gen">🎖 将领</button>' : ''}
+      ${g.canUndoMove(u)?'<button class="btn gold" id="pb-undo">↶ 撤销移动</button>':''}
       <button class="btn" id="pb-next">⏩ 下一部队</button>
       ${!g.tutorial?`<button class="btn danger" id="pb-disband" ${UI.busy||u.carrierId||g.cargoOf(u)?'disabled':''} title="不返还经济；运输机须先卸载伞兵">解散部队</button>`:''}
     </div>
@@ -1038,6 +1039,8 @@ function showUnitPanel(u) {
   if (b2) b2.onclick = () => { u.moved = true; u.attacked = true; UI.range = null; UI.targets.clear(); updatePanel(); nextUnit(); };
   const b3 = document.getElementById('pb-gen');
   if (b3) b3.onclick = () => {if(!g.isNaval(u))showGenerals(u);};
+  const undo=document.getElementById('pb-undo');
+  if(undo)undo.onclick=()=>{if(!UI.busy&&g.undoMove(u)){UI.anims=[];UI.pendingAttack=null;terrainCache.key='';select(u);updateTopbar();renderLog();autoSave();}};
   const disband=document.getElementById('pb-disband');
   if(disband)disband.onclick=()=>confirmDisband(u);
   const b4 = document.getElementById('pb-next');
@@ -1076,7 +1079,7 @@ function showFactoryPanel(city) {
 function showCityPanel(city) {
   const g = UI.game;
   const body = document.getElementById('panel-body');
-  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy && (!g.tutorial || (g.lesson===6 && city.k==='training-base'));
+  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy && (!g.tutorial || (g.lesson===8 && city.k==='training-base'));
   const groups=['民兵','徒步步兵','机动步兵'];
   const category=groups.includes(UI.cityRecruitCategory)?UI.cityRecruitCategory:groups[0];
   const roster = canRecruit ? g.rosterFor(city).filter(it=>it.eq.group===category) : [];
@@ -1364,6 +1367,7 @@ function showHelp(onReturn) {
         <h4>■ 战斗规则</h4>
         伤害 ≈ 42 × 攻/(攻+防)。防御方获得地形加成；兵力越低输出越低。<br>
         炮兵/空军无视地形防御加成；步兵/装甲在相邻格反击，海军可在自身射程和目标限制内反击，包括对来袭空军的防空还击。<br>
+        移动后没有可攻击目标会自动待命。最后移动的部队可撤销移动；攻击、其它部队有效移动／攻击或结束回合后失效。招募、建设等改变战局的操作也会结束撤销机会。<br>
         尚未行动的陆海军即使移动力不足，也可移动到一个合法且空闲的相邻格，耗尽本回合移动；不可越过陆海限制、禁行边或单位阻挡。<br>
         进入敌军相邻格会被<b>控制区(ZOC)</b>截停（具有忽略控制区技能的将领与空军除外）。<br>
         <b>驻防</b>+30%防御，跨回合自动保持，不列入“下一部队”与待命提示；手动移动或攻击后解除。己方部队面板可解散部队，不返还经济，将领回到待指派名单；载有伞兵的运输机需先卸载。老练度（击杀获取经验）最多+24%攻防。

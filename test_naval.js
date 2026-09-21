@@ -38,7 +38,7 @@ assert(!g.moveUnit(ship,kiel.x,kiel.y),'navy cannot enter city');
 const range=g.moveRange(ship);assert(range.cost.size>0);
 for(const k of range.cost.keys())assert(g.ocean(...k.split(',').map(Number)));
 const dest=[...range.cost.keys()].find(k=>hexDist(h.c,h.r,...k.split(',').map(Number))>1);
-assert(dest);assert(g.moveUnit(ship,...dest.split(',').map(Number)));assert(!ship.attacked&&!ship.embarked,'sailing leaves attack action');
+assert(dest);assert(g.moveUnit(ship,...dest.split(',').map(Number)));assert(ship.attacked&&!ship.embarked,'sailing without targets automatically waits');
 year(1943);assert.equal(g.recruitNaval('kiel','de:dd:0'),null,'obsolete model cannot be forged');
 assert(g.recruitNaval('kiel','de:dd:2'));
 // All target modifiers must remain finite, including embarked army targets.

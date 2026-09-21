@@ -181,9 +181,10 @@ class Game {
   rebaseAir(u,cityKey) {
     const base=this.airBase(u),ci=this.cityByKey[cityKey];
     if(!this.units.includes(u)||!this.isAir(u)||!base||!ci||!this.airfields.includes(ci)||ci===base||ci.owner!==this.unitFaction(u)||u.moved||u.attacked||hexDist(base.x,base.y,ci.x,ci.y)>this.airRadius(u))return false;
+    const before=this.unitFaction(u)===this.playerFaction?this.movementState():null;this.lastMove=null;
     u.airbase=ci.k;u.c=ci.x;u.r=ci.y;u.moved=true;u.attacked=true;u.dug=false;
     const cargo=this.cargoOf(u);if(cargo){cargo.c=ci.x;cargo.r=ci.y;}
-    this.pushLog(`${u.eq.n} 转场至${ci.n}机场，本回合行动结束。`,'info');return true;
+    this.pushLog(`${u.eq.n} 转场至${ci.n}机场，本回合行动结束。`,'info');this.finishMovement(u,before);return true;
   }
   loadParatrooper(plane,para) {
     if(!plane||!para)return false;
@@ -208,6 +209,7 @@ class Game {
   }
   paradrop(plane,c,r) {
     if(this.paradropError(plane,c,r))return false;
+    this.lastMove=null;
     const para=this.cargoOf(plane),f=this.unitFaction(plane),ct=this.homeCountryOf(c,r);
     delete para.carrierId;para.c=c;para.r=r;para.moved=true;para.attacked=true;plane.moved=true;plane.attacked=true;
     if(ct&&this.cf[ct]==='neutral'&&f!=='neutral')this.neutralDefect(ct,f);
@@ -226,6 +228,7 @@ class Game {
   }
   nuclearStrike(u,c,r) {
     if(this.nuclearError(u,c,r))return false;
+    this.lastMove=null;
     const f=this.unitFaction(u),cells=[[c,r],...this.neighbors(c,r)],affected=new Set(cells.map(p=>key(...p)));
     this.gold[f]-=AIR.nuclear.cost;u.moved=true;u.attacked=true;
     // Blast and fallout affect every layer and every side, including the launcher's base if selected.
@@ -635,12 +638,46 @@ class Game {
     return m;
   }
 
+  movementState() {
+    return JSON.parse(JSON.stringify({turn:this.turn,units:this.units.map(({eq,...u})=>u),
+      owners:this.cities.map(c=>c.owner),cf:this.cf,wars:[...this.wars],genUnit:this.genUnit,
+      gold:this.gold,construction:this.construction,fallout:this.fallout,over:this.over,
+      airfields:this.airfields.map(c=>c.k),harbors:this.harbors}));
+  }
+  finishMovement(u,before) {
+    if(!u.attacked&&!this.targetsOf(u,true).length)u.attacked=true;
+    this.lastMove=this.unitFaction(u)===this.playerFaction?
+      {unitId:u.id,before,after:this.movementState()}:null;
+  }
+  canUndoMove(u) {
+    const m=this.lastMove;
+    return !!(u&&m&&m.unitId===u.id&&this.units.includes(u)&&
+      JSON.stringify(m.after)===JSON.stringify(this.movementState()));
+  }
+  undoMove(u) {
+    if(!this.canUndoMove(u))return false;
+    const before=this.lastMove.before;
+    const existing=new Map(this.units.map(x=>[x.id,x]));
+    this.units=before.units.map(saved=>{
+      const unit=existing.get(saved.id)||{};
+      for(const k of Object.keys(unit))if(k!=='eq')delete unit[k];
+      Object.assign(unit,saved);unit.eq=this.equipOf(unit.eqKey);return unit;
+    });
+    this.cities.forEach((c,i)=>c.owner=before.owners[i]);
+    this.cf=before.cf;this.wars=new Set(before.wars);this.genUnit=before.genUnit;
+    this.over=before.over;this.airfields=before.airfields.map(k=>this.cityByKey[k]);
+    this.lastMove=null;this.terrDirty=true;
+    this.pushLog('已撤销移动，恢复原位置、行动状态和此次移动造成的控制权变化。','info');return true;
+  }
+
   moveUnit(u, c, r, path) {
     if(!this.units.includes(u)||u.carrierId||u.moved||u.attacked)return false;
     if(this.isAir(u))return this.rebaseAir(u,this.cityAt(c,r)?.k);
     const f = this.unitFaction(u);
     // Never trust caller-supplied paths to bypass movement/terrain/occupancy rules.
     path=this.pathTo(u,key(c,r));if(!path)return false;
+    const before=this.unitFaction(u)===this.playerFaction?this.movementState():null;
+    this.lastMove=null;
     const transition=this.movementEndsTurn(u,c,r);
     if(transition){u.embarked=this.ocean(c,r);u.attacked=true;
       this.pushLog(`${u.eq.n}${u.embarked?'下海':'上岸'}，本回合行动结束。`,'info');}
@@ -652,7 +689,7 @@ class Game {
     u.c = c; u.r = r;
     const city = this.cityAt(c, r);
     if (city && city.owner !== this.unitFaction(u)) this.captureCity(city, this.unitFaction(u), u);
-    // 大国军队开进中立国领土 → 中立国即刻倒向敌方（历史：1940 低地国家）
+    this.finishMovement(u,before);
     return true;
   }
 
@@ -772,6 +809,7 @@ class Game {
   }
   attack(att, def) {
     if(!this.units.includes(att)||!this.units.includes(def)||!this.targetsOf(att,true).includes(def))return null;
+    this.lastMove=null;
     const rec = { type: 'battle', aC: att.c, aR: att.r, c: def.c, r: def.r, killed: false, counter: 0 };
     const fA = this.unitFaction(att), fD = this.unitFaction(def);
     // 中立国被攻击 → 倒向攻击者的敌对阵营
@@ -938,6 +976,7 @@ class Game {
 
   /* ------------------------------ 回合推进 ------------------------------ */
   startTurnFor(f) {
+    this.lastMove=null;
     this.removeLostAirfields();
     // 收入 & 行动权恢复
     const inc = this.factionIncome(f);
@@ -1379,6 +1418,7 @@ class Game {
   /* ------------------------------ 存档 ------------------------------ */
   serialize() {
     return JSON.stringify({
+      lastMove:this.lastMove||null,
       facilities:{factories:this.cities.filter(ci=>ci.factory).map(ci=>ci.k),airfields:this.airfields.map(ci=>ci.k),harbors:this.harbors},
       construction:this.construction,
       v: 9, fallout:this.fallout, mapVersion: MAP_META.version, turn: this.turn, nextId: this.nextId,
@@ -1512,6 +1552,7 @@ class Game {
     if(coastMigrations.length)g.pushLog(`地图海岸校正：${coastMigrations.length}支部队已移至最近空闲的同类地形格，兵力与装备保留。`,'info');
     g.terrDirty = true; g.over = null; g.pendingEvents = [];
     g.checkVictory();
+    if(d.lastMove?.before&&d.lastMove?.after){g.lastMove=d.lastMove;const u=g.units.find(u=>u.id===g.lastMove.unitId);if(!g.canUndoMove(u))g.lastMove=null;}
     return g;
   }
 }

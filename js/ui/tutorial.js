@@ -3,7 +3,9 @@
 const LESSONS=[
  ['认识地图','按住地图空白处拖动；滚轮缩放。右侧查看单位，顶栏查看经济与回合。试一试后点击“开始练习”。'],
  ['选择部队','点击训练营上的己方步兵棋子（黄色圈）。右侧显示攻击、防御、兵力和移动力。'],
- ['移动到前沿','点击黄色圈中的蓝色格，将步兵移动一格。蓝色表示可移动范围；本步骤只开放目标格。'],
+ ['移动与自动待命','点击训练营右上方的黄色目标格。移动后没有有效攻击目标，部队自动待命，不必再点击待命。'],
+ ['撤销移动','点击右侧部队面板的“撤销移动”，返回训练营并恢复行动力。攻击后、其它部队有效移动或攻击后不能撤销；此时只选择其它部队不会影响撤销。'],
+ ['重新选择路线','再次点击黄色目标格，向敌方民兵移动。此次移动后有攻击目标，因此仍可攻击。'],
  ['攻击演习对手','点击黄色圈中的敌方民兵。敌军仅剩10兵力，足以一击击败。移动后仍可攻击，但攻击后不能再移动。'],
  ['结束回合','点击顶栏“结束回合”，或按 E / 回车。下一回合恢复行动力、获得城市收入；演习对手不会主动行动。'],
  ['占领城镇','再次选中步兵，点击黄色圈中的演习镇。陆军进入无人驻守的敌城即可占领，城市将为你提供收入。'],
@@ -38,10 +40,10 @@ function updateTutorial(){
   const box=document.getElementById('tutorial-coach'),step=g.lesson;
   if(box.dataset?.step!==String(step)){
     box.dataset.step=String(step);
-    box.innerHTML=`<div class="tutorial-heading">新手演习 · ${Math.min(step+1,8)} / 8 <span>8×5 局部地图</span></div>
+    box.innerHTML=`<div class="tutorial-heading">新手演习 · ${Math.min(step+1,10)} / 10 <span>8×5 局部地图</span></div>
       <h3>${LESSONS[step][0]}</h3><p>${LESSONS[step][1]}</p>
       <div class="row-btns">${step===0?'<button class="btn gold" id="tutorial-begin">开始练习</button>':''}
-      ${step===8?'<button class="btn gold" id="tutorial-campaign">选择阵营 · 开始战役</button>':''}
+      ${step===10?'<button class="btn gold" id="tutorial-campaign">选择阵营 · 开始战役</button>':''}
       <button class="btn" id="tutorial-locate">定位目标</button><button class="btn" id="tutorial-retry">重新练习</button><button class="btn" id="tutorial-exit">退出教程</button></div>`;
     const begin=document.getElementById('tutorial-begin');if(begin)begin.onclick=()=>{g.lesson=1;updateTutorial();};
     const campaign=document.getElementById('tutorial-campaign');if(campaign)campaign.onclick=exitTutorial;
@@ -49,12 +51,12 @@ function updateTutorial(){
     document.getElementById('tutorial-retry').onclick=()=>{if(!UI.busy){box.dataset.step='';startTutorial();}};
     document.getElementById('tutorial-exit').onclick=exitTutorial;
   }
-  document.getElementById('btn-end').disabled=UI.busy||![4,7].includes(step);
+  document.getElementById('btn-end').disabled=UI.busy||![6,9].includes(step);
   for(const id of ['tutorial-retry','tutorial-exit','tutorial-campaign']){const b=document.getElementById(id);if(b)b.disabled=UI.busy;}
 }
 function drawTutorial(){
   const g=UI.game;updateTutorial();
-  const target=({1:[1,2],2:[2,2],3:[3,2],5:[4,2],6:[1,2]})[g.lesson];
+  const target=({1:[1,2],2:[1,1],4:[2,2],5:[3,2],7:[4,2],8:[1,2]})[g.lesson];
   if(!target)return;
   const [x,y]=hexToPix(...target);cx.save();cx.strokeStyle='#ffdf70';cx.lineWidth=4;
   hexPath(x,y,S()*.94);cx.stroke();cx.restore();

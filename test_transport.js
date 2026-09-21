@@ -38,7 +38,7 @@ for(const [k,cost]of range.cost){
 const voyage=[...range.cost].find(([k,c])=>c>=2&&g.ocean(...k.split(',').map(Number)));
 assert(voyage,'multi-cell ocean movement available');
 const gold=g.gold.axis;assert(g.moveUnit(u,...voyage[0].split(',').map(Number)));
-assert(u.moved&&!u.attacked,'sailing may be followed by an attack');assert.equal(g.gold.axis,gold,'no per-voyage fee');
+assert(u.moved&&u.attacked,'sailing without targets automatically waits');assert.equal(g.gold.axis,gold,'no per-voyage fee');
 const saved=Game.deserialize(g.serialize()),loaded=saved.units.find(v=>v.id===u.id);
 assert(loaded.embarked&&loaded.transport==='transport');assert.equal(saved.movOf(loaded),5);
 // Reset only for independent combat/landing scenarios, with real coast coordinates.

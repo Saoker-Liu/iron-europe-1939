@@ -354,3 +354,11 @@ h.run("const guardUnit=UI.game.playerUnits().find(u=>u.dug);UI.game.startTurnFor
 assert(h.run("guardUnit.dug&&!UI.game.pendingPlayerUnits().includes(guardUnit)&&!modalRoot.innerHTML.includes('disband-confirm')"));
 assert(!h.run("document.getElementById('panel-body').innerHTML.includes('id=\"pb-dug\"')"));
 console.log('Disband UI: cancel/confirm, no refund, released general; persistent guards omitted from pending units.');
+
+h.run("closeModal();UI.busy=false;startTutorial();UI.game.lesson=2;UI.game.moveUnit(UI.game.trainee,1,1);select(UI.game.trainee)");
+assert(h.run("UI.game.trainee.attacked&&document.getElementById('panel-body').innerHTML.includes('pb-undo')"));
+h.run("document.getElementById('pb-undo').onclick()");
+assert(h.run('UI.game.lesson===4&&UI.game.trainee.c===1&&UI.game.trainee.r===2&&!UI.game.trainee.attacked'));
+h.run("UI.game.moveUnit(UI.game.trainee,2,2);UI.game.attack(UI.game.trainee,UI.game.target);select(UI.game.trainee)");
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('pb-undo')"));
+console.log('Undo UI and tutorial: button restores position/actions; actual attack removes undo.');

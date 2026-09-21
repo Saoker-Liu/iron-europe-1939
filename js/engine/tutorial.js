@@ -24,7 +24,7 @@ class TutorialGame extends TutorialBase {
   homeCountryOf(c,r){return this.tutorial?(this.inMap(c,r)?(c<3?'de':'pl'):null):super.homeCountryOf(c,r);}
   territoryOwner(c,r){return this.tutorial?(this.inMap(c,r)?this.cities[c<3?0:1].owner:null):super.territoryOwner(c,r);}
   checkVictory(){if(!this.tutorial)return super.checkVictory();this.over=null;return null;}
-  expectedMove(){return this.lesson===2?[2,2]:this.lesson===5?[4,2]:null;}
+  expectedMove(){return this.lesson===2?[1,1]:this.lesson===4?[2,2]:this.lesson===7?[4,2]:null;}
   moveRange(u){
     const range=super.moveRange(u);if(!this.tutorial)return range;
     const goal=this.expectedMove(),k=goal?.join(',');
@@ -35,21 +35,23 @@ class TutorialGame extends TutorialBase {
     const goal=this.expectedMove();if(!goal||u!==this.trainee||c!==goal[0]||r!==goal[1])return false;
     const ok=super.moveUnit(u,c,r);if(ok)this.lesson++;return ok;
   }
+  undoMove(u){const ok=super.undoMove(u);if(ok&&this.lesson===3)this.lesson=4;return ok;}
+  canUndoMove(u){return this.lesson===3&&super.canUndoMove(u);}
   canStrikeFrom(u,c,r,target){
-    if(this.tutorial&&(this.lesson!==3||u!==this.trainee||target.id!==this.target.id))return false;
+    if(this.tutorial&&(![4,5].includes(this.lesson)||u!==this.trainee||target.id!==this.target.id))return false;
     return super.canStrikeFrom(u,c,r,target);
   }
   attack(u,target){
-    if(this.lesson!==3||u!==this.trainee||target!==this.target)return null;
-    const result=super.attack(u,target);if(result?.killed)this.lesson=4;return result;
+    if(this.lesson!==5||u!==this.trainee||target!==this.target)return null;
+    const result=super.attack(u,target);if(result?.killed)this.lesson=6;return result;
   }
   recruit(cityKey,eqKey,faction=this.playerFaction){
-    if(this.lesson!==6||cityKey!=='training-base')return null;
-    const u=super.recruit(cityKey,eqKey,faction);if(u){this.recruitId=u.id;this.lesson=7;}return u;
+    if(this.lesson!==8||cityKey!=='training-base')return null;
+    const u=super.recruit(cityKey,eqKey,faction);if(u){this.recruitId=u.id;this.lesson=9;}return u;
   }
   startConstruction(){return false;}
   endTurn(){
-    if(![4,7].includes(this.lesson))return {actions:[],victory:null};
+    if(![6,9].includes(this.lesson))return {actions:[],victory:null};
     this.turn++;this.startTurnFor(this.playerFaction);this.lesson++;
     this.pushLog(`新回合：行动力恢复，城市收入 +${this.factionIncome(this.playerFaction)} 金。`,'econ');
     return {actions:[],victory:null};
