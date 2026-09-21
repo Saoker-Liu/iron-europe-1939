@@ -16,7 +16,7 @@ function harness() {
     drawImage(...args) { if (failBlit) { failBlit = false; throw Error('transient canvas failure'); } blits.push(args); },
   }, {get: (o,k) => k in o ? o[k] : () => {}});
   function element(canvas = false) {
-    return {style:{},dataset:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
+    return {style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
       set width(v){this._width=v;if(canvas)resizes++;}, get width(){return this._width;},height:0};
   }
   const iconDraws = [];
@@ -27,7 +27,7 @@ function harness() {
   const iconShapeStub=Object.fromEntries(Object.keys(vm.runInContext('UnitIcons.SHAPES',ictx)).map(k=>[k,1]));
   const sandbox = {...D, MapLabels:require('./js/ui/map-labels'), Game, hexDist, HexMath:globalThis.HexMath, console,
     innerWidth:1280,innerHeight:900,performance:{now:()=>1005},
-    document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element(true)},
+    document:{body:element(),getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element(true)},
     clearTimeout(){},addEventListener(){},requestAnimationFrame(fn){frames.push(fn);},setTimeout(fn){timers.push(fn);},
     Path2D:class {moveTo(){} lineTo(){} closePath(){}},
     // 单位侧影（js/ui/unit-icons.js）在浏览器由 loader 先载入；这里用记录型替身，
@@ -40,6 +40,8 @@ function harness() {
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync('js/ui/music.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/engine/tutorial.js','utf8'),sandbox);
+  vm.runInContext(fs.readFileSync('js/data/tutorial-courses.js','utf8'),sandbox);
+  vm.runInContext(fs.readFileSync('js/engine/tutorial-campaigns.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/tutorial.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/ui.js','utf8'),sandbox);
   const run = code => vm.runInContext(code,sandbox);
@@ -402,3 +404,18 @@ assert(h.run("modalRoot.innerHTML.includes('芬兰')&&modalRoot.innerHTML.includ
 h.run("document.getElementById('war-confirm').onclick()");assert(h.run('UI.busy'));h.timers.shift()();
 assert(h.run("UI.game.cf.fi!=='neutral'&&UI.game.cf.ch!=='neutral'&&farNeutral.hp<100&&!modalOpen()"));
 console.log('Combined approach/attack: one consent covers transit and target countries before either action.');
+
+// Advanced checkpoints must expose actual campaign controls, not basic-tutorial gates.
+const academy=harness();academy.timers.length=0;academy.run("UI.busy=false;startCourse('advanced',1);select(UI.game.units[0]);doMove(3,2)");
+while(academy.timers.length)academy.timers.shift()();academy.run('render(10000)');
+academy.run("assertAcademy=UI.game.objectiveMet()");
+assert(academy.run('assertAcademy'),'river movement through production UI');
+academy.run("UI.busy=false;startCourse('army',0);showCityPanel(UI.game.cities[0]);document.getElementById('city-recruit-tab-1').onclick();document.getElementById('city-recruit-tab-2').onclick()");
+assert.equal(academy.run('UI.game.tabs.length'),3,'all infantry tabs remain available');
+academy.run("startCourse('politics',5);select(UI.game.units[0]);doMove(4,2)");
+assert(academy.run("modalRoot.innerHTML.includes('war-confirm')"),'neutral tutorial requires war confirmation');
+academy.run("document.getElementById('war-cancel').onclick()");
+assert.equal(academy.run('UI.game.units[0].c'),3,'cancel preserves position');
+academy.run('doMove(4,2);document.getElementById("war-confirm").onclick()');while(academy.timers.length)academy.timers.shift()();academy.frame(20000);
+assert(academy.run('UI.game.objectiveMet()'),'confirmed limited war completes lesson');
+console.log('Course UI: river movement, recruitment tabs, neutral-war cancel/confirm and progression passed.');

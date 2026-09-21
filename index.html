@@ -113,10 +113,15 @@
   #tutorial-coach p { font-size: 14px; line-height: 1.7; margin-bottom: 8px; }
   .tutorial-heading { font-size: 12px; color: #b8c3ce; }
   .tutorial-heading span { float: right; }
-  .tutorial-mode #map-legend, .tutorial-mode #banner, .tutorial-mode #log, .tutorial-mode #btn-save, .tutorial-mode #btn-gen,
-  .tutorial-mode #btn-cities, .tutorial-mode #btn-units, .tutorial-mode #btn-mapmode,
-  .tutorial-mode #pb-dug, .tutorial-mode #pb-skip, .tutorial-mode #pb-gen,
-  .tutorial-mode [id^="pb-ship-"] { display: none !important; }
+  .tutorial-mode:not(.tutorial-course) #map-legend, .tutorial-mode:not(.tutorial-course) #banner, .tutorial-mode:not(.tutorial-course) #log, .tutorial-mode:not(.tutorial-course) #btn-save, .tutorial-mode:not(.tutorial-course) #btn-gen,
+  .tutorial-mode:not(.tutorial-course) #btn-cities, .tutorial-mode:not(.tutorial-course) #btn-units, .tutorial-mode:not(.tutorial-course) #btn-mapmode,
+  .tutorial-mode:not(.tutorial-course) #pb-dug, .tutorial-mode:not(.tutorial-course) #pb-skip, .tutorial-mode:not(.tutorial-course) #pb-gen,
+  .tutorial-mode:not(.tutorial-course) [id^="pb-ship-"] { display: none !important; }
+  .tutorial-course #btn-save, .tutorial-course #map-legend, .tutorial-course #banner { display:none!important; }
+  .tutorial-catalog { display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:18px 0; }
+  .tutorial-catalog .btn { text-align:left;white-space:normal;padding:18px; }
+  .tutorial-catalog small { display:block;margin-top:8px;line-height:1.6;color:#bec9d2; }
+  .tutorial-course #tutorial-coach { max-height:280px;overflow:auto; }
   @media (max-width: 760px) {
     #tutorial-coach { width: calc(100% - 24px); left: 12px; max-height: 190px; }
     .tutorial-mode #panel { width: 240px; max-height: calc(100% - 285px); }

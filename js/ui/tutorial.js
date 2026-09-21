@@ -18,6 +18,7 @@ const LESSONS=[
 ];
 function tutorialMode(on){
   document.body?.classList.toggle('tutorial-mode',on);
+  document.body?.classList.remove('tutorial-course');
   document.getElementById('tutorial-coach').style.display=on?'block':'none';
   if(!on)document.getElementById('btn-end').disabled=false;
 }
@@ -34,12 +35,14 @@ function exitTutorial(){
   closeModal();showStart();
 }
 function fitTutorial(){
+  if(UI.game?.courseId){const w=Math.max(240,innerWidth-350),h=Math.max(180,innerHeight-390);UI.cam.z=Math.min(1.3,w/(36*SQ3*11),h/(36*1.5*8));UI.cam.x=60;UI.cam.y=100;return;}
   const w=Math.max(260,innerWidth-340),h=Math.max(140,innerHeight-310);
   UI.cam.z=Math.min(1.3,w/(36*SQ3*9),h/(36*1.5*6));
   UI.cam.x=(w-7.5*SQ3*S())/2;UI.cam.y=80+(h-6*S())/2;
 }
 function updateTutorial(){
   const g=UI.game;if(!g?.tutorial)return;
+  if(g.courseId){updateCourseCoach();return;}
   const box=document.getElementById('tutorial-coach'),step=g.lesson;
   if(box.dataset?.step!==String(step)){
     box.dataset.step=String(step);
@@ -49,7 +52,7 @@ function updateTutorial(){
       ${step===10?T('<button class="btn gold" id="tutorial-campaign">选择阵营 · 开始战役</button>'):''}
       <button class="btn" id="tutorial-locate">${T("定位目标")}</button><button class="btn" id="tutorial-retry">${T("重新练习")}</button><button class="btn" id="tutorial-exit">${T("退出教程")}</button></div>`;
     const begin=document.getElementById('tutorial-begin');if(begin)begin.onclick=()=>{g.lesson=1;updateTutorial();};
-    const campaign=document.getElementById('tutorial-campaign');if(campaign)campaign.onclick=exitTutorial;
+    const campaign=document.getElementById('tutorial-campaign');if(campaign){campaign.textContent=courseText('完成基础 · 选择下一课程','Basic Complete · Choose Another Course');campaign.onclick=showTutorialMenu;}
     document.getElementById('tutorial-locate').onclick=fitTutorial;
     document.getElementById('tutorial-retry').onclick=()=>{if(!UI.busy){box.dataset.step='';startTutorial();}};
     document.getElementById('tutorial-exit').onclick=exitTutorial;
@@ -59,8 +62,46 @@ function updateTutorial(){
 }
 function drawTutorial(){
   const g=UI.game;updateTutorial();
+  if(g.courseId){cx.save();cx.strokeStyle='#ffdf70';cx.lineWidth=3;for(const p of g.highlights){const [x,y]=hexToPix(...p);hexPath(x,y,S()*.94);cx.stroke();}cx.restore();return;}
   const target=({1:[1,2],2:[1,1],4:[2,2],5:[3,2],7:[4,2],8:[1,2]})[g.lesson];
   if(!target)return;
   const [x,y]=hexToPix(...target);cx.save();cx.strokeStyle='#ffdf70';cx.lineWidth=4;
   hexPath(x,y,S()*.94);cx.stroke();cx.restore();
+}
+function courseText(zh,en){return typeof I18N!=='undefined'&&I18N.lang==='en'?en:zh;}
+function showTutorialMenu(){
+  if(UI.busy)return;
+  openModal(`<div class="modal"><h1>${courseText('欢迎来到指挥学院','Welcome to Command School')}</h1><p>${courseText('初次游玩？建议先完成基础操作，再选择各系统的独立演习。每节使用全新的局部地图，可以反复练习，不会覆盖战役存档。','New here? Start with Basic Operations, then explore each system in a separate exercise. Every checkpoint starts on a fresh small map. Practise freely without overwriting your campaign save.')}</p>
+  <div class="tutorial-catalog"><button class="btn gold" id="course-basic">${courseText('基础操作','Basic Operations')}<small>${courseText('选择、移动、撤销、攻击、占城与招募','Selection, movement, undo, combat, capture and recruitment')}</small></button>${Object.entries(TutorialCourses).map(([id,c])=>`<button class="btn" data-course="${id}">${lessonText(c.title)}<small>${c.steps.map(s=>lessonText(s.title)).join(' · ')}</small></button>`).join('')}</div>
+  <div class="actions"><button class="btn" id="course-skip">${courseText('已了解规则 · 跳过教程，开始战役','Already know the rules? Skip tutorials and start a campaign')}</button></div></div>`);
+  document.getElementById('course-basic').onclick=startTutorial;
+  document.querySelectorAll('[data-course]').forEach(b=>b.onclick=()=>startCourse(b.dataset.course));
+  document.getElementById('course-skip').onclick=()=>{tutorialMode(false);UI.game=null;closeModal();showStart();};
+}
+function startCourse(id,step=0){
+  if(UI.busy)return;
+  closeModal();startGame(id==='politics'&&step===5?'sov':'axis','normal',new TutorialCampaign(id,step));
+  tutorialMode(true);document.body.classList.add('tutorial-course');
+  document.getElementById('tutorial-coach').dataset.step='';
+  UI.political=id==='politics';UI.cityRecruitCategory='民兵';UI.factoryCategory='炮兵';UI.airMission=null;
+  terrainCache.key='';fitTutorial();updateCourseCoach();
+}
+function updateCourseCoach(){
+  const g=UI.game,course=TutorialCourses[g.courseId],s=g.checkpoint(),box=document.getElementById('tutorial-coach');
+  const stamp=g.courseId+':'+g.lesson;
+  if(box.dataset.step!==stamp){
+    box.dataset.step=stamp;
+    box.innerHTML=`<div class="tutorial-heading">${lessonText(course.title)} · ${g.lesson+1}/${course.steps.length}</div><h3>${lessonText(s.title)}</h3><p>${lessonText(s.body)}</p><p><strong>${courseText('目标：','Goal: ')}${lessonText(s.goal)}</strong></p><p id="course-result"></p><div class="row-btns">${s.id==='cession'?`<button class="btn gold" id="course-treaty">${courseText('执行演示割让条约','Execute Training Cession Treaty')}</button>`:''}<button class="btn gold" id="course-next"></button><button class="btn" id="course-retry">${courseText('重练本节','Restart Checkpoint')}</button><button class="btn" id="course-menu">${courseText('课程目录','Course Menu')}</button><button class="btn" id="course-locate">${courseText('查看全图','Fit Map')}</button></div>`;
+    document.getElementById('course-next').onclick=()=>{if(!UI.busy&&g.objectiveMet()){if(g.lesson+1<course.steps.length)startCourse(g.courseId,g.lesson+1);else showTutorialMenu();}};
+    document.getElementById('course-retry').onclick=()=>startCourse(g.courseId,g.lesson);
+    document.getElementById('course-menu').onclick=showTutorialMenu;
+    document.getElementById('course-locate').onclick=fitTutorial;
+    const treaty=document.getElementById('course-treaty');if(treaty)treaty.onclick=()=>{if(!UI.busy&&g.lessonTreaty()){terrainCache.key='';updateTopbar();renderLog();updatePanel();}};
+  }
+  const met=g.objectiveMet(),next=document.getElementById('course-next');next.disabled=UI.busy||!met;
+  next.textContent=g.lesson+1<course.steps.length?courseText('下一节 · 全新布置','Next Checkpoint · Fresh Setup'):courseText('完成课程','Complete Course');
+  const last=g.history.filter(x=>x.kind==='attack'||x.kind==='move').at(-1);
+  document.getElementById('course-result').textContent=(met?courseText('✓ 目标已完成。','✓ Objective complete.'):courseText('按照目标操作后可进入下一节。','Complete the objective to continue.'))+(last?.kind==='attack'?courseText(` 本次造成${last.damage}伤害，受到${last.loss}反击伤害。`,` Dealt ${last.damage} damage; received ${last.loss} counterattack damage.`):last?.kind==='move'?courseText(` 本次移动路径消耗：${last.cost}。`,` Movement path cost: ${last.cost}.`):'');
+  document.getElementById('btn-end').disabled=UI.busy;
+  for(const id of ['course-menu','course-retry','course-treaty']){const b=document.getElementById(id);if(b)b.disabled=UI.busy;}
 }

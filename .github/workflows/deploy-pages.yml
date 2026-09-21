@@ -30,6 +30,7 @@ jobs:
           node test_labels.js
           node test_render.js
           node test_tutorial.js
+          node test_tutorial_courses.js
           node test_unit_icons.js
           node test_i18n.js
           node test_i18n_landing.js

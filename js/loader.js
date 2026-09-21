@@ -20,9 +20,9 @@
     { label: '加载地形与河流',     files: ['js/data/terrain.js'] },
     { label: '加载国家与城市',     files: ['js/data/nations.js'] },
     { label: '加载经济与军事部署', files: ['js/data/economy.js', 'js/data/military.js', 'js/data/infantry.js', 'js/data/artillery.js', 'js/data/armor.js', 'js/data/air.js', 'js/data/air-scenario.js', 'js/data/naval.js', 'js/data/naval-names.js', 'js/data/naval-scenario.js'] },
-    { label: '加载将领与历史事件', files: ['js/data/generals.js', 'js/data/events.js'] },
+    { label: '加载将领与历史事件', files: ['js/data/generals.js', 'js/data/events.js', 'js/data/tutorial-courses.js'] },
     { label: '装配地图与数据',     files: ['js/core/assemble.js'] },
-    { label: '初始化引擎',         files: ['js/engine/game.js', 'js/engine/diplomacy.js', 'js/engine/tutorial.js'] },
+    { label: '初始化引擎',         files: ['js/engine/game.js', 'js/engine/diplomacy.js', 'js/engine/tutorial.js', 'js/engine/tutorial-campaigns.js'] },
     { label: '初始化界面',         files: ['js/ui/map-labels.js', 'js/ui/unit-icons.js', 'js/ui/music.js', 'js/ui/tutorial.js', 'js/ui/ui.js'] },
   ];
   const TOTAL = STAGES.reduce((n, s) => n + s.files.length, 0);

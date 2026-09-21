@@ -2,11 +2,11 @@
 
 [Play](https://ttdnx2999-cmd.github.io/test_collab/?lang=en) · [中文说明](README.md)
 
-A single-player, turn-based hex wargame covering the European theatre. Runs in your browser, including offline: extract the complete game package and open `index.html`. Choose **English** on the introduction page, then **Play Free**. Choose the Axis, Allies or Soviet Union, or try the tutorial first.
+A single-player, turn-based hex wargame covering the European theatre. Runs in your browser, including offline: extract the complete game package and open `index.html`. Choose **English** on the introduction page, then **Play Free**. Play Free opens the course menu. Experienced players can skip tutorials to choose a faction and difficulty.
 
 ## Learn the controls
 
-The tutorial uses a small, fictional 8×5-hex training map. It teaches selection, movement, automatic waiting, undoing a move, combat, capturing cities, recruitment and ending turns. It does not overwrite your campaign.
+Six independent courses cover Basic Operations (8×5 hexes), Advanced Tactics, Army, Navy, Air Force, and Economy and Diplomacy (10×7 each). The five additional courses contain 23 interactive checkpoints. Complete the objective to continue; each checkpoint resets its small fictional map and can be restarted. Enemies do not take turns, but normal counterattack rules apply. Tutorials never overwrite campaign saves.
 
 - Left-click a unit or city. Blue hexes are reachable; highlighted enemies can be attacked. The unit can move into range automatically when appropriate.
 - Drag to pan; scroll to zoom. Use **Find City** to search city, country and region names. English mode also accepts original Chinese names.

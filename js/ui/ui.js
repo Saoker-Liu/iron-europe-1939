@@ -145,7 +145,7 @@ function terrainScale(z) {
 }
 
 function terrainKey(g) {
-  let k = (g.tutorial?'tutorial':'campaign') + (g.isWinter() ? 'w' : 's') + (UI.political ? 'p' : 't');
+  let k = (g.tutorial?'tutorial'+(g.courseId||'basic')+g.lesson:'campaign') + (g.isWinter() ? 'w' : 's') + (UI.political ? 'p' : 't');
   for (const ci of g.cities) k += ci.owner+':'+g.controllingCountry(ci)+';';
   k+=':'+g.politicalRevision;
   return k;
@@ -211,6 +211,7 @@ function rebuildTerrain(g, z) {
     edge(a, b, '#68a9d2', Math.max(2, s2 * .17));
   }
   // 河流图层；跨河消耗由引擎中的河流边处理。
+  if(g.courseId)for(const k of g.riverEdges){const [a,b]=k.split('|').map(v=>v.split(',').map(Number));edge(a,b,'#58b8ee',3);}
   if (!g.tutorial && (RIVERS || []).length) {
     c2.strokeStyle = 'rgba(70,120,200,.55)';
     c2.lineWidth = Math.max(1, s2 * 0.10);
@@ -579,7 +580,7 @@ addEventListener('keydown', e => {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     endTurnFlow();
   }
-  else if ((e.key === 'g' || e.key === 'G') && !g.tutorial) showGenerals();
+  else if ((e.key === 'g' || e.key === 'G') && (!g.tutorial||g.courseId)) showGenerals();
   else if (e.key === 'h' || e.key === 'H') showHelp();
   else if (e.key === 'm' || e.key === 'M') toggleSound();
 }, true);
@@ -690,7 +691,7 @@ function drawConstruction(g) {
   cx.restore();
 }
 function constructionHTML(city) {
-  if(UI.game?.tutorial)return '';
+  if(UI.game?.tutorial&&!UI.game.courseId)return '';
   const g=UI.game;
   return `<div class="p-sub">${T('城市设施 · 每种一座；不同设施可同时施工。费用开工时支付，城市易手后设施及工程由新控制方接管。')}</div>`+
     Object.entries(ECONOMY.construction).map(([kind,rule])=>{
@@ -781,7 +782,8 @@ function handleClick(sx, sy) {
 
 function select(u) {
   const g = UI.game;
-  if(g.tutorial&&g.lesson===1&&u===g.trainee)g.lesson=2;
+  g.inspect?.(u);
+  if(g.tutorial&&!g.courseId&&g.lesson===1&&u===g.trainee)g.lesson=2;
   UI.sel = u;UI.airMission=null;
   SFX.click();
   if (!u.moved) UI.range = g.moveRange(u); else UI.range = null;
@@ -860,7 +862,7 @@ function doMove(c, r, approved=[]) {
 /* 攻击（必要时先自动移动接敌） */
 function doAttack(enemy,approved=[]) {
   const g = UI.game, u = UI.sel;
-  if(g.tutorial&&g.lesson!==5)return;
+  if(g.tutorial&&!g.courseId&&g.lesson!==5)return;
   if(!UI.targets.has(enemy.id)&&!g.targetsOf(u,true).includes(enemy))return;
   const plan = UI.targets.get(enemy.id);
   const countries=plan?g.neutralMoveCountries(u,g.pathTo(u,plan.join(','))):[];
@@ -919,7 +921,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 async function endTurnFlow() {
   const g = UI.game;
   if (!g || UI.busy || g.over) return;
-  if(g.tutorial&&![6,9].includes(g.lesson))return;
+  if(g.tutorial&&!g.courseId&&![6,9].includes(g.lesson))return;
   UI.busy = true;
   deselect(); updatePanel();
   document.getElementById('btn-end').disabled = true;
@@ -1035,7 +1037,7 @@ function showUnitPanel(u) {
   const rank = gen ? Math.min(5, 1 + Math.floor((g.genKills[gen.id] || 0) / 3)) : 0;
   const ship=g.transportOf(u),atSea=g.isEmbarked(u);
   const airborneCargo=g.cargoOf(u),base=g.airBase(u),waitingPara=base?g.unitAt(base.x,base.y):null;
-  const transportPanel=my&&!g.tutorial&&!g.isNaval(u)&&u.eq.cls!=='air'?`<div class="p-sub">${F('运输装备：{0} · {1}', ship?ship.name:T('未配备'), atSea?T('航行中'):T('陆上'))}<br>${T('沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。')}</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="${F('价格{0}金；海上移动{1}，防御{2}，攻击保留{3}%', t.cost, t.move, t.defense, Math.round(t.attackMultiplier*100))}" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?F('{0}年解锁', t.year):ship&&ship.cost>=t.cost?(ship.id===t.id?T('已配备'):T('已有更高级')):F('{0}金', g.transportPrice(u,t.id))}</button>`).join('')}</div>`:'';
+  const transportPanel=my&&(!g.tutorial||g.courseId)&&!g.isNaval(u)&&u.eq.cls!=='air'?`<div class="p-sub">${F('运输装备：{0} · {1}', ship?ship.name:T('未配备'), atSea?T('航行中'):T('陆上'))}<br>${T('沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。')}</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="${F('价格{0}金；海上移动{1}，防御{2}，攻击保留{3}%', t.cost, t.move, t.defense, Math.round(t.attackMultiplier*100))}" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?F('{0}年解锁', t.year):ship&&ship.cost>=t.cost?(ship.id===t.id?T('已配备'):T('已有更高级')):F('{0}金', g.transportPrice(u,t.id))}</button>`).join('')}</div>`:'';
   body.innerHTML = `
     <div class="p-title"><span>${g.unitName(u)}</span><span class="tag" style="border-color:${FACTION_COLOR[g.unitFaction(u)]}">${FACTION_NAME[g.unitFaction(u)]}</span></div>
     <div class="p-sub">${g.isNaval(u)?g.navalIdentity(u):COUNTRIES[u.ct].name+' · '+CLASSES[u.eq.cls].name} · ${u.eq.nt || ''}</div>
@@ -1125,11 +1127,12 @@ function showFactoryPanel(city) {
   offers.forEach(o=>document.getElementById('factory-build-'+o.index).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
 }
 function showCityPanel(city) {
-  const g = UI.game;
+  const g = UI.game;g.inspectCity?.(city);
   const body = document.getElementById('panel-body');
-  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy && (!g.tutorial || (g.lesson===8 && city.k==='training-base'));
+  const canRecruit = !city.demilitarized && city.owner === g.playerFaction && !!g.recruitmentSite(city) && !UI.busy && (!g.tutorial || g.courseId || (g.lesson===8 && city.k==='training-base'));
   const groups=['民兵','徒步步兵','机动步兵'];
   const category=groups.includes(UI.cityRecruitCategory)?UI.cityRecruitCategory:groups[0];
+  g.inspectTab?.(category);
   const roster = canRecruit ? g.rosterFor(city).filter(it=>it.eq.group===category) : [];
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
@@ -1255,7 +1258,7 @@ function showStart(fac = 'axis', diff = 'normal') {
     modalRoot.querySelectorAll('.diff-opt').forEach(x => x.classList.toggle('sel', x === el));
     SFX.click();
   });
-  document.getElementById('m-tutorial').onclick = startTutorial;
+  document.getElementById('m-tutorial').onclick = showTutorialMenu;
   document.getElementById('m-start').onclick = () => { closeModal(); startGame(fac, diff); };
   const c = document.getElementById('m-continue');
   if (c) c.onclick = () => {
@@ -1447,7 +1450,7 @@ function showHelp(onReturn) {
         <b>${T("占领敌方首都 → 该国投降并被吞并")}</b>${T("（全部领土转移，原国家军事单位解散；冬季战争按专用停战条款结算）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。")}<br>
         ${T("等移动消耗的路线优先避开中立国。会引发战争的移动、攻击或伞降须先确认，弹窗列明受影响国家及参战后果；取消不消耗行动。中立国可进攻。巴巴罗萨行动前，苏联进攻中立国仅触发双方局部战争，不牵连同盟国；其他情况沿用倒向敌方阵营的规则。")}<br>${T("占领城市会转移其附属领土；等距属于多座城市的格子，只有全部相关城市归同一占领国才转移。割让会迁走原国家部队，吞并则解散原国家全部部队。政区颜色与边界随实际控制国变化。")}
         <h4>${T("■ 教程、存档与主菜单")}</h4>
-        ${T("阵营选择页提供8×5格的新手演习，教程不覆盖正式存档。顶栏“主菜单”保存战役并返回阵营选择，行动结算时需等待结束。存档保存在当前浏览器，在线与离线地址不共用，清理浏览器数据可能丢失存档；重要进度请点击“存档”。新开局采用完整初始部署，旧存档不追补已过去的事件。")}<br>
+        ${T("从介绍页进入后先选择教程，也可跳过进入战役。基础、进阶、陆军、海军、空军、经济与外交六类演习使用独立局部地图；每节重新布置，可重练，不覆盖正式存档。顶栏“主菜单”保存战役并返回阵营选择，行动结算时需等待结束。存档保存在当前浏览器，在线与离线地址不共用，清理浏览器数据可能丢失存档；重要进度请点击“存档”。新开局采用完整初始部署，旧存档不追补已过去的事件。")}<br>
         <a href="${typeof I18N!=='undefined'&&I18N.lang==='en'?'README.en.md':'README.md'}" target="_blank" rel="noopener">${T("完整游戏说明")}</a> · <a href="${typeof I18N!=='undefined'&&I18N.lang==='en'?'DIPLOMACY.en.md':'DIPLOMACY.md'}" target="_blank" rel="noopener">${T("外交与条约细则")}</a>
         <h4>${T("■ 音乐与署名")}</h4>
         ${T("音乐与音效可用顶部🔊按钮或 M 键统一开关。首次点击或按键后开始播放，切到后台时暂停。")}<br>
@@ -1552,7 +1555,7 @@ function autoSave() {
 window.BootUI = function () {
   resize();
   requestAnimationFrame(render);
-  showStart();
+  if(new URLSearchParams(location.search).get('tutorial')==='1')showTutorialMenu();else showStart();
 };
 
 // Switching language must not lose a player's latest orders.
