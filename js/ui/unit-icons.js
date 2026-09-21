@@ -88,6 +88,48 @@ const UnitIcons = (() => {
     'L -36 24 A 8.5 8.5 0 0 1 -44.5 15.5 A 8.5 8.5 0 0 1 -36 7 Z',  // 履带（压扁贴地）
   ].join(' ');
 
+  /* ---- 装甲角色（armor.js 的 armorRole，侧视朝右，与通用形同一语法）----
+   * 通用形 tank 本身就是"中型坦克"原型（armorRole=medium 直接回退，不另立键）。
+   * 角色主特征：
+   *   car 装甲车=轮式（四只圆轮，无履带）· light 轻型坦克=整体小一号+细管
+   *   heavy 重型坦克=方盒大炮塔+长管伸过车首+宽履带
+   *   superheavy 超重型=双层巨大车体+塔上架塔+超宽履带（鼠式的原型学） */
+  const TANK_CAR = [
+    'M -40 -6 L 24 -10 L 42 -2 L 44 4 L -40 6 Z',          // 车体（窄长、斜艏）
+    'M -6 -18 L 10 -18 L 14 -8 L -10 -8 Z',                // 小炮塔（低矮）
+    bar(12, -15, 34, -13.5, 1.8),                          // 短细炮管（20-25mm 口径）
+    circle(-28, 8, 6),                                     // 后外轮
+    circle(-13, 8, 6),                                     // 后内轮
+    circle(16, 8, 6),                                      // 前内轮
+    circle(31, 8, 6),                                      // 前外轮（8 轮驱动，主特征：轮式）
+  ].join(' ');
+
+  const TANK_LIGHT = [
+    'M -30 -5 L 16 -8 L 30 -2 L 30 4 L -30 5 Z',           // 车体（紧凑）
+    'M -8 -14 L 6 -14 L 10 -5 L -12 -5 Z',                 // 小炮塔
+    bar(8, -11, 26, -10, 1.4),                             // 细短炮管
+    'M -26 3 L 18 3 A 7 7 0 0 1 25 10 A 7 7 0 0 1 18 17 ' +
+    'L -26 17 A 7 7 0 0 1 -33 10 A 7 7 0 0 1 -26 3 Z',     // 履带（小一号）
+  ].join(' ');
+
+  const TANK_HEAVY = [
+    'M -46 -6 L 22 -10 L 46 -2 L 46 6 L 22 9 L -46 9 Z',   // 车体（大而方正）
+    'M -20 -18 L 12 -18 L 18 -8 L -26 -8 Z',               // 大炮塔（方盒状，虎式原型学）
+    'M -18 -22 L -4 -22 L -4 -17 L -18 -17 Z',             // 指挥塔（塔顶左后方）
+    bar(16, -15, 49, -13, 2.4),                            // 长炮管（伸过车首）
+    'M -38 7 L 28 7 A 9.5 9.5 0 0 1 37.5 16.5 A 9.5 9.5 0 0 1 28 26 ' +
+    'L -38 26 A 9.5 9.5 0 0 1 -47.5 16.5 A 9.5 9.5 0 0 1 -38 7 Z',  // 宽履带
+  ].join(' ');
+
+  const TANK_SUPERHEAVY = [
+    'M -48 -8 L 26 -12 L 50 0 L 50 7 L 26 10 L -48 10 Z',  // 车体（巨大首上斜甲）
+    'M -34 -19 L 18 -19 L 22 -8.5 L -38 -8.5 Z',           // 战斗室（宽大上层结构）
+    'M -16 -28 L 8 -28 L 12 -18 L -20 -18 Z',              // 炮塔（骑在上层结构上，双层主特征）
+    bar(10, -24, 48, -22, 2.6),                            // 128mm 长炮管
+    'M -40 8 L 28 8 A 10 10 0 0 1 38 18 A 10 10 0 0 1 28 28 ' +
+    'L -40 28 A 10 10 0 0 1 -50 18 A 10 10 0 0 1 -40 8 Z', // 超宽履带
+  ].join(' ');
+
   /* 炮兵：1939—45 野战榴弹炮（leFH 18／ZiS-3 的原型学；侧视，炮口指向右上）。
    * 与旧形的差别：双腿开架式大架（V 字，单腿像独轮车）；防盾包裹炮闩并下沿
    * 落地；炮管上方有驻退机（复进杆，野战炮的第二根管子）；轮子缩小让位于炮身。 */
@@ -309,6 +351,10 @@ const UnitIcons = (() => {
     inf: normalizeWinding(INF),
     art: normalizeWinding(ART),
     tank: normalizeWinding(TANK),
+    tankCar: normalizeWinding(TANK_CAR),
+    tankLight: normalizeWinding(TANK_LIGHT),
+    tankHeavy: normalizeWinding(TANK_HEAVY),
+    tankSuperheavy: normalizeWinding(TANK_SUPERHEAVY),
     air: normalizeWinding(AIR),
     airFighter: normalizeWinding(AIR_FIGHTER),
     airHeavy: normalizeWinding(AIR_HEAVY),
@@ -334,6 +380,19 @@ const UnitIcons = (() => {
   /* 装甲：5 个负重轮 + 车体侧线（铆接甲板的年代感） */
   const TANK_DETAIL = [-32, -16, 0, 16, 32].map(x => circle(x, 15.5, 5.5)).join(' ') + ' ' +
     bar(-40, -2, 28, -2, 1);
+  /* 装甲车：四只轮毂 + 观察缝 */
+  const TANK_CAR_DETAIL = [-28, -13, 16, 31].map(x => circle(x, 8, 2.4)).join(' ') + ' ' +
+    bar(34, -5, 41, -4, 1.2);
+  /* 轻型坦克：3 个小负重轮 + 炮塔舱盖 */
+  const TANK_LIGHT_DETAIL = [-16, 0, 16].map(x => circle(x, 10, 3.4)).join(' ') + ' ' +
+    circle(-1, -11, 2.4);
+  /* 重型坦克：交错负重轮 + 炮口制退器（虎式的年代特征） */
+  const TANK_HEAVY_DETAIL = [-32, -16, 0, 16, 32].map(x => circle(x, 16.5, 4.4)).join(' ') + ' ' +
+    bar(46.5, -17, 46.5, -9, 2.4);
+  /* 超重型：6 轮 + 炮口制退器 + 尾部发动机格栅（鼠式原型学） */
+  const TANK_SUPERHEAVY_DETAIL = [-32, -19, -6, 7, 20, 33].map(x => circle(x, 18, 4.4)).join(' ') + ' ' +
+    bar(45.5, -26, 45.5, -18, 2.6) + ' ' +
+    bar(-45, -5, -39, -5.4, 1.4) + ' ' + bar(-45, -2, -39, -2.4, 1.4);
   /* 炮兵：3 根轮辐 + 炮口制退器 */
   const ART_DETAIL = [20, 140, 260].map(a => {
     const r = a * Math.PI / 180;
@@ -392,6 +451,8 @@ const UnitIcons = (() => {
 
   const DETAILS = {
     tank: TANK_DETAIL, art: ART_DETAIL, inf: INF_DETAIL, air: AIR_DETAIL,
+    tankCar: TANK_CAR_DETAIL, tankLight: TANK_LIGHT_DETAIL,
+    tankHeavy: TANK_HEAVY_DETAIL, tankSuperheavy: TANK_SUPERHEAVY_DETAIL,
     airFighter: AIR_FIGHTER_DETAIL, airHeavy: AIR_HEAVY_DETAIL, airCas: AIR_CAS_DETAIL,
     airNaval: AIR_NAVAL_DETAIL, airTactical: AIR_TACTICAL_DETAIL,
     airStrategic: AIR_STRATEGIC_DETAIL, airTransport: AIR_TRANSPORT_DETAIL,

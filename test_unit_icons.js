@@ -13,6 +13,7 @@ const first=paths;
 for(let i=0;i<1000;i++)icons.draw(canvas,['inf','art','tank','air'][i%4],20,20,24,{detail:true});
 assert.equal(paths,first,'rendering repeatedly must reuse Path2D objects');
 const EXPECTED=['inf','art','tank','air',
+  'tankCar','tankLight','tankHeavy','tankSuperheavy',
   'airFighter','airHeavy','airCas','airNaval','airTactical','airStrategic','airTransport',
   'sub','dd','cl','ca','bc','bb','cve','cv','transport'];
 assert.deepEqual(Object.keys(icons.SHAPES).sort(),[...EXPECTED].sort(),'icon set must cover every unit class and air role');

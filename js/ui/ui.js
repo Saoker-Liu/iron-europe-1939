@@ -315,16 +315,27 @@ function render(now) {
   }
 }
 
-/* 空军按角色选侧影（键=air.js 的 airRole，图形=unit-icons.js 的 air* 形）。
- * 角色细分是"看得懂的类别"（单发/双发/四发、鸥翼、鱼雷、双垂尾），具体型号留给面板文字点名。 */
-const AIR_ICON = { fighter:'airFighter', heavy:'airHeavy', cas:'airCas',
-  naval:'airNaval', tactical:'airTactical', strategic:'airStrategic', transport:'airTransport' };
-const airIconKey = eq => (eq && eq.cls === 'air') ? (AIR_ICON[eq.airRole] || 'air') : (eq && eq.cls);
+/* 兵种角色 → 侧影键（图形=unit-icons.js）。原则同空军：图标只画"看得懂的类别"
+ * （轮式/履带、双联高射管、火箭轨、马骑），具体型号与年份档留给面板文字点名。
+ * 未列出的角色回退本兵种通用形；中等坦克/基本榴弹炮本来就是通用形的原型，不另立键。 */
+const ROLE_ICON = {
+  air: { fighter:'airFighter', heavy:'airHeavy', cas:'airCas', naval:'airNaval',
+         tactical:'airTactical', strategic:'airStrategic', transport:'airTransport' },
+  tank: { car:'tankCar', light:'tankLight', heavy:'tankHeavy', superheavy:'tankSuperheavy' },
+  art:  { aa:'artAa', at:'artAt', field:'artField', rocket:'artRocket' },
+  inf:  { cavalry:'infCavalry', motorized:'infMotorized', mechanized:'infMechanized' },
+};
+const iconKeyFor = eq => {
+  if (!eq) return 'inf';
+  const m = ROLE_ICON[eq.cls];
+  const k = m && m[eq.armorRole || eq.artRole || eq.infRole || eq.airRole];
+  return k || eq.cls;
+};
 
 function unitIconClass(g,u) {
   if (g.isEmbarked(u)) return 'transport';            // 海运中的陆军画运输船侧影
-  if (u.eq.cls === 'air') return AIR_ICON[u.eq.airRole] || 'air';
-  return Object.hasOwn(UnitIcons.SHAPES, u.eq.cls) ? u.eq.cls : null;   // 未知兵种回退汉字兵种符
+  const k = iconKeyFor(u.eq);
+  return Object.hasOwn(UnitIcons.SHAPES, k) ? k : (Object.hasOwn(UnitIcons.SHAPES, u.eq.cls) ? u.eq.cls : null);
 }
 function drawFrame(now) {
   const g = UI.game;
@@ -633,7 +644,7 @@ function showAirfieldPanel(ci) {
     <div class="p-sub">驻扎空军（机场失守时，未撤离的飞机损失）</div>
     ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${g.airRoleName(u)} · ${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
     <div class="p-sub">组建空军</div>
-    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${UnitIcons.svg(airIconKey(o.eq),18)}</span>${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
+    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${UnitIcons.svg(iconKeyFor(o.eq),18)}</span>${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
   document.getElementById('airfield-city').onclick=()=>showCityPanel(ci);
   const transferButton=document.getElementById('airfield-transfer');if(transferButton)transferButton.onclick=()=>{if(!UI.busy&&g.rebaseAir(selected,ci.k)){select(selected);updateTopbar();renderLog();}};
   units.forEach((u,i)=>{document.getElementById('airfield-unit-'+i).onclick=()=>{if(UI.busy||!g.units.includes(u))return;if(UI.sel&&UI.targets.has(u.id)){doAttack(u);return;}if(g.unitFaction(u)===g.playerFaction)select(u);else showUnitInfo(u);};});
@@ -1064,7 +1075,7 @@ function showFactoryPanel(city) {
   body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，仅部署到空闲城市格，新部队当回合不能行动，需在城内停留至下回合。</div>
     <button class="btn" id="factory-city">返回城市</button>
     ${recruitmentTabsHTML('factory',groups,category)}
-    ${offers.map(o=>`<div class="shop-item"><div><span class="ico">${UnitIcons.svg(o.eq.cls,18)}</span>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${o.index}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
+    ${offers.map(o=>`<div class="shop-item"><div><span class="ico">${UnitIcons.svg(iconKeyFor(o.eq),18)}</span>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${o.index}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
   document.getElementById('factory-city').onclick=()=>showCityPanel(city);
   groups.forEach((label,i)=>document.getElementById('factory-tab-'+i).onclick=()=>{UI.factoryCategory=label;showFactoryPanel(city);});
   offers.forEach(o=>document.getElementById('factory-build-'+o.index).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
@@ -1089,7 +1100,7 @@ function showCityPanel(city) {
     ${recruitmentTabsHTML('city-recruit',groups,category)}
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
-        <div><div class="s-name"><span class="ico">${UnitIcons.svg(it.eq.cls,15)}</span>${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
+        <div><div class="s-name"><span class="ico">${UnitIcons.svg(iconKeyFor(it.eq),15)}</span>${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
         <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
         <div class="s-cost">${it.eq.cost}金</div>
       </div>`).join('')}`;

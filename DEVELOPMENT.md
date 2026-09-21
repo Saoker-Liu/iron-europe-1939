@@ -139,7 +139,7 @@ deserialize以initialFleet:false构造，再恢复原单位；两遍处理舰名
 
 兵种图标改造（`js/ui/unit-icons.js`）沉淀的三条铁律与事故记录，合并时保留备查。
 
-覆盖范围与数据全集对齐：4 个陆空兵种（inf/art/tank/air）+ air.js 七个机种角色各一形（airFighter/airHeavy/airCas/airNaval/airTactical/airStrategic/airTransport，ui.js 的 `AIR_ICON` 映射、`airIconKey()` 兜底回通用形）+ naval.js 八舰种（sub/dd/cl/ca/bc/bb/cve/cv）+ transport（`economy.transports` 海运陆军的地图侧影，键不属于 CLASSES）。新增舰种、机种角色或兵种时同步扩 `SHAPES`/`DETAILS`，否则 `unitIconClass` 返回 null、地图回退成汉字兵种符；`tools/icon-preview.html` 全量列出自查。空军按"角色"而非"型号"画形：图标只到机型类别（单发/双发/四发、鸥翼、鱼雷、双垂尾），具体型号由面板文字点名——同一角色下各国机型俯视轮廓本就相似，画型号必然画不准。
+覆盖范围与数据全集对齐：4 个陆空兵种（inf/art/tank/air）+ armor.js 四个装甲角色（tankCar/tankLight/tankHeavy/tankSuperheavy；medium 即通用形原型，不另立键）+ artillery.js 四个炮兵角色 + infantry.js 三个步兵角色 + air.js 七个机种角色各一形（airFighter/airHeavy/airCas/airNaval/airTactical/airStrategic/airTransport，ui.js 的 `AIR_ICON` 映射、`airIconKey()` 兜底回通用形）+ naval.js 八舰种（sub/dd/cl/ca/bc/bb/cve/cv）+ transport（`economy.transports` 海运陆军的地图侧影，键不属于 CLASSES）。新增舰种、机种角色或兵种时同步扩 `SHAPES`/`DETAILS`，否则 `unitIconClass` 返回 null、地图回退成汉字兵种符；`tools/icon-preview.html` 全量列出自查。空军按"角色"而非"型号"画形：图标只到机型类别（单发/双发/四发、鸥翼、鱼雷、双垂尾），具体型号由面板文字点名——同一角色下各国机型俯视轮廓本就相似，画型号必然画不准。
 
 1. **禁止每帧重建地形几何**——曾每帧为可见格重建 Path2D（全图构建 332ms），是 4FPS 卡顿的根源。任何新增的"画地图上的东西"都应进 `rebuildTerrain` 的缓存层，而不是 render 主循环
 2. **主画布文本是贵操作**——CJK `strokeText/fillText` 很贵；低倍速（`simple = s < 11`）已自动省略单位小字，新增文字标记请放进同一分支。单位兵种现已改为**矢量图标**（`js/ui/unit-icons.js`），不再逐帧绘制中文，所以图标在低倍速下照常绘制（这正是替换的收益）。但图标描边必须用「`stroke` → `fill` 共用同一 transform」：**禁止把同一个 `Path2D` 换个 transform 再填一遍**来描边——实测会让 Chrome 无法复用光栅化缓存，从 6.6µs 暴涨到 62µs/单位。另：`lineJoin='round'` 下先 stroke 后 fill，线宽内半会被白色主体盖住，接缝也一并盖住，因此不会出现脏线。
