@@ -575,6 +575,10 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
 }
 .lb-close:hover{border-color:var(--gold);color:var(--gold-hi);transform:rotate(90deg)}
 
+/* ---------- EN mode：正文经 data-i18n 换英文；隐藏会与译文重复的英文点缀 ---------- */
+.lang-en .en,.lang-en .stat .e,.lang-en .mech h4 span:not([data-i18n]),.lang-en .tech span b,
+.lang-en .tle .ten,.lang-en .side .s-en,.lang-en .finale .fen{display:none}
+
 /* ---------- reveal ---------- */
 .rv{opacity:0;transform:translateY(30px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--d,0)*90ms)}
 .rv.on{opacity:1;transform:none}
@@ -610,15 +614,16 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
     <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L92 28 V72 L50 96 L8 72 V28 Z" fill="#10141a" stroke="#d8b24a" stroke-width="5"/><path d="M28 62 V44 L50 30 L72 44 V62 L50 76 Z" fill="none" stroke="#d8b24a" stroke-width="4"/><circle cx="50" cy="53" r="6" fill="#d8b24a"/></svg>
     <span class="bt"><b>钢铁欧陆 1939</b><span>IRON EUROPE</span></span>
   </a>
-  <nav class="nav-links" aria-label="页面导航">
-    <a href="#map">战场</a>
-    <a href="#arms">兵种</a>
-    <a href="#navy">海战</a>
-    <a href="#generals">将领</a>
-    <a href="#sides">阵营</a>
-    <a href="#timeline">战史</a>
+  <nav class="nav-links" aria-label="页面导航" data-i18n-aria="页面导航">
+    <a href="#map" data-i18n="战场">战场</a>
+    <a href="#arms" data-i18n="兵种">兵种</a>
+    <a href="#navy" data-i18n="海战">海战</a>
+    <a href="#generals" data-i18n="将领">将领</a>
+    <a href="#sides" data-i18n="阵营">阵营</a>
+    <a href="#timeline" data-i18n="战史">战史</a>
   </nav>
-  <a class="btn btn-gold btn-small" href="../index.html?play=1">开战 <span class="arr">▸</span></a>
+  <button class="btn btn-ghost btn-small" id="btn-lang" title="Switch language / 切换语言" style="margin-left:8px">EN</button>
+  <a class="btn btn-gold btn-small" href="../index.html?play=1"><span data-i18n="开战">开战</span> <span class="arr">▸</span></a>
 </header>
 
 <main id="top">
@@ -638,13 +643,13 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
       <span class="h1-zh">钢铁欧陆</span>
       <span class="h1-en">IRON EUROPE <b class="nb">1939–1945</b></span>
     </h1>
-    <p class="hero-tag">六边形回合制二战战棋 —— <em>改写 1939–1945 的欧洲命运</em>
+    <p class="hero-tag"><span data-i18n="六边形回合制二战战棋">六边形回合制二战战棋</span> —— <em data-i18n="改写 1939–1945 的欧洲命运">改写 1939–1945 的欧洲命运</em>
       <span class="en">A HEX-GRID TURN-BASED WWII WARGAME · REWRITE THE FATE OF EUROPE</span>
     </p>
-    <p class="hero-sub"><b>占领敌方首都，令其全国崩溃。</b>Take a capital, and a nation falls.</p>
+    <p class="hero-sub"><b data-i18n="占领敌方首都，令其全国崩溃。">占领敌方首都，令其全国崩溃。</b><span class="en"> Take a capital, and a nation falls.</span></p>
     <div class="hero-cta">
-      <a class="btn btn-gold" href="../index.html?play=1">免费开战 · PLAY FREE <span class="arr">▸</span></a>
-      <a class="btn btn-ghost" href="#map">检阅战场 <span class="arr">↓</span></a>
+      <a class="btn btn-gold" href="../index.html?play=1"><span data-i18n="免费开战 · PLAY FREE">免费开战 · PLAY FREE</span> <span class="arr">▸</span></a>
+      <a class="btn btn-ghost" href="#map"><span data-i18n="检阅战场">检阅战场</span> <span class="arr">↓</span></a>
     </div>
   </div>
 
@@ -652,12 +657,12 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
 
   <div class="hero-stats">
     <div class="in">
-      <div class="stat"><div class="n"><span data-count="128">0</span>×<span data-count="112">0</span></div><div class="l">六边形战区</div><div class="e">HEX BATTLEFIELD</div></div>
-      <div class="stat"><div class="n"><span data-count="436">0</span></div><div class="l">城市与港口</div><div class="e">CITIES &amp; PORTS</div></div>
-      <div class="stat"><div class="n"><span data-count="33">0</span></div><div class="l">国家政权</div><div class="e">NATIONS</div></div>
-      <div class="stat"><div class="n"><span data-count="91">0</span></div><div class="l">开局舰艇</div><div class="e">STARTING WARSHIPS</div></div>
-      <div class="stat"><div class="n"><span data-count="116">0</span></div><div class="l">史实将领</div><div class="e">LEGENDARY GENERALS</div></div>
-      <div class="stat"><div class="n"><span data-count="10">0</span></div><div class="l">历史事件脚本</div><div class="e">HISTORIC EVENTS</div></div>
+      <div class="stat"><div class="n"><span data-count="128">0</span>×<span data-count="112">0</span></div><div class="l" data-i18n="六边形战区">六边形战区</div><div class="e">HEX BATTLEFIELD</div></div>
+      <div class="stat"><div class="n"><span data-count="436">0</span></div><div class="l" data-i18n="城市与港口">城市与港口</div><div class="e">CITIES &amp; PORTS</div></div>
+      <div class="stat"><div class="n"><span data-count="33">0</span></div><div class="l" data-i18n="国家政权">国家政权</div><div class="e">NATIONS</div></div>
+      <div class="stat"><div class="n"><span data-count="91">0</span></div><div class="l" data-i18n="开局舰艇">开局舰艇</div><div class="e">STARTING WARSHIPS</div></div>
+      <div class="stat"><div class="n"><span data-count="116">0</span></div><div class="l" data-i18n="史实将领">史实将领</div><div class="e">LEGENDARY GENERALS</div></div>
+      <div class="stat"><div class="n"><span data-count="10">0</span></div><div class="l" data-i18n="历史事件脚本">历史事件脚本</div><div class="e">HISTORIC EVENTS</div></div>
     </div>
   </div>
 </section>
@@ -683,35 +688,34 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
         <span class="sec-en">A EUROPE MEASURED IN KILOMETERS</span>
       </h2>
     </header>
-    <p class="sec-lede rv" style="--d:1">128×112 六边形，每格约 45 公里，兰伯特等角圆锥投影。
-      海岸河流来自 Natural Earth，<b>国界定格在 1939 年 8 月 31 日——开战前夜</b>。
-      128×112 hexes at ~45 km each. Coastlines from Natural Earth; borders frozen on the eve of war, Aug 31, 1939.</p>
+    <p class="sec-lede rv" style="--d:1"><span data-i18n-html="128×112 六边形，每格约 45 公里，兰伯特等角圆锥投影。<br>海岸河流来自 Natural Earth，<b>国界定格在 1939 年 8 月 31 日——开战前夜</b>。">128×112 六边形，每格约 45 公里，兰伯特等角圆锥投影。<br>海岸河流来自 Natural Earth，<b>国界定格在 1939 年 8 月 31 日——开战前夜</b>。</span>
+      <span class="en">128×112 hexes at ~45 km each. Coastlines from Natural Earth; borders frozen on the eve of war, Aug 31, 1939.</span></p>
 
     <div class="map-grid" style="margin-top:clamp(36px,5vw,56px)">
       <figure class="frame rv" style="--d:1" data-full="img/03-campaign-fullmap.jpg" data-alt="战役地图全景历史版本截图" role="button" tabindex="0" aria-label="放大查看战役地图全景">
         <img src="img/03-campaign-fullmap.jpg" alt="钢铁欧陆 1939 战役地图全景历史版本截图：从伦敦到莫斯科的完整欧洲战场" width="1600" height="1000" loading="lazy">
-        <figcaption class="cap"><b>历史版本截图 · CAMPAIGN MAP, FULL THEATER</b><span>europe-1939-geographic-v8</span></figcaption>
+        <figcaption class="cap"><b><span data-i18n="历史版本截图">历史版本截图</span> · CAMPAIGN MAP, FULL THEATER</b><span>europe-1939-geographic-v8</span></figcaption>
       </figure>
       <div class="facts">
         <div class="fact rv" style="--d:2">
           <span class="idx">01</span>
           <div><h3>45 KM / HEX</h3>
-          <p>每格约 <b>45 公里</b>，兰伯特等角圆锥投影。距离即战略：一格的得失，就是一个师的行军日。</p></div>
+          <p data-i18n-html="每格约 <b>45 公里</b>，兰伯特等角圆锥投影。距离即战略：一格的得失，就是一个师的行军日。">每格约 <b>45 公里</b>，兰伯特等角圆锥投影。距离即战略：一格的得失，就是一个师的行军日。</p></div>
         </div>
         <div class="fact rv" style="--d:3">
           <span class="idx">02</span>
           <div><h3>NATURAL EARTH · 1939.08.31</h3>
-          <p>海岸线、湖泊、河流源自 Natural Earth 公共数据；国界是<b>开战前夕的历史快照</b>——但泽自由市、波希米亚-摩拉维亚保护国、意占阿尔巴尼亚，原样呈现。</p></div>
+          <p data-i18n-html="海岸线、湖泊、河流源自 Natural Earth 公共数据；国界是<b>开战前夕的历史快照</b>——但泽自由市、波希米亚-摩拉维亚保护国、意占阿尔巴尼亚，原样呈现。">海岸线、湖泊、河流源自 Natural Earth 公共数据；国界是<b>开战前夕的历史快照</b>——但泽自由市、波希米亚-摩拉维亚保护国、意占阿尔巴尼亚，原样呈现。</p></div>
         </div>
         <div class="fact rv" style="--d:4">
           <span class="idx">03</span>
           <div><h3>436 CAPTURABLE NODES</h3>
-          <p>436 座城市 / 港口 / 基地<b>全部独立可占领</b>，位置经穷举对照验证，最大偏移约 41 公里。</p></div>
+          <p data-i18n-html="436 座城市 / 港口 / 基地<b>全部独立可占领</b>，位置经穷举对照验证，最大偏移约 41 公里。">436 座城市 / 港口 / 基地<b>全部独立可占领</b>，位置经穷举对照验证，最大偏移约 41 公里。</p></div>
         </div>
         <div class="fact rv" style="--d:5">
           <span class="idx">04</span>
           <div><h3>REAL WATERS, REAL STRATEGY</h3>
-          <p>彼列科普地峡、刻赤海峡、厄勒海峡、多佛尔、基尔运河——<b>真实水道塑造真实战略</b>。英国没有虚构的陆桥。</p></div>
+          <p data-i18n-html="彼列科普地峡、刻赤海峡、厄勒海峡、多佛尔、基尔运河——<b>真实水道塑造真实战略</b>。英国没有虚构的陆桥。">彼列科普地峡、刻赤海峡、厄勒海峡、多佛尔、基尔运河——<b>真实水道塑造真实战略</b>。英国没有虚构的陆桥。</p></div>
         </div>
       </div>
     </div>
@@ -719,15 +723,15 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
     <div class="thumb-row">
       <figure class="thumb rv" style="--d:1" data-full="img/01-start-screen.jpg" data-alt="开始界面历史版本截图" role="button" tabindex="0" aria-label="放大查看开始界面">
         <img src="img/01-start-screen.jpg" alt="开始界面：三阵营选择" width="1600" height="1000" loading="lazy">
-        <figcaption>开始界面 · 阵营与难度 START SCREEN</figcaption>
+        <figcaption><span data-i18n="开始界面 · 阵营与难度">开始界面 · 阵营与难度</span> START SCREEN</figcaption>
       </figure>
       <figure class="thumb rv" style="--d:2" data-full="img/06-berlin-maxzoom.jpg" data-alt="柏林最大缩放历史版本截图" role="button" tabindex="0" aria-label="放大查看柏林细节">
         <img src="img/06-berlin-maxzoom.jpg" alt="柏林，最大缩放下的城市与单位细节" width="1600" height="1000" loading="lazy">
-        <figcaption>柏林 · 最大缩放 BERLIN, MAX ZOOM</figcaption>
+        <figcaption><span data-i18n="柏林 · 最大缩放">柏林 · 最大缩放</span> BERLIN, MAX ZOOM</figcaption>
       </figure>
       <figure class="thumb rv" style="--d:3" data-full="img/04-unit-selected-panzer.jpg" data-alt="选中III号坦克的历史版本截图" role="button" tabindex="0" aria-label="放大查看选中部队画面">
         <img src="img/04-unit-selected-panzer.jpg" alt="选中III号坦克，金色高亮显示 79 格机动范围" width="1600" height="1000" loading="lazy">
-        <figcaption>选中部队 · III号坦克 UNIT SELECTED</figcaption>
+        <figcaption><span data-i18n="选中部队 · III号坦克">选中部队 · III号坦克</span> UNIT SELECTED</figcaption>
       </figure>
     </div>
   </div>
@@ -742,31 +746,30 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
         <span class="sec-en">ROCK, PAPER, SIEGE</span>
       </h2>
     </header>
-    <p class="sec-lede rv" style="--d:1">步兵、炮兵、装甲、空军——<b>多类装备，各有分工</b>。
-      山地固守、装甲突穿、炮兵覆盖、空军越顶，胜负全在你的排兵布阵。
-      INFANTRY, ARTILLERY, ARMOR, AIR — specialized roles and equipment.</p>
+    <p class="sec-lede rv" style="--d:1"><span data-i18n-html="步兵、炮兵、装甲、空军——<b>多类装备，各有分工</b>。<br>山地固守、装甲突穿、炮兵覆盖、空军越顶，胜负全在你的排兵布阵。">步兵、炮兵、装甲、空军——<b>多类装备，各有分工</b>。<br>山地固守、装甲突穿、炮兵覆盖、空军越顶，胜负全在你的排兵布阵。</span>
+      <span class="en">INFANTRY, ARTILLERY, ARMOR, AIR — specialized roles and equipment.</span></p>
 
     <div class="arms-grid" style="margin-top:clamp(36px,5vw,56px)">
       <div class="rv" style="--d:2">
-        <table class="ctype" aria-label="当前陆空军类别与生产方式">
-          <thead><tr><th>类别</th><th>分支</th><th>组建地点</th><th>作战定位</th></tr></thead>
-          <tbody><tr><th>步兵</th><td>11类</td><td>城市</td><td>占领与守备</td></tr>
-          <tr><th>炮兵</th><td>5类</td><td>工厂</td><td>火力／防空／反坦克</td></tr>
-          <tr><th>装甲</th><td>5类</td><td>工厂</td><td>突击与机动</td></tr>
-          <tr><th>空军</th><td>7类</td><td>机场</td><td>制空／轰炸／运输</td></tr></tbody></table>
+        <table class="ctype" aria-label="当前陆空军类别与生产方式" data-i18n-aria="当前陆空军类别与生产方式">
+          <thead><tr><th data-i18n="类别">类别</th><th data-i18n="分支">分支</th><th data-i18n="组建地点">组建地点</th><th data-i18n="作战定位">作战定位</th></tr></thead>
+          <tbody><tr><th data-i18n="步兵">步兵</th><td data-i18n="11类">11类</td><td data-i18n="城市">城市</td><td data-i18n="占领与守备">占领与守备</td></tr>
+          <tr><th data-i18n="炮兵">炮兵</th><td data-i18n="5类">5类</td><td data-i18n="工厂">工厂</td><td data-i18n="火力／防空／反坦克">火力／防空／反坦克</td></tr>
+          <tr><th data-i18n="装甲">装甲</th><td data-i18n="5类">5类</td><td data-i18n="工厂">工厂</td><td data-i18n="突击与机动">突击与机动</td></tr>
+          <tr><th data-i18n="空军">空军</th><td data-i18n="7类">7类</td><td data-i18n="机场">机场</td><td data-i18n="制空／轰炸／运输">制空／轰炸／运输</td></tr></tbody></table>
         <div class="tnote">
-          <i>实际战斗修正按当前装备类别与目标计算</i>
+          <i data-i18n="实际战斗修正按当前装备类别与目标计算">实际战斗修正按当前装备类别与目标计算</i>
         </div>
         <div class="mechs">
-          <div class="mech"><span class="mn">①</span><h4>控制区 ZOC<span>ZONES OF CONTROL</span></h4><p>空军与具有忽略控制区技能的将领可无视封锁，普通装甲仍受控制区影响。</p></div>
-          <div class="mech"><span class="mn">②</span><h4>驻防工事<span>ENTRENCHMENT</span></h4><p>城市地形防御 +40%，首都 +60%；主动驻防另加30%。地形不是背景板，是武器。</p></div>
-          <div class="mech"><span class="mn">③</span><h4>老练度<span>VETERANCY</span></h4><p>部队越战越强，最高 +24% 攻防——老兵营值得守护。</p></div>
-          <div class="mech"><span class="mn">④</span><h4>将领技能<span>GENERALS</span></h4><p>116 位史实名将各怀绝技，击杀晋升，最高五星。</p></div>
+          <div class="mech"><span class="mn">①</span><h4><span data-i18n="控制区">控制区</span> ZOC<span>ZONES OF CONTROL</span></h4><p data-i18n="空军与具有忽略控制区技能的将领可无视封锁，普通装甲仍受控制区影响。">空军与具有忽略控制区技能的将领可无视封锁，普通装甲仍受控制区影响。</p></div>
+          <div class="mech"><span class="mn">②</span><h4><span data-i18n="驻防工事">驻防工事</span><span>ENTRENCHMENT</span></h4><p data-i18n="城市地形防御 +40%，首都 +60%；主动驻防另加30%。地形不是背景板，是武器。">城市地形防御 +40%，首都 +60%；主动驻防另加30%。地形不是背景板，是武器。</p></div>
+          <div class="mech"><span class="mn">③</span><h4><span data-i18n="老练度">老练度</span><span>VETERANCY</span></h4><p data-i18n="部队越战越强，最高 +24% 攻防——老兵营值得守护。">部队越战越强，最高 +24% 攻防——老兵营值得守护。</p></div>
+          <div class="mech"><span class="mn">④</span><h4><span data-i18n="将领技能">将领技能</span><span>GENERALS</span></h4><p data-i18n="116 位史实名将各怀绝技，击杀晋升，最高五星。">116 位史实名将各怀绝技，击杀晋升，最高五星。</p></div>
         </div>
       </div>
       <figure class="frame rv" style="--d:3" data-full="img/02-help-countertable.jpg" data-alt="游戏内帮助面板：兵种克制表" role="button" tabindex="0" aria-label="放大查看游戏内帮助面板">
         <img src="img/02-help-countertable.jpg" alt="历史版本帮助面板，规则以当前游戏为准" width="1600" height="1000" loading="lazy">
-        <figcaption class="cap"><b>历史版本截图 · IN-GAME HELP</b><span>按 H 随时查阅</span></figcaption>
+        <figcaption class="cap"><b><span data-i18n="历史版本截图">历史版本截图</span> · IN-GAME HELP</b><span data-i18n="按 H 随时查阅">按 H 随时查阅</span></figcaption>
       </figure>
     </div>
   </div>
@@ -784,23 +787,22 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
 
     <div class="navy-grid">
       <div>
-        <p class="sec-lede rv" style="--d:1"><b>91 艘采用舰名系统的开局军舰</b>组成欧洲战区的缩编舰队。
-          俾斯麦、胡德、贝尔法斯特、U-47——建造它们、指挥它们、击沉它们。
-          91 individually named ships form the starting scenario fleets. Build them, command them, sink them.</p>
-        <div class="classes rv" style="--d:2" aria-label="八种舰型">
-          <span>潜艇 SUBS</span><span>驱逐舰 DESTROYERS</span><span>轻巡洋舰 LIGHT CRUISERS</span><span>重巡洋舰 HEAVY CRUISERS</span><span>战列巡洋舰 BATTLECRUISERS</span><span>战列舰 BATTLESHIPS</span><span>护航航母 ESCORT CARRIERS</span><span>航空母舰 FLEET CARRIERS</span>
+        <p class="sec-lede rv" style="--d:1"><span data-i18n-html="<b>91 艘采用舰名系统的开局军舰</b>组成欧洲战区的缩编舰队。<br>俾斯麦、胡德、贝尔法斯特、U-47——建造它们、指挥它们、击沉它们。"><b>91 艘采用舰名系统的开局军舰</b>组成欧洲战区的缩编舰队。<br>俾斯麦、胡德、贝尔法斯特、U-47——建造它们、指挥它们、击沉它们。</span>
+          <span class="en">91 individually named ships form the starting scenario fleets. Build them, command them, sink them.</span></p>
+        <div class="classes rv" style="--d:2" aria-label="八种舰型" data-i18n-aria="八种舰型">
+          <span data-i18n="潜艇 SUBS">潜艇 SUBS</span><span data-i18n="驱逐舰 DESTROYERS">驱逐舰 DESTROYERS</span><span data-i18n="轻巡洋舰 LIGHT CRUISERS">轻巡洋舰 LIGHT CRUISERS</span><span data-i18n="重巡洋舰 HEAVY CRUISERS">重巡洋舰 HEAVY CRUISERS</span><span data-i18n="战列巡洋舰 BATTLECRUISERS">战列巡洋舰 BATTLECRUISERS</span><span data-i18n="战列舰 BATTLESHIPS">战列舰 BATTLESHIPS</span><span data-i18n="护航航母 ESCORT CARRIERS">护航航母 ESCORT CARRIERS</span><span data-i18n="航空母舰 FLEET CARRIERS">航空母舰 FLEET CARRIERS</span>
         </div>
         <div class="ncards rv" style="--d:3">
-          <div class="mech"><span class="mn">⚓ ①</span><h4>军港建造<span>SHIPYARDS</span></h4><p>点击军港 ⚓ 造舰，泊位与城市易手实时联动；六国舰型逐年解锁：1939 德意志级 → 1941 俾斯麦级 → 1943 H 级计划。</p></div>
-          <div class="mech"><span class="mn">②</span><h4>反潜博弈<span>ASW WARFARE</span></h4><p>驱逐舰、潜艇、航母与具备攻击能力的陆基航空兵可打击潜艇——护航驱逐舰不是装饰品。</p></div>
-          <div class="mech"><span class="mn">③</span><h4>舰炮岸轰<span>SHORE BOMBARDMENT</span></h4><p>水面舰压制海岸守军，航母舰载机打击纵深；大舰巨炮重新有了意义。</p></div>
-          <div class="mech"><span class="mn">④</span><h4>两栖登陆<span>AMPHIBIOUS ASSAULT</span></h4><p>运输船队载陆军跨海抢滩——1944 年的登陆日，可以由你重演，也可以让它不再发生。</p></div>
+          <div class="mech"><span class="mn">⚓ ①</span><h4><span data-i18n="军港建造">军港建造</span><span>SHIPYARDS</span></h4><p data-i18n="点击军港 ⚓ 造舰，泊位与城市易手实时联动；六国舰型逐年解锁：1939 德意志级 → 1941 俾斯麦级 → 1943 H 级计划。">点击军港 ⚓ 造舰，泊位与城市易手实时联动；六国舰型逐年解锁：1939 德意志级 → 1941 俾斯麦级 → 1943 H 级计划。</p></div>
+          <div class="mech"><span class="mn">②</span><h4><span data-i18n="反潜博弈">反潜博弈</span><span>ASW WARFARE</span></h4><p data-i18n="驱逐舰、潜艇、航母与具备攻击能力的陆基航空兵可打击潜艇——护航驱逐舰不是装饰品。">驱逐舰、潜艇、航母与具备攻击能力的陆基航空兵可打击潜艇——护航驱逐舰不是装饰品。</p></div>
+          <div class="mech"><span class="mn">③</span><h4><span data-i18n="舰炮岸轰">舰炮岸轰</span><span>SHORE BOMBARDMENT</span></h4><p data-i18n="水面舰压制海岸守军，航母舰载机打击纵深；大舰巨炮重新有了意义。">水面舰压制海岸守军，航母舰载机打击纵深；大舰巨炮重新有了意义。</p></div>
+          <div class="mech"><span class="mn">④</span><h4><span data-i18n="两栖登陆">两栖登陆</span><span>AMPHIBIOUS ASSAULT</span></h4><p data-i18n="运输船队载陆军跨海抢滩——1944 年的登陆日，可以由你重演，也可以让它不再发生。">运输船队载陆军跨海抢滩——1944 年的登陆日，可以由你重演，也可以让它不再发生。</p></div>
         </div>
-        <p class="navy-foot rv" style="--d:4"><b>考据彩蛋：</b>每艘开局军舰标注舰名来源——史实舰名 / 计划舰名 / 游戏拟名，分级呈现，绝不张冠李戴。AI与玩家共用造舰规则，难度设置会影响AI收入与战斗加成。</p>
+        <p class="navy-foot rv" style="--d:4" data-i18n-html="<b>考据彩蛋：</b>每艘开局军舰标注舰名来源——史实舰名 / 计划舰名 / 游戏拟名，分级呈现，绝不张冠李戴。AI与玩家共用造舰规则，难度设置会影响AI收入与战斗加成。"><b>考据彩蛋：</b>每艘开局军舰标注舰名来源——史实舰名 / 计划舰名 / 游戏拟名，分级呈现，绝不张冠李戴。AI与玩家共用造舰规则，难度设置会影响AI收入与战斗加成。</p>
       </div>
       <figure class="frame rv" style="--d:2" data-full="img/05-naval-fleet-deutschland.jpg" data-alt="军港与舰队历史版本截图：德意志号" role="button" tabindex="0" aria-label="放大查看舰队画面">
         <img src="img/05-naval-fleet-deutschland.jpg" alt="历史版本截图：选中德意志号装甲舰，舰队停泊于军港，海上六边形战场清晰可见" width="1600" height="1000" loading="lazy">
-        <figcaption class="cap"><b>历史版本截图 · FLEET AT ANCHOR</b><span>德意志号 DEUTSCHLAND · ⚓ 军港</span></figcaption>
+        <figcaption class="cap"><b><span data-i18n="历史版本截图">历史版本截图</span> · FLEET AT ANCHOR</b><span data-i18n="德意志号 DEUTSCHLAND · ⚓ 军港">德意志号 DEUTSCHLAND · ⚓ 军港</span></figcaption>
       </figure>
     </div>
   </div>
@@ -815,51 +817,51 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
         <span class="sec-en">COMMANDERS OF HISTORY</span>
       </h2>
     </header>
-    <p class="sec-lede rv" style="--d:1">116 位史实将领全部实装。按人物履历设计游戏技能——<b>完整数值与设计理由可供审阅</b>。</p>
+    <p class="sec-lede rv" style="--d:1" data-i18n-html="116 位史实将领全部实装。按人物履历设计游戏技能——<b>完整数值与设计理由可供审阅</b>。">116 位史实将领全部实装。按人物履历设计游戏技能——<b>完整数值与设计理由可供审阅</b>。</p>
 
-    <p class="sec-lede"><a href="../GENERAL_CATALOG.md">查看116位将领的完整审阅名录 →</a></p>
+    <p class="sec-lede"><a href="../GENERAL_CATALOG.md" data-i18n="查看116位将领的完整审阅名录 →">查看116位将领的完整审阅名录 →</a></p>
     <div class="gen-grid" style="margin-top:clamp(32px,4vw,48px)">
       <article class="gen rv" style="--d:1;--fc:#9aa3ab">
         <span class="gfac">德国 GERMANY</span>
         <h3>古德里安</h3><span class="gen-en">HEINZ GUDERIAN</span>
-        <p class="skill">装甲攻 +25% · 移动力 +2 · 无视控制区</p>
-        <p class="bio">闪电战之父——「纵深穿插」这一技能，就是他本人。</p>
+        <p class="skill" data-i18n="装甲攻 +25% · 移动力 +2 · 无视控制区">装甲攻 +25% · 移动力 +2 · 无视控制区</p>
+        <p class="bio" data-i18n="闪电战之父——「纵深穿插」这一技能，就是他本人。">闪电战之父——「纵深穿插」这一技能，就是他本人。</p>
       </article>
       <article class="gen rv" style="--d:2;--fc:#9aa3ab">
         <span class="gfac">德国 GERMANY</span>
         <h3>隆美尔</h3><span class="gen-en">ERWIN ROMMEL</span>
-        <p class="skill">装甲攻 +20% · 对炮兵 +40%</p>
-        <p class="bio">第 7 装甲师「魔鬼之师」，席卷法军炮群的行家。</p>
+        <p class="skill" data-i18n="装甲攻 +20% · 对炮兵 +40%">装甲攻 +20% · 对炮兵 +40%</p>
+        <p class="bio" data-i18n="第 7 装甲师「魔鬼之师」，席卷法军炮群的行家。">第 7 装甲师「魔鬼之师」，席卷法军炮群的行家。</p>
       </article>
       <article class="gen rv" style="--d:3;--fc:#cf5340">
         <span class="gfac">苏联 USSR</span>
         <h3>朱可夫</h3><span class="gen-en">GEORGY ZHUKOV</span>
-        <p class="skill">全体攻防 +20%</p>
-        <p class="bio">从诺门坎打到柏林的「胜利元帅」，均衡即全能。</p>
+        <p class="skill" data-i18n="全体攻防 +20%">全体攻防 +20%</p>
+        <p class="bio" data-i18n="从诺门坎打到柏林的「胜利元帅」，均衡即全能。">从诺门坎打到柏林的「胜利元帅」，均衡即全能。</p>
       </article>
       <article class="gen rv" style="--d:4;--fc:#cf5340">
         <span class="gfac">苏联 USSR</span>
         <h3>崔可夫</h3><span class="gen-en">VASYLY CHUIKOV</span>
-        <p class="skill">驻城防御 +50% · 反击系数 +30个百分点</p>
-        <p class="bio">斯大林格勒第 62 集团军——「贴身紧逼」的城市战之神。</p>
+        <p class="skill" data-i18n="驻城防御 +50% · 反击系数 +30个百分点">驻城防御 +50% · 反击系数 +30个百分点</p>
+        <p class="bio" data-i18n="斯大林格勒第 62 集团军——「贴身紧逼」的城市战之神。">斯大林格勒第 62 集团军——「贴身紧逼」的城市战之神。</p>
       </article>
       <article class="gen rv" style="--d:5;--fc:#5b8ac9">
         <span class="gfac">英国 BRITAIN</span>
         <h3>蒙哥马利</h3><span class="gen-en">B. MONTGOMERY</span>
-        <p class="skill">防御 +25% · 反击系数 +30个百分点</p>
-        <p class="bio">阿拉曼的先胜后战：不打好准备，一步也不动。</p>
+        <p class="skill" data-i18n="防御 +25% · 反击系数 +30个百分点">防御 +25% · 反击系数 +30个百分点</p>
+        <p class="bio" data-i18n="阿拉曼的先胜后战：不打好准备，一步也不动。">阿拉曼的先胜后战：不打好准备，一步也不动。</p>
       </article>
       <article class="gen rv" style="--d:6;--fc:#5b8ac9">
         <span class="gfac">美国 USA</span>
         <h3>巴顿</h3><span class="gen-en">G. S. PATTON</span>
-        <p class="skill">装甲攻 +30% · 移动力 +1</p>
-        <p class="bio">第 3 集团军横扫西欧——油门踩到底。</p>
+        <p class="skill" data-i18n="装甲攻 +30% · 移动力 +1">装甲攻 +30% · 移动力 +1</p>
+        <p class="bio" data-i18n="第 3 集团军横扫西欧——油门踩到底。">第 3 集团军横扫西欧——油门踩到底。</p>
       </article>
     </div>
 
     <div class="promo rv">
       <span class="stars" aria-hidden="true">★★★★★</span>
-      <p>击杀 3 人晋升一星，<b>最高五星</b>，每星攻防 +4% —— 你的将领和你一起打完整场战争。</p>
+      <p data-i18n-html="击杀 3 人晋升一星，<b>最高五星</b>，每星攻防 +4% —— 你的将领和你一起打完整场战争。">击杀 3 人晋升一星，<b>最高五星</b>，每星攻防 +4% —— 你的将领和你一起打完整场战争。</p>
       <span class="stars" aria-hidden="true">KILL ×3 = ★</span>
     </div>
   </div>
@@ -874,46 +876,46 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
         <span class="sec-en">CHOOSE YOUR SIDE</span>
       </h2>
     </header>
-    <p class="sec-lede rv" style="--d:1">三种完全不同的战争体验——<b>闪电猎手、困守待变、钢铁洪流</b>。换一个阵营，就是换一款游戏。</p>
+    <p class="sec-lede rv" style="--d:1"><span data-i18n-html="三种完全不同的战争体验——<b>闪电猎手、困守待变、钢铁洪流</b>。换一个阵营，就是换一款游戏。">三种完全不同的战争体验——<b>闪电猎手、困守待变、钢铁洪流</b>。换一个阵营，就是换一款游戏。</span></p>
 
     <div class="side-grid" style="margin-top:clamp(32px,4vw,48px)">
       <article class="side rv" style="--d:1;--fc:#9aa3ab">
         <div class="band"></div>
         <div class="in">
           <span class="s-en">AXIS</span>
-          <h3>轴心国</h3>
-          <p>闪击波兰、横扫法国——<b>黄金窗口只有 21 个月</b>。装备与将领最精良，但 1941 年 6 月之后，你将同时面对三个方向。</p>
-          <p style="margin-top:10px">适合：进攻型指挥官。</p>
-          <p class="gens"><b>将领</b><br>古德里安 · 隆美尔 · 曼施坦因<br>莫德尔 · 凯塞林</p>
+          <h3 data-i18n="轴心国">轴心国</h3>
+          <p data-i18n-html="闪击波兰、横扫法国——<b>黄金窗口只有 21 个月</b>。装备与将领最精良，但 1941 年 6 月之后，你将同时面对三个方向。">闪击波兰、横扫法国——<b>黄金窗口只有 21 个月</b>。装备与将领最精良，但 1941 年 6 月之后，你将同时面对三个方向。</p>
+          <p style="margin-top:10px" data-i18n="适合：进攻型指挥官。">适合：进攻型指挥官。</p>
+          <p class="gens" data-i18n-html="<b>将领</b><br>古德里安 · 隆美尔 · 曼施坦因<br>莫德尔 · 凯塞林"><b>将领</b><br>古德里安 · 隆美尔 · 曼施坦因<br>莫德尔 · 凯塞林</p>
         </div>
       </article>
       <article class="side rv" style="--d:2;--fc:#5b8ac9">
         <div class="band"></div>
         <div class="in">
           <span class="s-en">ALLIES</span>
-          <h3>同盟国</h3>
-          <p>守住马奇诺与伦敦，熬过最黑的两年——<b>等美国参战、等诺曼底翻盘</b>。防守反击的艺术。</p>
-          <p style="margin-top:10px">适合：耐心的战略家。</p>
-          <p class="gens"><b>将领</b><br>蒙哥马利 · 巴顿 · 戴高乐<br>艾森豪威尔 · 亚历山大</p>
+          <h3 data-i18n="同盟国">同盟国</h3>
+          <p data-i18n-html="守住马奇诺与伦敦，熬过最黑的两年——<b>等美国参战、等诺曼底翻盘</b>。防守反击的艺术。">守住马奇诺与伦敦，熬过最黑的两年——<b>等美国参战、等诺曼底翻盘</b>。防守反击的艺术。</p>
+          <p style="margin-top:10px" data-i18n="适合：耐心的战略家。">适合：耐心的战略家。</p>
+          <p class="gens" data-i18n-html="<b>将领</b><br>蒙哥马利 · 巴顿 · 戴高乐<br>艾森豪威尔 · 亚历山大"><b>将领</b><br>蒙哥马利 · 巴顿 · 戴高乐<br>艾森豪威尔 · 亚历山大</p>
         </div>
       </article>
       <article class="side rv" style="--d:3;--fc:#cf5340">
         <div class="band"></div>
         <div class="in">
           <span class="s-en">USSR</span>
-          <h3>苏联</h3>
-          <p>1941 年 6 月前和平备战；开战后<b>以空间换时间</b>，让俄罗斯的冬天替你作战，再用钢铁洪流攻克柏林。</p>
-          <p style="margin-top:10px">适合：大兵团作战爱好者。</p>
-          <p class="gens"><b>将领</b><br>朱可夫 · 罗科索夫斯基<br>科涅夫 · 崔可夫</p>
+          <h3 data-i18n="苏联">苏联</h3>
+          <p data-i18n-html="1941 年 6 月前和平备战；开战后<b>以空间换时间</b>，让俄罗斯的冬天替你作战，再用钢铁洪流攻克柏林。">1941 年 6 月前和平备战；开战后<b>以空间换时间</b>，让俄罗斯的冬天替你作战，再用钢铁洪流攻克柏林。</p>
+          <p style="margin-top:10px" data-i18n="适合：大兵团作战爱好者。">适合：大兵团作战爱好者。</p>
+          <p class="gens" data-i18n-html="<b>将领</b><br>朱可夫 · 罗科索夫斯基<br>科涅夫 · 崔可夫"><b>将领</b><br>朱可夫 · 罗科索夫斯基<br>科涅夫 · 崔可夫</p>
         </div>
       </article>
     </div>
 
     <div class="diff rv">
       <span class="dl">难度 DIFFICULTY —</span>
-      <span><b>军校实习</b> CADET · AI −12%</span>
-      <span><b>前线指挥</b> FRONTLINE · 标准</span>
-      <span><b>总参谋部</b> GENERAL STAFF · AI +12%，收入 +20%</span>
+      <span><b data-i18n="军校实习">军校实习</b> CADET · AI −12%</span>
+      <span><b data-i18n="前线指挥">前线指挥</b> FRONTLINE · <span data-i18n="标准">标准</span></span>
+      <span><b data-i18n="总参谋部">总参谋部</b> GENERAL STAFF · <span data-i18n="AI +12%，收入 +20%">AI +12%，收入 +20%</span></span>
     </div>
   </div>
 </section>
@@ -927,20 +929,20 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
         <span class="sec-en">HISTORY FOLLOWS THE SCRIPT — UNTIL YOU MOVE</span>
       </h2>
     </header>
-    <p class="sec-lede rv" style="--d:1">10 个历史事件脚本按月触发：<b>你读到的事件简报，就是当年将军们读到的战报</b>。复现历史，或者改写它。</p>
+    <p class="sec-lede rv" style="--d:1"><span data-i18n-html="10 个历史事件脚本按月触发：<b>你读到的事件简报，就是当年将军们读到的战报</b>。复现历史，或者改写它。">10 个历史事件脚本按月触发：<b>你读到的事件简报，就是当年将军们读到的战报</b>。复现历史，或者改写它。</span></p>
 
     <div class="tl" style="margin-top:clamp(36px,5vw,60px)">
-      <div class="tle rv"><span class="tm">1939 · 09</span><h3>战争爆发<span class="ten">CASE WHITE</span></h3><p>国界定格于 8 月 31 日。从你的第一次移动开始，历史进入<b>你的版本</b>。</p></div>
-      <div class="tle rv"><span class="tm">1940 · 05</span><h3>西线闪击战<span class="ten">FALL GELB</span></h3><p>战报叙事——阿登森林不再是「不可穿越」，只要你的装甲敢走。</p></div>
-      <div class="tle rv"><span class="tm">1940 · 06</span><h3>意大利参战<span class="ten">ITALY JOINS</span></h3><p>意大利领土与军队转入轴心，地中海战线开启。</p></div>
-      <div class="tle rv"><span class="tm">1940 · 09</span><h3>不列颠空战<span class="ten">BATTLE OF BRITAIN</span></h3><p>海峡上空的空权争夺——空军压制与海岸组合的实战课堂。</p></div>
-      <div class="tle rv"><span class="tm">1940 · 11</span><h3>巴尔干加入轴心<span class="ten">BALKAN PACT</span></h3><p>匈牙利、罗马尼亚领土与军队转入轴心——南翼稳固，东进倒计时。</p></div>
-      <div class="tle key rv"><span class="tm">1941 · 06</span><h3>巴巴罗萨行动<span class="ten">BARBAROSSA</span></h3><p>轴心-苏联开战，<b>苏联紧急动员 10 个师开赴西部边境</b>。史上最大的陆地攻势，在一张 128×112 的地图上展开。</p></div>
-      <div class="tle key rv"><span class="tm">1941 · 12</span><h3>美国参战<span class="ten">USA ENTERS THE WAR</span></h3><p>同盟国收入 <b>+40</b>，伦敦出现美军先头部队与美军装备——工业天平开始倾斜。</p></div>
-      <div class="tle rv"><span class="tm">1942 · 07</span><h3>斯大林格勒<span class="ten">STALINGRAD</span></h3><p>战报叙事——城市战与崔可夫的高光时刻。</p></div>
-      <div class="tle rv"><span class="tm">1943 · 07</span><h3>库尔斯克<span class="ten">ZITADELLE</span></h3><p>战报叙事——史上最大坦克会战，装甲克制的终极考卷。</p></div>
-      <div class="tle key rv"><span class="tm">1944 · 06</span><h3>诺曼底登陆<span class="ten">OVERLORD</span></h3><p><b>最多 10 个盟军师在法国海岸抢滩</b>——两栖运输舰队此时就是你的生命线。</p></div>
-      <div class="tle rv"><span class="tm">每年 12–2 月</span><h3>俄罗斯严冬<span class="ten">GENERAL WINTER</span><span class="wtag">❄ RECURRING</span></h3><p>轴心国部队在苏联境内每月 <b>−12 兵力</b>，地图飘雪。拿破仑的教训，每年重放一遍。</p></div>
+      <div class="tle rv"><span class="tm">1939 · 09</span><h3><span data-i18n="战争爆发">战争爆发</span><span class="ten">CASE WHITE</span></h3><p data-i18n-html="国界定格于 8 月 31 日。从你的第一次移动开始，历史进入<b>你的版本</b>。">国界定格于 8 月 31 日。从你的第一次移动开始，历史进入<b>你的版本</b>。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 05</span><h3><span data-i18n="西线闪击战">西线闪击战</span><span class="ten">FALL GELB</span></h3><p data-i18n="战报叙事——阿登森林不再是「不可穿越」，只要你的装甲敢走。">战报叙事——阿登森林不再是「不可穿越」，只要你的装甲敢走。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 06</span><h3><span data-i18n="意大利参战">意大利参战</span><span class="ten">ITALY JOINS</span></h3><p data-i18n="意大利领土与军队转入轴心，地中海战线开启。">意大利领土与军队转入轴心，地中海战线开启。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 09</span><h3><span data-i18n="不列颠空战">不列颠空战</span><span class="ten">BATTLE OF BRITAIN</span></h3><p data-i18n="海峡上空的空权争夺——空军压制与海岸组合的实战课堂。">海峡上空的空权争夺——空军压制与海岸组合的实战课堂。</p></div>
+      <div class="tle rv"><span class="tm">1940 · 11</span><h3><span data-i18n="巴尔干加入轴心">巴尔干加入轴心</span><span class="ten">BALKAN PACT</span></h3><p data-i18n="匈牙利、罗马尼亚领土与军队转入轴心——南翼稳固，东进倒计时。">匈牙利、罗马尼亚领土与军队转入轴心——南翼稳固，东进倒计时。</p></div>
+      <div class="tle key rv"><span class="tm">1941 · 06</span><h3><span data-i18n="巴巴罗萨行动">巴巴罗萨行动</span><span class="ten">BARBAROSSA</span></h3><p data-i18n-html="轴心-苏联开战，<b>苏联紧急动员 10 个师开赴西部边境</b>。史上最大的陆地攻势，在一张 128×112 的地图上展开。">轴心-苏联开战，<b>苏联紧急动员 10 个师开赴西部边境</b>。史上最大的陆地攻势，在一张 128×112 的地图上展开。</p></div>
+      <div class="tle key rv"><span class="tm">1941 · 12</span><h3><span data-i18n="美国参战">美国参战</span><span class="ten">USA ENTERS THE WAR</span></h3><p data-i18n-html="同盟国收入 <b>+40</b>，伦敦出现美军先头部队与美军装备——工业天平开始倾斜。">同盟国收入 <b>+40</b>，伦敦出现美军先头部队与美军装备——工业天平开始倾斜。</p></div>
+      <div class="tle rv"><span class="tm">1942 · 07</span><h3><span data-i18n="斯大林格勒">斯大林格勒</span><span class="ten">STALINGRAD</span></h3><p data-i18n="战报叙事——城市战与崔可夫的高光时刻。">战报叙事——城市战与崔可夫的高光时刻。</p></div>
+      <div class="tle rv"><span class="tm">1943 · 07</span><h3><span data-i18n="库尔斯克">库尔斯克</span><span class="ten">ZITADELLE</span></h3><p data-i18n="战报叙事——史上最大坦克会战，装甲克制的终极考卷。">战报叙事——史上最大坦克会战，装甲克制的终极考卷。</p></div>
+      <div class="tle key rv"><span class="tm">1944 · 06</span><h3><span data-i18n="诺曼底登陆">诺曼底登陆</span><span class="ten">OVERLORD</span></h3><p data-i18n-html="<b>最多 10 个盟军师在法国海岸抢滩</b>——两栖运输舰队此时就是你的生命线。"><b>最多 10 个盟军师在法国海岸抢滩</b>——两栖运输舰队此时就是你的生命线。</p></div>
+      <div class="tle rv"><span class="tm" data-i18n="每年 12–2 月">每年 12–2 月</span><h3><span data-i18n="俄罗斯严冬">俄罗斯严冬</span><span class="ten">GENERAL WINTER</span><span class="wtag">❄ RECURRING</span></h3><p data-i18n-html="轴心国部队在苏联境内每月 <b>−12 兵力</b>，地图飘雪。拿破仑的教训，每年重放一遍。">轴心国部队在苏联境内每月 <b>−12 兵力</b>，地图飘雪。拿破仑的教训，每年重放一遍。</p></div>
     </div>
   </div>
 </section>
@@ -957,39 +959,39 @@ footer .fmeta a:hover{color:var(--gold-hi);border-color:var(--gold)}
 
     <div class="play-grid">
       <div class="rv" style="--d:1">
-        <p class="sec-lede" style="margin-bottom:26px">没有教程关。<b>左键点、拖动看、滚轮缩</b>，剩下的交给 H 键的帮助面板。</p>
-        <div class="keys" aria-label="操作方式">
-          <span class="keyrow"><kbd>左键</kbd><b>选择 / 攻击</b></span>
-          <span class="keyrow"><kbd>拖动</kbd><b>平移地图</b></span>
-          <span class="keyrow"><kbd>滚轮</kbd><b>缩放</b></span>
-          <span class="keyrow"><kbd>N</kbd><b>下一支部队</b></span>
-          <span class="keyrow"><kbd>E</kbd><b>结束回合</b></span>
-          <span class="keyrow"><kbd>G</kbd><b>将领</b></span>
-          <span class="keyrow"><kbd>H</kbd><b>帮助</b></span>
-          <span class="keyrow"><kbd>M</kbd><b>静音</b></span>
+        <p class="sec-lede" style="margin-bottom:26px" data-i18n-html="没有教程关。<b>左键点、拖动看、滚轮缩</b>，剩下的交给 H 键的帮助面板。">没有教程关。<b>左键点、拖动看、滚轮缩</b>，剩下的交给 H 键的帮助面板。</p>
+        <div class="keys" aria-label="操作方式" data-i18n-aria="操作方式">
+          <span class="keyrow"><kbd data-i18n="左键">左键</kbd><b data-i18n="选择 / 攻击">选择 / 攻击</b></span>
+          <span class="keyrow"><kbd data-i18n="拖动">拖动</kbd><b data-i18n="平移地图">平移地图</b></span>
+          <span class="keyrow"><kbd data-i18n="滚轮">滚轮</kbd><b data-i18n="缩放">缩放</b></span>
+          <span class="keyrow"><kbd>N</kbd><b data-i18n="下一支部队">下一支部队</b></span>
+          <span class="keyrow"><kbd>E</kbd><b data-i18n="结束回合">结束回合</b></span>
+          <span class="keyrow"><kbd>G</kbd><b data-i18n="将领">将领</b></span>
+          <span class="keyrow"><kbd>H</kbd><b data-i18n="帮助">帮助</b></span>
+          <span class="keyrow"><kbd>M</kbd><b data-i18n="静音">静音</b></span>
         </div>
         <div class="runbox" aria-label="本地运行方式">
-          <div class="rb-t"><i></i><i></i><i></i>&nbsp;离线运行 OFFLINE</div>
-          <pre><span class="c"># 免安装、零依赖，两条路任选</span>
-<span class="g">①</span> 在线试玩  <span class="c">→</span>  ttdnx2999-cmd.github.io/test_collab
-<span class="g">②</span> 本地离线  <span class="c">→</span>  git clone 后<b>双击 index.html</b></pre>
+          <div class="rb-t"><i></i><i></i><i></i>&nbsp;<span data-i18n="离线运行">离线运行</span> OFFLINE</div>
+          <pre><span class="c" data-i18n="# 免安装、零依赖，两条路任选"># 免安装、零依赖，两条路任选</span>
+<span class="g">①</span> <span data-i18n="在线试玩">在线试玩</span>  <span class="c">→</span>  ttdnx2999-cmd.github.io/test_collab
+<span class="g">②</span> <span data-i18n="本地离线">本地离线</span>  <span class="c">→</span>  <span data-i18n="git clone 后">git clone 后</span><b data-i18n="双击 index.html">双击 index.html</b></pre>
         </div>
       </div>
       <div class="rv" style="--d:2">
-        <div class="tech" aria-label="技术特性">
-          <span>零依赖 · 零构建<b>ZERO DEPENDENCIES</b></span>
-          <span>纯原生 Canvas 渲染<b>VANILLA CANVAS</b></span>
-          <span>离线可玩 · 单机<b>OFFLINE-READY · SINGLE-PLAYER</b></span>
-          <span>自动存档 · 续玩<b>SAVE &amp; RESUME</b></span>
-          <span>共享规则 · 难度影响AI加成<b>AI PLAYS BY THE RULES</b></span>
-          <span>政区 / 地形双渲染<b>POLITICAL / TERRAIN MODES</b></span>
+        <div class="tech" aria-label="技术特性" data-i18n-aria="技术特性">
+          <span><span data-i18n="零依赖 · 零构建">零依赖 · 零构建</span><b>ZERO DEPENDENCIES</b></span>
+          <span><span data-i18n="纯原生 Canvas 渲染">纯原生 Canvas 渲染</span><b>VANILLA CANVAS</b></span>
+          <span><span data-i18n="离线可玩 · 单机">离线可玩 · 单机</span><b>OFFLINE-READY · SINGLE-PLAYER</b></span>
+          <span><span data-i18n="自动存档 · 续玩">自动存档 · 续玩</span><b>SAVE &amp; RESUME</b></span>
+          <span><span data-i18n="共享规则 · 难度影响AI加成">共享规则 · 难度影响AI加成</span><b>AI PLAYS BY THE RULES</b></span>
+          <span><span data-i18n="政区 / 地形双渲染">政区 / 地形双渲染</span><b>POLITICAL / TERRAIN MODES</b></span>
         </div>
         <div class="runbox" style="margin-top:26px" aria-label="工程笔记">
           <div class="rb-t"><i></i><i></i><i></i>&nbsp;工程笔记 ENGINEERING NOTES</div>
-          <pre><span class="c">// 逻辑与表现完全分离</span>
-game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</span>
-离屏缓存分层渲染 <span class="c">→</span> 地形缓存复用、动态单位视口剔除
-<em id="fpsp">window.__fps</em> <span class="c">控制台可读实时帧率</span></pre>
+          <pre><span class="c" data-i18n="// 逻辑与表现完全分离">// 逻辑与表现完全分离</span>
+game.js <span class="c" data-i18n="不引用任何 DOM，可在 Node 里跑完整战役">不引用任何 DOM，可在 Node 里跑完整战役</span>
+<span data-i18n="离屏缓存分层渲染">离屏缓存分层渲染</span> <span class="c">→</span> <span data-i18n="地形缓存复用、动态单位视口剔除">地形缓存复用、动态单位视口剔除</span>
+<em id="fpsp">window.__fps</em> <span class="c" data-i18n="控制台可读实时帧率">控制台可读实时帧率</span></pre>
         </div>
       </div>
     </div>
@@ -1000,11 +1002,11 @@ game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</sp
 <section class="finale">
   <div class="fbg" aria-hidden="true"><img src="img/01-start-screen.jpg" alt="" width="1600" height="1000" loading="lazy"></div>
   <div class="fveil" aria-hidden="true"></div>
-  <h2 class="rv">历史已经写好。<br><em>该写你的了。</em></h2>
+  <h2 class="rv" data-i18n-html="历史已经写好。<br><em>该写你的了。</em>">历史已经写好。<br><em>该写你的了。</em></h2>
   <p class="fen rv" style="--d:1">HISTORY IS WRITTEN. NOW WRITE YOURS.</p>
   <div class="cta rv" style="--d:2">
-    <a class="btn btn-gold" href="../index.html?play=1">免费开战 · PLAY FREE <span class="arr">▸</span></a>
-    <a class="btn btn-ghost" href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener">GitHub 仓库</a>
+    <a class="btn btn-gold" href="../index.html?play=1"><span data-i18n="免费开战 · PLAY FREE">免费开战 · PLAY FREE</span> <span class="arr">▸</span></a>
+    <a class="btn btn-ghost" href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener" data-i18n="GitHub 仓库">GitHub 仓库</a>
   </div>
   <p class="fmono rv" style="--d:3">FREE · PLAYS IN YOUR BROWSER · OFFLINE-READY</p>
 </section>
@@ -1019,13 +1021,13 @@ game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</sp
         <svg viewBox="0 0 100 100" width="30" height="30" aria-hidden="true"><path d="M50 4 L92 28 V72 L50 96 L8 72 V28 Z" fill="#10141a" stroke="#d8b24a" stroke-width="5"/><circle cx="50" cy="50" r="12" fill="#d8b24a"/></svg>
         <b>钢铁欧陆 1939</b><span>IRON EUROPE 1939–1945</span>
       </div>
-      <p><b>免责声明：</b>地图为战略概化表示，不代表对任何领土主权的立场。地理数据来自 Natural Earth（公有领域）；历史边界经 1939 年事件校订，定格于 1939-08-31。本作致敬《欧陆战争》《将军的荣耀》《世界征服者》系列。</p>
+      <p data-i18n-html="<b>免责声明：</b>地图为战略概化表示，不代表对任何领土主权的立场。地理数据来自 Natural Earth（公有领域）；历史边界经 1939 年事件校订，定格于 1939-08-31。本作致敬《欧陆战争》《将军的荣耀》《世界征服者》系列。"><b>免责声明：</b>地图为战略概化表示，不代表对任何领土主权的立场。地理数据来自 Natural Earth（公有领域）；历史边界经 1939 年事件校订，定格于 1939-08-31。本作致敬《欧陆战争》《将军的荣耀》《世界征服者》系列。</p>
     </div>
     <div class="fmeta">
       MAP europe-1939-geographic-v8<br>
       TURN = 1 MONTH · SEPT 1939 — 1945<br>
       <a href="../index.html?play=1">PLAY ONLINE ↗</a>&nbsp;&nbsp;<a href="https://github.com/ttdnx2999-cmd/test_collab" target="_blank" rel="noopener">GITHUB ↗</a><br>
-      © 2026 钢铁欧陆 1939
+      <span data-i18n="© 2026 钢铁欧陆 1939">© 2026 钢铁欧陆 1939</span>
     </div>
   </div>
 </footer>
@@ -1036,6 +1038,13 @@ game.js <span class="c">不引用任何 DOM，可在 Node 里跑完整战役</sp
   <img src="" alt="">
 </div>
 
+<script src="../js/ui/i18n.js?v=landing-1"></script>
+<script src="../js/ui/i18n-en-landing.js?v=landing-1"></script>
+<script>
+/* 与游戏共用 localStorage 键：landing 切 EN → 游戏开局即 EN，反之亦然 */
+document.documentElement.classList.toggle('lang-en', typeof I18N !== 'undefined' && I18N.lang === 'en');
+document.documentElement.setAttribute('lang', (typeof I18N !== 'undefined' && I18N.lang === 'en') ? 'en' : 'zh-CN');
+</script>
 <script>
 (function(){
   "use strict";
