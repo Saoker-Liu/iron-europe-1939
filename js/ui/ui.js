@@ -1203,6 +1203,7 @@ function showStart(fac = 'axis', diff = 'normal') {
         ${hasSave ? '<button class="btn gold" id="m-continue">'+T('继续上次战役')+'</button>' : ''}
         <button class="btn gold" id="m-tutorial">${T('新手教程 · 约5分钟')}</button>
         <button class="btn" id="m-help2">${T('玩法说明')}</button>
+        <button class="btn" id="m-lang" title="Switch language / 切换语言">${(typeof I18N !== 'undefined' && I18N.lang === 'en') ? '中文' : 'EN'}</button>
       </div>
     </div>`);
   modalRoot.querySelectorAll('.fac-card').forEach(el => el.onclick = () => {
@@ -1226,6 +1227,8 @@ function showStart(fac = 'axis', diff = 'normal') {
   };
   const h2 = document.getElementById('m-help2');
   if (h2) h2.onclick = () => showHelp(() => showStart(fac, diff));
+  const ml = document.getElementById('m-lang');
+  if (ml) ml.onclick = () => { if (typeof I18N !== 'undefined') I18N.toggle(); };
 }
 
 function startGame(fac, diff, loaded) {
