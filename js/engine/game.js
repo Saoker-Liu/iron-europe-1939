@@ -605,6 +605,15 @@ class Game {
       const p = k.split(',').map(Number);
       if ((this.isSeagoing(u) ? this.ocean(...p) : this.landPassable(...p)) && !at(...p)) ends.set(k, v);
     }
+    // Minimum one-hex movement: only a legal, empty adjacent destination.
+    // Add after pathfinding so this allowance can never extend into a second step.
+    for(const [c,r] of this.neighbors(u.c,u.r)){
+      const k=key(c,r);
+      if(ends.has(k)||at(c,r)||this.blockedEdges.has(this.edgeKey([u.c,u.r],[c,r])))continue;
+      if(!(this.isSeagoing(u)?this.ocean(c,r):this.landPassable(c,r)))continue;
+      if(!Number.isFinite(this.terrainCost(u,c,r)))continue;
+      ends.set(k,Math.max(0,mov));prev.set(k,start);
+    }
     // A shore transition is a separate adjacent move and ends both actions.
     if(!this.isNaval(u) && !CLASSES[u.eq.cls].fly && this.transportOf(u))for(const p of this.neighbors(u.c,u.r)){
       const valid=this.isEmbarked(u)?this.landPassable(...p):this.ocean(...p);

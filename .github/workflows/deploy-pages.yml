@@ -34,6 +34,7 @@ jobs:
           node test_music.js
           node test_generals.js
           node build_general_catalog.js --check
+          node test_minimum_movement.js
           node test_transport.js
           node test_air.js
           node test_air_equipment.js
