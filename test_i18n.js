@@ -82,4 +82,29 @@ c3.window.location = { reload: () => { reloaded = true; } };
 I18N3.setLang('zh');
 assert.deepEqual(saved, ['iron-europe-lang', 'zh']);
 assert(reloaded, '切换语言必须整页刷新');
+/* ---- i18n-en-geo.js：assemble 后的就地数据翻译（EN 模式） ---- */
+const geoCtx = { localStorage: { getItem: () => 'en', setItem: () => {} } };
+geoCtx.window = geoCtx;
+geoCtx.document = makeDoc('en');
+geoCtx.TERRAIN = { '.': { name: '平原' } };
+geoCtx.COUNTRIES = { de: { name: '德国', note: '1939年德国附庸国' } };
+geoCtx.FACTION_NAME = { axis: '轴心国' };
+geoCtx.CITIES = [{ k: 'london', n: '伦敦', region: '英格兰南部', note: '大西洋运输港口与西部航道司令部所在地' }];
+geoCtx.RIVERS = [{ name: '莱茵河' }];
+geoCtx.MAP_META = { labels: [{ name: '北海' }] };
+vm.createContext(geoCtx);
+for (const f of ['js/ui/i18n.js', 'js/ui/i18n-en-geo.js'])
+  vm.runInContext(fs.readFileSync(f, 'utf8'), geoCtx, { filename: f });
+vm.runInContext('I18N.translateData()', geoCtx);
+assert.equal(geoCtx.TERRAIN['.'].name, 'Plains');
+assert.equal(geoCtx.TERRAIN['.']['_zhname'], '平原');
+assert.equal(geoCtx.COUNTRIES.de.name, 'Germany');
+assert.equal(geoCtx.FACTION_NAME.axis, 'Axis');
+assert.equal(geoCtx.CITIES[0].n, 'London');
+assert.equal(geoCtx.CITIES[0]._zhn, '伦敦');
+assert.equal(geoCtx.CITIES[0].region, 'southern England');
+assert.equal(geoCtx.CITIES[0].note, 'Atlantic convoy port and home of Western Approaches Command');
+assert.equal(geoCtx.RIVERS[0].name, 'Rhine');
+assert.equal(geoCtx.MAP_META.labels[0].name, 'North Sea');
+
 console.log('i18n: dict lookup, passthrough, slot reorder, tr() keeps _zh, onData, static DOM, lang persistence passed');
