@@ -13,6 +13,9 @@
   root.GameData.modules.events = {
     turnOf,
     EVENTS: [
+      { t: turnOf(1939,11),kind:'winterwar',title:'苏芬冬季战争',text:'苏联与芬兰爆发局部战争，不牵涉英法等国。芬兰夺取列宁格勒可迫使停战；苏联夺取赫尔辛基后以芬兰割让卡累利阿换取停战，芬兰保留独立。' },
+      { t: turnOf(1940,6),kind:'baltic',title:'苏联向波罗的海三国发出最后通牒',text:'苏联吞并仍独立且未加入大国阵营的爱沙尼亚、拉脱维亚和立陶宛，接收全部领土，三国军事单位解散。月回合将最后通牒与随后吞并合并结算。' },
+      { t: turnOf(1940,6),kind:'bessarabia',title:'苏联要求割让比萨拉比亚',text:'罗马尼亚向苏联割让基希讷乌及其比萨拉比亚附属地区，当地罗马尼亚部队撤回本国。' },
       { t: turnOf(1940, 5),  kind: 'log',   title: '西线闪击战', text: '1940年5月10日，德军发起"黄色方案"，装甲集群穿越阿登森林，法兰西战役爆发。' },
       { t: turnOf(1940, 6),  kind: 'italy', title: '意大利参战', text: '1940年6月10日，墨索里尼向英法宣战，意大利加入轴心国作战。' },
       { t: turnOf(1940, 9),  kind: 'log',   title: '不列颠空战', text: '戈林的德国空军与英国皇家空军在英伦上空展开殊死搏杀，"Never was so much owed by so many to so few."' },

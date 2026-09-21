@@ -22,7 +22,7 @@ for(const faction of ['axis','west','sov']){
  const italian=air.filter(u=>u.ct==='it');assert(italian.every(u=>g.unitFaction(u)==='neutral'&&g.targetsOf(u).length===0));
  const ids=italian.map(u=>u.id);g.turn=D.EVENTS.find(e=>e.kind==='italy').t;g.processEvents();
  assert(italian.every(u=>g.unitFaction(u)==='axis'));assert.deepEqual(g.units.filter(u=>u.ct==='it'&&g.isAir(u)).map(u=>u.id),ids);
- const saved=Game.deserialize(g.serialize());assert.deepEqual(saved.units.filter(u=>saved.isAir(u)).map(u=>[u.id,u.ct,u.eqKey,u.airbase,u.gen]),air.map(u=>[u.id,u.ct,u.eqKey,u.airbase,u.gen]));
+ const saved=Game.deserialize(g.serialize());assert.deepEqual(saved.units.filter(u=>saved.isAir(u)).map(u=>[u.id,u.ct,u.eqKey,u.airbase,u.gen]),g.units.filter(u=>g.isAir(u)).map(u=>[u.id,u.ct,u.eqKey,u.airbase,u.gen]));
  // Loading a pre-scenario save, including one with no aircraft, never injects a new air force.
  const old=JSON.parse(g.serialize());old.v=8;old.units=old.units.filter(u=>u.eqKey.split(':')[1]!=='air');old.genUnit.kesselring=null;
  assert.equal(Game.deserialize(JSON.stringify(old)).units.filter(u=>u.eq.cls==='air').length,0);

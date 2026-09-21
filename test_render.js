@@ -362,3 +362,10 @@ assert(h.run('UI.game.lesson===4&&UI.game.trainee.c===1&&UI.game.trainee.r===2&&
 h.run("UI.game.moveUnit(UI.game.trainee,2,2);UI.game.attack(UI.game.trainee,UI.game.target);select(UI.game.trainee)");
 assert(!h.run("document.getElementById('panel-body').innerHTML.includes('pb-undo')"));
 console.log('Undo UI and tutorial: button restores position/actions; actual attack removes undo.');
+
+// National borders must invalidate even when a cession stays inside one coalition.
+h.run("closeModal();UI.game=new Game('west');UI.political=true;const politicalBefore=terrainKey(UI.game);UI.game.cedeTerritory('fr','uk',['lille'])");
+assert(h.run('terrainKey(UI.game)!==politicalBefore'));
+assert(h.run("UI.game.territoryCountry(UI.game.cityByKey.lille.x,UI.game.cityByKey.lille.y)==='uk'"));
+assert.doesNotThrow(()=>h.run('rebuildTerrain(UI.game,UI.cam.z);drawMapLabels(UI.game)'));
+console.log('Political rendering: national cession within a coalition invalidates colors and borders.');

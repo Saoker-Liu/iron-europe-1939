@@ -141,7 +141,8 @@ function terrainScale(z) {
 
 function terrainKey(g) {
   let k = (g.tutorial?'tutorial':'campaign') + (g.isWinter() ? 'w' : 's') + (UI.political ? 'p' : 't');
-  for (const ci of g.cities) k += ci.owner[0];
+  for (const ci of g.cities) k += ci.owner+':'+g.controllingCountry(ci)+';';
+  k+=':'+g.politicalRevision;
   return k;
 }
 
@@ -175,7 +176,7 @@ function rebuildTerrain(g, z) {
   for (let r = 0; r < mapHeight; r++) for (let c = 0; c < mapWidth; c++) {
     const t = g.tile(c, r);
     if (!t || !g.landPassable(c, r)) continue;
-    const ct = g.homeCountryOf(c, r);
+    const ct = g.territoryCountry(c, r);
     const owner = g.territoryOwner(c, r);
     if (!owner || !ct) continue;
     const col = UI.political ? COUNTRIES[ct].color : (FACTION_COLOR[owner] || '#888888');
@@ -197,7 +198,7 @@ function rebuildTerrain(g, z) {
     if (!g.landPassable(c, r)) continue;
     for (const p of g.neighbors(c, r)) {
       if (!g.landPassable(...p)) edge([c, r], p, '#abc2c7', Math.max(.5, s2 * .055));
-      else if (r * mapWidth + c < p[1] * mapWidth + p[0] && g.homeCountryOf(c, r) !== g.homeCountryOf(...p)) edge([c, r], p, '#263039', Math.max(.8, s2 * .055));
+      else if (r * mapWidth + c < p[1] * mapWidth + p[0] && g.territoryCountry(c, r) !== g.territoryCountry(...p)) edge([c, r], p, '#263039', Math.max(.8, s2 * .055));
     }
   }
   for (const k of (g.tutorial?[]:MAP_META.blockedEdges)) {
@@ -272,12 +273,12 @@ function drawMapLabels(g) {
   }
   const cam=UI.cam, level=MapLabels.tier(cam.z,MAP_META);
   const key=[cam.x,cam.y,cam.z,innerWidth,innerHeight].join('|');
-  if(mapLabelCache.key!==key||mapLabelCache.game!==g){
-    const items=MapLabels.candidates(MAP_META,g.cities,cam.z);
+  if(mapLabelCache.key!==key||mapLabelCache.game!==g||mapLabelCache.revision!==g.politicalRevision){
+    const items=MapLabels.candidates(MAP_META,g.cities,cam.z).filter(label=>label.kind!=='country'||!Object.keys(g.annexed||{}).some(ct=>COUNTRIES[ct]?.name===label.text));
     mapLabelCache.items=MapLabels.layout(items,{...cam,width:innerWidth,height:innerHeight},(text,size)=>{
       cx.font=`600 ${size}px "Microsoft YaHei",sans-serif`;return cx.measureText(text).width;
     });
-    mapLabelCache.key=key;mapLabelCache.game=g;
+    mapLabelCache.key=key;mapLabelCache.game=g;mapLabelCache.revision=g.politicalRevision;
   }
   cx.save();cx.textAlign='center';cx.textBaseline='middle';cx.setLineDash([]);
   for(const label of mapLabelCache.items){
@@ -372,7 +373,7 @@ function drawFrame(now) {
   const uM = s * 2;
   const simple = s < 11;
   for (const u of g.units) {
-    if (!UI.showUnits || g.isAir(u) || u.carrierId) continue;
+    if (!UI.showUnits || u.evacuated || g.isAir(u) || u.carrierId) continue;
     const isSel = u === UI.sel;
     let [x, y] = hexToPix(u.c, u.r);
     const animating = UI.moveAnim && UI.moveAnim.unit === u && UI.moveAnim.path.length > 0;
@@ -940,7 +941,7 @@ function updateTooltip(sx, sy, target) {
     if (T) {
       let ex = '';
       if (t === 'c') { const ci = g.cityAt(c, r); ex = ci && ci.cap ? '（首都 防御+60%）' : ''; }
-      const ct = g.homeCountryOf(c, r);
+      const ct = g.territoryCountry(c, r);
       const ll = Geography.hexToGeo(c, r);
       html = `${T.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}${g.tutorial?'<br>虚构演习地图':`<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`}`;
     }
@@ -1383,8 +1384,8 @@ function showHelp(onReturn) {
         八类舰艇仅在海上移动，不能登陆占城。潜艇只能攻击海上目标；驱逐舰、潜艇、航母和空军可以反潜。水面舰可岸轰，航母直接用舰载机远程打击，无需另造机队。己方军港每回合修复25兵力。<br>
         军港随城市控制权转移。青色短线为真实狭窄海峡的通航连接，按格距消耗移动力；基尔运河暂仅为地理标记。<br>
         <h4>■ 胜负</h4>
-        <b>占领敌方首都 → 该国全境沦陷</b>（所有城市易手）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。<br>
-        中立国（西班牙/瑞典/瑞士/土耳其等）可进攻，但会倒向你的敌人！
+        <b>占领敌方首都 → 该国投降并被吞并</b>（全部领土转移，原国家军事单位解散；冬季战争按专用停战条款结算）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。<br>
+        中立国可进攻。巴巴罗萨行动前，苏联进攻中立国仅触发双方局部战争，不牵连同盟国；其他情况沿用倒向敌方阵营的规则。<br>占领城市会转移其附属领土；等距属于多座城市的格子，只有全部相关城市归同一占领国才转移。割让会迁走原国家部队，吞并则解散原国家全部部队。政区颜色与边界随实际控制国变化。
         <h4>■ 音乐与署名</h4>
         音乐与音效可用顶部🔊按钮或 M 键统一开关。首次点击或按键后开始播放，切到后台时暂停。<br>
         Music: Five Armies, Air Prelude, Impact Moderato, Fanfare for Space, Wounded<br>

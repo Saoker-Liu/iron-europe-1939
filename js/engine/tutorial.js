@@ -13,6 +13,7 @@ class TutorialGame extends TutorialBase {
     this.terr['1,0']='f';this.terr['2,0']='f';this.terr['6,1']='h';this.terr['6,4']='m';
     this.cities=[{k:'training-base',n:'训练营',ct:'de',x:1,y:2,cap:false,owner:'axis',inc:25},
       {k:'training-town',n:'演习镇',ct:'pl',x:4,y:2,cap:false,owner:'west',inc:15}];
+    for(const ci of this.cities)ci.controlCt=ci.ct;
     this.cityByKey=Object.fromEntries(this.cities.map(c=>[c.k,c]));
     for(const c of this.cities)this.terr[c.x+','+c.y]='c';
     this.trainee=this.spawnUnit('de','de:infantry:0',1,2,{silent:true});
