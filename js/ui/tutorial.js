@@ -1,5 +1,8 @@
 /* Guided practice runs in the normal map UI; no campaign save writes. */
 'use strict';
+/* 双语层：i18n.js 仅在浏览器加载；测试沙箱保持中文原样 */
+var T = (typeof I18N !== 'undefined' && I18N.t) ? I18N.t : (s => s);
+var F = (typeof I18N !== 'undefined' && I18N.f) ? I18N.f : ((tpl, ...a) => tpl.replace(/\{(\d+)\}/g, (m, i) => a[+i] === undefined ? m : String(a[+i])));
 const LESSONS=[
  ['认识地图','按住地图空白处拖动；滚轮缩放。右侧查看单位，顶栏查看经济与回合。试一试后点击“开始练习”。'],
  ['选择部队','点击训练营上的己方步兵棋子（黄色圈）。右侧显示攻击、防御、兵力和移动力。'],
@@ -38,11 +41,11 @@ function updateTutorial(){
   const box=document.getElementById('tutorial-coach'),step=g.lesson;
   if(box.dataset?.step!==String(step)){
     box.dataset.step=String(step);
-    box.innerHTML=`<div class="tutorial-heading">新手演习 · ${Math.min(step+1,8)} / 8 <span>8×5 局部地图</span></div>
-      <h3>${LESSONS[step][0]}</h3><p>${LESSONS[step][1]}</p>
-      <div class="row-btns">${step===0?'<button class="btn gold" id="tutorial-begin">开始练习</button>':''}
-      ${step===8?'<button class="btn gold" id="tutorial-campaign">选择阵营 · 开始战役</button>':''}
-      <button class="btn" id="tutorial-locate">定位目标</button><button class="btn" id="tutorial-retry">重新练习</button><button class="btn" id="tutorial-exit">退出教程</button></div>`;
+    box.innerHTML=`<div class="tutorial-heading">${F('新手演习 · {0} / 8', Math.min(step+1,8))} <span>${T('8×5 局部地图')}</span></div>
+      <h3>${T(LESSONS[step][0])}</h3><p>${T(LESSONS[step][1])}</p>
+      <div class="row-btns">${step===0?`<button class="btn gold" id="tutorial-begin">${T('开始练习')}</button>`:''}
+      ${step===8?`<button class="btn gold" id="tutorial-campaign">${T('选择阵营 · 开始战役')}</button>`:''}
+      <button class="btn" id="tutorial-locate">${T('定位目标')}</button><button class="btn" id="tutorial-retry">${T('重新练习')}</button><button class="btn" id="tutorial-exit">${T('退出教程')}</button></div>`;
     const begin=document.getElementById('tutorial-begin');if(begin)begin.onclick=()=>{g.lesson=1;updateTutorial();};
     const campaign=document.getElementById('tutorial-campaign');if(campaign)campaign.onclick=exitTutorial;
     document.getElementById('tutorial-locate').onclick=fitTutorial;

@@ -423,4 +423,34 @@
     '空军机制升级：原有飞机已转入最近己方机场，兵力、经验与将领保留。': 'Air system upgrade: existing aircraft moved to the nearest friendly airfield, keeping strength, experience and generals.',
     '地图海岸校正：{0}支部队已移至最近空闲的同类地形格，兵力与装备保留。': 'Coastline corrections: {0} unit(s) moved to the nearest free hex of the same terrain, strength and equipment kept.',
   });
+
+  /* ==================== 新手教程 ==================== */
+  I18N.add({
+    '训练营': 'Training Camp', '演习镇': 'Practice Town',
+    '新手演习：虚构的8×5格训练场。对手不主动行动；不写入战役存档。': 'Training exercise: a fictional 8×5-hex proving ground. The opponent never acts; nothing is written to campaign saves.',
+    '新回合：行动力恢复，城市收入 +{0} 金。': 'New turn: moves restored, city income +{0} gold.',
+    '教程不写入正式战役存档': 'The tutorial never writes to campaign saves',
+    '新手演习 · {0} / 8': 'Training Exercise · {0} / 8',
+    '8×5 局部地图': '8×5 local map',
+    '开始练习': 'Start Practising', '定位目标': 'Show Goal', '重新练习': 'Restart Drill', '退出教程': 'Quit Tutorial',
+    '选择阵营 · 开始战役': 'Pick a Faction · Start the Campaign',
+    '认识地图': 'Get to Know the Map',
+    '按住地图空白处拖动；滚轮缩放。右侧查看单位，顶栏查看经济与回合。试一试后点击“开始练习”。': 'Drag the empty map to pan; scroll to zoom. Units are listed on the right, economy and turn in the top bar. Try it, then click "Start Practising".',
+    '选择部队': 'Select a Unit',
+    '点击训练营上的己方步兵棋子（黄色圈）。右侧显示攻击、防御、兵力和移动力。': 'Click your infantry piece on the training camp (yellow ring). Attack, defence, strength and movement appear on the right.',
+    '移动到前沿': 'Move to the Front',
+    '点击黄色圈中的蓝色格，将步兵移动一格。蓝色表示可移动范围；本步骤只开放目标格。': 'Click the blue hex inside the yellow ring to move the infantry one step. Blue marks the movement range; this step only opens the goal hex.',
+    '攻击演习对手': 'Attack the Sparring Partner',
+    '点击黄色圈中的敌方民兵。敌军仅剩10兵力，足以一击击败。移动后仍可攻击，但攻击后不能再移动。': 'Click the enemy militia inside the yellow ring. It is down to 10 strength — one blow finishes it. A moved unit may still attack, but an attacking unit cannot move again.',
+    '结束回合': 'End the Turn',
+    '点击顶栏“结束回合”，或按 E / 回车。下一回合恢复行动力、获得城市收入；演习对手不会主动行动。': 'Click "End Turn" in the top bar, or press E / Enter. Next turn moves are restored and city income arrives; the sparring partner never acts on its own.',
+    '占领城镇': 'Take the Town',
+    '再次选中步兵，点击黄色圈中的演习镇。陆军进入无人驻守的敌城即可占领，城市将为你提供收入。': 'Select the infantry again and click Practice Town inside the yellow ring. An army entering an undefended enemy city captures it, and the city pays you income.',
+    '招募援军': 'Recruit Reinforcements',
+    '点击左侧空闲的训练营，选择“徒步步兵”栏，再点击普通步兵进行招募。必须有足够经济，且城市格没有陆军占用。': 'Click the free training camp on the left, pick the "Foot Infantry" tab, then click the regular infantry to recruit it. You need enough gold and an unoccupied city hex.',
+    '等待新兵就绪': 'Wait for the Recruits',
+    '新招募的部队本回合不能移动或攻击。再次点击“结束回合”，查看它们恢复行动力和经济增长。': 'Newly recruited units cannot move or attack this turn. Click "End Turn" again and watch their moves recover and your economy grow.',
+    '演习完成': 'Exercise Complete',
+    '你已掌握选中、移动、攻击、占城、招募和回合结算。主战役还包含工厂、机场、军港与将领，可随时打开玩法说明。': 'You have mastered selecting, moving, attacking, capturing, recruiting and turn resolution. The main campaign adds factories, airfields, naval ports and generals — open the manual any time.',
+  });
 })();
