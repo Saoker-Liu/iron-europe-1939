@@ -1,12 +1,14 @@
 /* National territory and limited wars, independent of the three playable coalitions. */
 (function(root){
 'use strict';
+const T = s => typeof I18N !== 'undefined' ? I18N.t(s) : s;
+const F = (s,...a) => typeof I18N !== 'undefined' ? I18N.f(s,...a) : s.replace(/\{(\d+)\}/g,(_,i)=>a[+i]??_);
 function install(Game){Object.assign(Game.prototype,{
   politicalState(){return {landTransfers:this.landTransfers,annexed:this.annexed,events:this.diplomacyEvents,winterWar:this.winterWar,
     cities:this.cities.map(c=>({ct:c.ct,controlCt:c.controlCt||c.ct,cap:!!c.cap}))};},
   restorePoliticalState(p){
     this.landTransfers={...p.landTransfers};this.annexed={...p.annexed};this.diplomacyEvents={...p.events};this.winterWar=p.winterWar;
-    p.cities.forEach((c,i)=>{if(!COUNTRIES[c.ct]||!COUNTRIES[c.controlCt])throw Error('无效的领土国家');Object.assign(this.cities[i],c);});this.rebuildDependencies();
+    p.cities.forEach((c,i)=>{if(!COUNTRIES[c.ct]||!COUNTRIES[c.controlCt])throw Error(T('无效的领土国家'));Object.assign(this.cities[i],c);});this.rebuildDependencies();
   },
   initTerritory(){
     this.landTransfers={};this.annexed={};this.diplomacyEvents={};this.winterWar=null;this.politicalRevision=0;
@@ -52,14 +54,14 @@ function install(Game){Object.assign(Game.prototype,{
   },
   neutralMoveCountries(u,path){return [...new Set((path||[]).map(p=>this.neutralEntryCountry(u,...p)).filter(Boolean))];},
   neutralityConsequence(ct,f){
-    if(f==='sov'&&this.turn<turnOf(1941,6)&&!this.atWar('axis','sov'))return `${COUNTRIES[ct].name}将与苏联爆发局部战争，其他国家不参战。`;
+    if(f==='sov'&&this.turn<turnOf(1941,6)&&!this.atWar('axis','sov'))return F("{0}将与苏联爆发局部战争，其他国家不参战。", COUNTRIES[ct].name);
     const foes=['axis','west','sov'].filter(x=>x!==f&&this.atWar(f,x));
     const target=(foes.length?foes:['axis','west','sov'].filter(x=>x!==f)).sort((a,b)=>this.factionIncome(b)-this.factionIncome(a))[0];
-    return `${COUNTRIES[ct].name}将加入${this.factionName(target)}并与你交战。${this.atWar(f,target)?'':'这也会使你与该阵营开战。'}`;
+    return F("{0}将加入{1}并与你交战。{2}", COUNTRIES[ct].name, this.factionName(target), this.atWar(f,target)?'':T('这也会使你与该阵营开战。'));
   },
   activeFactions(){return ['axis','west','sov',...new Set(Object.values(this.cf).filter(f=>f?.startsWith('local:')))];},
   registerLocalFactions(){for(const ct of Object.keys(COUNTRIES)){
-    const f='local:'+ct;FACTION_NAME[f]=COUNTRIES[ct].name+'（局部战争）';FACTION_COLOR[f]=COUNTRIES[ct].color;
+    const f='local:'+ct;FACTION_NAME[f]=COUNTRIES[ct].name+T('（局部战争）');FACTION_COLOR[f]=COUNTRIES[ct].color;
   }},
   beginLocalWar(ct){
     if(this.annexed[ct]||this.annexed.su||ct==='su')return false;
@@ -68,7 +70,7 @@ function install(Game){Object.assign(Game.prototype,{
     for(const ci of this.cities)if(ci.ct===ct&&this.controllingCountry(ci)===ct){ci.owner=f;ci.controlCt=ct;}
     this.wars.add(['sov',f].sort().join('|'));this.politicalRevision++;this.terrDirty=true;
     if(ct==='fi'&&!this.winterWar)this.winterWar={status:'active'};
-    this.pushLog(`苏联与${COUNTRIES[ct].name}爆发局部战争，其他国家不参战。`,'war');return true;
+    this.pushLog(F("苏联与{0}爆发局部战争，其他国家不参战。", COUNTRIES[ct].name),'war');return true;
   },
   relocateNationalUnits(ct,units){
     // A cession evacuates the donor's units to nearest remaining national controlled land/base/coast.
@@ -106,7 +108,7 @@ function install(Game){Object.assign(Game.prototype,{
     for(const k of cells)this.landTransfers[k]=to;
     for(const k of selected){const ci=this.cityByKey[k];ci.ct=to;ci.controlCt=to;ci.owner=this.cf[to];ci.cap=false;}
     this.rebuildDependencies();this.relocateNationalUnits(from,evacuate);this.lastMove=null;
-    this.pushLog(`${COUNTRIES[from].name}向${COUNTRIES[to].name}割让${[...selected].map(k=>this.cityByKey[k].n).join('、')}及附属领土，原国家部队撤回本国。`,'event');return true;
+    this.pushLog(F("{0}向{1}割让{2}及附属领土，原国家部队撤回本国。", COUNTRIES[from].name, COUNTRIES[to].name, [...selected].map(k=>this.cityByKey[k].n).join('、')),'event');return true;
   },
   annexCountry(from,to){
     if(from===to||this.annexed[from]||this.annexed[to])return false;
@@ -123,7 +125,7 @@ function install(Game){Object.assign(Game.prototype,{
     }
     if(nations.has('fi')&&this.winterWar?.status==='active')this.winterWar={status:'peace',outcome:'finland-annexed'};
     this.lastMove=null;this.rebuildDependencies();
-    this.pushLog(`${COUNTRIES[to].name}吞并${COUNTRIES[from].name}，其全部领土移交，原国家军事单位解散。`,'war');return true;
+    this.pushLog(F("{0}吞并{1}，其全部领土移交，原国家军事单位解散。", COUNTRIES[to].name, COUNTRIES[from].name),'war');return true;
   },
   finishWinterWar(sovietVictory){
     if(this.winterWar?.status!=='active')return;
@@ -135,15 +137,15 @@ function install(Game){Object.assign(Game.prototype,{
     if(sovietVictory)this.cedeTerritory('fi','su',['viipuri']);
     for(const ct of ['su','fi'])this.relocateNationalUnits(ct,this.units.filter(u=>u.ct===ct&&this.legalCountry(u.c,u.r)!==ct&&!this.isNaval(u)));
     this.politicalRevision++;this.terrDirty=true;this.lastMove=null;
-    const title=sovietVictory?'冬季战争停战：割让卡累利阿':'冬季战争停战：列宁格勒失守';
-    const text=sovietVictory?'芬兰保留独立，向苏联割让维堡及其卡累利阿附属地区；双方部队撤回本国。':'芬兰夺取列宁格勒，迫使苏联停战。双方归还临时占领区，部队撤回本国。';
+    const title=sovietVictory?T('冬季战争停战：割让卡累利阿'):T('冬季战争停战：列宁格勒失守');
+    const text=sovietVictory?T('芬兰保留独立，向苏联割让维堡及其卡累利阿附属地区；双方部队撤回本国。'):T('芬兰夺取列宁格勒，迫使苏联停战。双方归还临时占领区，部队撤回本国。');
     this.pendingEvents.push({title,text});this.pushLog(title+'。'+text,'event');
   },
   partitionPoland(){
     if(this.diplomacyEvents.poland||this.annexed.pl!=='de'||this.turn>=turnOf(1941,6)||this.atWar('axis','sov')||this.annexed.su)return;
     this.diplomacyEvents.poland=true;
     this.cedeTerritory('de','su',['lwow','wilno','brestlitovsk','grodno','bialystok','luck','rowno','pinsk','tarnopol']);
-    const ev={title:'莫洛托夫·里宾特洛甫条约：瓜分波兰',text:'德国迫使波兰投降后，按约定将波兰东部地区割让给苏联，德军撤出割让区。边界按现有城市附属领土概化。'};
+    const ev={title:T('莫洛托夫·里宾特洛甫条约：瓜分波兰'),text:T('德国迫使波兰投降后，按约定将波兰东部地区割让给苏联，德军撤出割让区。边界按现有城市附属领土概化。')};
     this.pendingEvents.push(ev);this.pushLog(ev.title,'event');
   },
   diplomaticEvent(ev){

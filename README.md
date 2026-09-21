@@ -1,5 +1,9 @@
 # 钢铁欧陆 1939
 
+[English player guide](README.en.md) · [试玩反馈问卷](survey.html)
+
+介绍页右上角可选择中文／English，语言选择会带入正式战役和教程。战役中切换语言前会保存进度；舰名标识不随语言变化，存档可在中英文之间继续游玩。问卷可在浏览器填写并下载答案，网页不自动上传反馈。
+
 浏览器单机六边形回合制战棋。原生 HTML、Canvas 与 JavaScript，无需安装游戏运行依赖，可离线游玩。
 
 [开始游戏](https://ttdnx2999-cmd.github.io/test_collab/) · [部署状态](https://github.com/ttdnx2999-cmd/test_collab/actions/workflows/deploy-pages.yml) · [开发与验证](DEVELOPMENT.md)

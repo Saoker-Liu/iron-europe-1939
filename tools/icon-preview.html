@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>兵种图标预览 · 钢铁欧陆 1939</title>
 <!--
-  改动 js/ui/unit-icons.js 后，用浏览器打开本页即可检查四种兵种图标的效果。
+  改动 js/ui/unit-icons.js 后，用浏览器打开本页即可检查全部兵种／舰种图标的效果。
   无需服务器：双击本文件即可（file:// 下也能加载 ../js/ui/unit-icons.js）。
   检查要点：
     ① 尺寸梯度：缩到 s=8 是否还能大致分辨兵种（这是替换汉字的主要动机）
@@ -39,8 +39,16 @@
 
 <script src="../js/ui/unit-icons.js"></script>
 <script>
-const CLASSES = { inf:{name:'步兵'}, art:{name:'炮兵'}, tank:{name:'装甲'}, air:{name:'空军'} };
-const CLS = ['inf','art','tank','air'];
+const CLASSES = { inf:{name:'步兵'}, art:{name:'炮兵'}, tank:{name:'装甲'}, air:{name:'空军(通用)'},
+  airFighter:{name:'轻战'}, airHeavy:{name:'重战'}, airCas:{name:'近支'}, airNaval:{name:'海轰'},
+  airTactical:{name:'战术'}, airStrategic:{name:'战略'}, airTransport:{name:'运输机'},
+  tankCar:{name:'装甲车'}, tankLight:{name:'轻坦'}, tankHeavy:{name:'重坦'}, tankSuperheavy:{name:'超重'},
+  artAa:{name:'防空'}, artAt:{name:'反坦克'}, artField:{name:'野战'}, artRocket:{name:'火箭'},
+  infCavalry:{name:'骑兵'}, infMotorized:{name:'摩托化'}, infMechanized:{name:'机械化'},
+  sub:{name:'潜艇'}, dd:{name:'驱逐舰'}, cl:{name:'轻巡'}, ca:{name:'重巡'},
+  bc:{name:'战巡'}, bb:{name:'战列'}, cve:{name:'护航航母'}, cv:{name:'航母'},
+  transport:{name:'运输船'} };
+const CLS = Object.keys(CLASSES);
 /* nations.js 里真实的国家配色；yl/wht 是人为加的最亮底色，用于压测对比度 */
 const COLORS = { de:'#66796b', su:'#b03a31', uk:'#b39b45', fi:'#9bb0c4',
                  dk:'#c0504d', gr:'#6f9fc4', yl:'#e8dc9a', wht:'#f2f2f2' };
@@ -56,6 +64,7 @@ function disc(cx, x, y, s, cc, fc) {
 /* ① 尺寸梯度（与 ui.js 的渲染顺序一致） */
 (function () {
   const cx = document.getElementById('cv1').getContext('2d');
+  cv1.height = 100 + CLS.length * 62;   // 行数随兵种/舰种数量自适应
   cx.font = '11px "Microsoft YaHei",sans-serif';
   [8, 11, 14, 18, 24, 36, 52, 76].forEach((s, i) => {
     const x0 = 40 + i * 132;
@@ -96,9 +105,10 @@ document.getElementById('domrow').innerHTML = CLS.map(c =>
 /* ④ 放大（纯色填充，最容易看出破形） */
 (function () {
   const cx = document.getElementById('cv4').getContext('2d');
-  const K = 1.6, cy = 92;
+  const K = 1.6, COLS = 5;
+  cv4.height = 60 + Math.ceil(CLS.length / COLS) * 205;
   CLS.forEach((c, i) => {
-    const bx = 145 + i * 258;
+    const bx = 105 + (i % COLS) * 216, cy = 92 + Math.floor(i / COLS) * 205;
     cx.save();
     cx.translate(bx, cy);          // 形状以 (0,0) 为中心，必须先移到目标位置再放大
     cx.scale(K, K);
@@ -107,7 +117,7 @@ document.getElementById('domrow').innerHTML = CLS.map(c =>
     cx.restore();
     cx.textAlign = 'center'; cx.fillStyle = '#556';
     cx.font = '12px "Microsoft YaHei",sans-serif';
-    cx.fillText(CLASSES[c].name + '  ' + c, bx, 192);
+    cx.fillText(CLASSES[c].name + '  ' + c, bx, cy + 100);
   });
 })();
 </script>

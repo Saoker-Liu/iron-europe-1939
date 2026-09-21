@@ -31,6 +31,9 @@ jobs:
           node test_render.js
           node test_tutorial.js
           node test_unit_icons.js
+          node test_i18n.js
+          node test_i18n_landing.js
+          node test_i18n_campaign.js
           node test_music.js
           node test_generals.js
           node build_general_catalog.js --check
@@ -53,7 +56,7 @@ jobs:
       - name: 打包游戏和地图资料
         run: |
           mkdir -p _site/artifacts
-          cp DIPLOMACY.md GENERAL_CATALOG.md MUSIC.md index.html README.md MAP_NOTES.md CITY_CATALOG.md NAVAL_CATALOG.md NAVAL_NAMES.md AIR_CATALOG.md _site/
+          cp survey.html README.en.md DIPLOMACY.en.md DIPLOMACY.md GENERAL_CATALOG.md MUSIC.md index.html README.md MAP_NOTES.md CITY_CATALOG.md NAVAL_CATALOG.md NAVAL_NAMES.md AIR_CATALOG.md _site/
           cp -R js map_sources music docs landing tools _site/
           cp artifacts/europe-1939-political.png artifacts/europe-1939-terrain.png artifacts/label-levels.png artifacts/naval-ports-detail.png artifacts/coast-river-detail.png _site/artifacts/
           touch _site/.nojekyll

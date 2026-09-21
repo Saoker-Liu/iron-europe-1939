@@ -6,7 +6,10 @@
   // 默认先展示介绍页；只有主动点击开战才加载游戏和阵营选择。
   if (new URLSearchParams(window.location.search).get('play') !== '1') {
     document.documentElement.style.visibility = 'hidden';
-    window.location.replace(new URL('landing/index.html', window.location.href).href);
+    const target = new URL('landing/index.html', window.location.href);
+    const lang = new URLSearchParams(window.location.search).get('lang');
+    if (['zh','en'].includes(lang)) target.searchParams.set('lang',lang);
+    window.location.replace(target.href);
   }
 </script>
 <title>钢铁欧陆 1939 · 二战六边形战棋</title>
@@ -139,7 +142,7 @@
   .diff-row { display: flex; gap: 8px; margin: 14px 0; }
   .diff-opt { flex: 1; text-align: center; padding: 8px; background: #1d242e; border: 2px solid #2e3947; border-radius: 4px; cursor: pointer; font-size: 13px; }
   .diff-opt.sel { border-color: #d8b24a; color: #d8b24a; font-weight: 700; }
-  .modal .actions { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+  .modal .actions { flex-wrap: wrap; display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
   .gen-row { display: flex; gap: 10px; padding: 10px; border-bottom: 1px solid #232c38; align-items: flex-start; }
   .gen-portrait { width: 54px; height: 54px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center;
     justify-content: center; font-size: 20px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000; border: 2px solid #d8b24a88; }
@@ -165,6 +168,10 @@
   .help-body table { border-collapse: collapse; margin: 6px 0; }
   .help-body td, .help-body th { border: 1px solid #2e3947; padding: 3px 9px; font-size: 12px; }
   ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #33404f; border-radius: 4px; }
+  .lang-en .boot-title { letter-spacing: 3px; }
+  .lang-en #map-legend { width: 320px !important; }
+  .lang-en .s-name, .lang-en .p-title { overflow-wrap: anywhere; }
+  .lang-en .fac-card { min-width: 0; }
 </style>
 </head>
 <body>
@@ -177,47 +184,53 @@
     <span id="date" style="color:#c9d1da"></span>
   </div>
   <div id="tb-right">
-    <button class="btn" id="btn-atlas">地图全览</button>
-    <button class="btn" id="btn-cities">查找城市</button>
-    <button class="btn" id="btn-mapmode">政区 / 地形</button>
-    <button class="btn" id="btn-units">隐藏部队</button>
-    <button class="btn" id="btn-gen">🎖 将领</button>
-    <button class="btn" id="btn-help">❓ 帮助</button>
-    <button class="btn" id="btn-sound" title="音乐与音效开关（M）" aria-label="音乐与音效开关">🔊</button>
-    <button class="btn" id="btn-save">💾 存档</button>
-    <button class="btn" id="btn-menu" title="保存当前战役并返回主菜单">⌂ 主菜单</button>
-    <button class="btn primary" id="btn-end">结束回合 ⏎</button>
+    <button class="btn" id="btn-atlas" data-i18n="地图全览">地图全览</button>
+    <button class="btn" id="btn-cities" data-i18n="查找城市">查找城市</button>
+    <button class="btn" id="btn-mapmode" data-i18n="政区 / 地形">政区 / 地形</button>
+    <button class="btn" id="btn-units" data-i18n="隐藏部队">隐藏部队</button>
+    <button class="btn" id="btn-gen" data-i18n="🎖 将领">🎖 将领</button>
+    <button class="btn" id="btn-help" data-i18n="❓ 帮助">❓ 帮助</button>
+    <button class="btn" id="btn-lang" title="Switch language / 切换语言">EN</button>
+    <button class="btn" id="btn-sound" data-i18n-title="音乐与音效开关（M）" data-i18n-aria="音乐与音效开关" title="音乐与音效开关（M）" aria-label="音乐与音效开关" data-i18n-aria-label="音乐与音效开关">🔊</button>
+    <button class="btn" id="btn-save" data-i18n="💾 存档">💾 存档</button>
+    <button class="btn" id="btn-menu" data-i18n-title="保存当前战役并返回主菜单" title="保存当前战役并返回主菜单" data-i18n="⌂ 主菜单">⌂ 主菜单</button>
+    <button class="btn primary" id="btn-end" data-i18n="结束回合 ⏎">结束回合 ⏎</button>
   </div>
 </header>
 
 <aside id="panel"><div id="panel-body"></div></aside>
 
 <div id="log">
-  <div id="log-head">📜 战报（点击折叠）</div>
+  <div id="log-head" data-i18n="📜 战报（点击折叠）">📜 战报（点击折叠）</div>
   <div id="log-body"></div>
 </div>
 
 <div id="tooltip"></div>
 <div id="map-legend" style="position:absolute;right:12px;width:296px;bottom:14px;z-index:4;pointer-events:none;background:#111b27ed;padding:10px 14px;border:1px solid #586673;border-radius:5px;font-size:12px;line-height:1.7">
-  <div style="color:#ead6a4">文字层级：<span id="map-label-level">国家与主要地区</span></div>
-  <div>滚轮缩放切换层级；继续放大即可显示全部城市名。</div>
-  <b style="color:#dfc88e">欧洲 · 1939 年开战前夕</b><br>
-  1939.08.31开局　|　边界随控制权变化　|　★ 首都<br>
-  蓝色实线：河流　|　船字棋子：海上运输部队<br>
-  ⚓ 点击海上军港建造舰艇；新舰下回合行动<br>沿海购买运输舰艇；下海／上岸耗尽行动<br>海上移动力固定 5；渡河额外消耗 1 移动力<br>
-  地形：浅绿平原 · 深绿森林 · 褐色丘陵 · 灰色山地
+  <div style="color:#ead6a4"><span data-i18n="文字层级：">文字层级：</span><span id="map-label-level"><span data-i18n="国家与主要地区">国家与主要地区</span></span></div>
+  <div><span data-i18n="滚轮缩放切换层级；继续放大即可显示全部城市名。">滚轮缩放切换层级；继续放大即可显示全部城市名。</span></div>
+  <b style="color:#dfc88e"><span data-i18n="欧洲 · 1939 年开战前夕">欧洲 · 1939 年开战前夕</span></b><br>
+  <span data-i18n="1939.08.31开局　|　边界随控制权变化　|　★ 首都">1939.08.31开局　|　边界随控制权变化　|　★ 首都</span><br>
+  <span data-i18n="蓝色实线：河流　|　船字棋子：海上运输部队">蓝色实线：河流　|　船字棋子：海上运输部队</span><br>
+  <span data-i18n="⚓ 点击海上军港建造舰艇；新舰下回合行动">⚓ 点击海上军港建造舰艇；新舰下回合行动</span><br><span data-i18n="沿海购买运输舰艇；下海／上岸耗尽行动">沿海购买运输舰艇；下海／上岸耗尽行动</span><br><span data-i18n="海上移动力固定 5；渡河额外消耗 1 移动力">海上移动力固定 5；渡河额外消耗 1 移动力</span><br>
+  <span data-i18n="地形：浅绿平原 · 深绿森林 · 褐色丘陵 · 灰色山地">地形：浅绿平原 · 深绿森林 · 褐色丘陵 · 灰色山地</span>
 </div>
 <div id="banner"></div>
 <div id="tutorial-coach" aria-live="polite"></div>
 <div id="modal-root"></div>
 
 <div id="boot">
-  <div class="boot-title">钢铁欧陆 1939</div>
+  <div class="boot-title" data-i18n="钢铁欧陆 1939">钢铁欧陆 1939</div>
   <div class="boot-sub">IRON EUROPE 1939-1945</div>
   <div class="boot-bar"><div id="boot-fill"></div></div>
-  <div id="boot-label">正在初始化…</div>
+  <div id="boot-label" data-i18n="正在初始化…">正在初始化…</div>
 </div>
 
-<script src="js/loader.js?v=guide-cleanup-1"></script>
+<script src="js/ui/i18n.js?v=bilingual-1"></script>
+<script src="js/ui/i18n-en.js?v=bilingual-1"></script>
+<script src="js/ui/i18n-en-geo.js?v=bilingual-1"></script>
+<script src="js/ui/i18n-en-mil.js?v=bilingual-1"></script>
+<script src="js/ui/i18n-en-updates.js?v=bilingual-1"></script>
+<script src="js/loader.js?v=bilingual-1"></script>
 </body>
 </html>

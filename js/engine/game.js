@@ -14,6 +14,11 @@ const { key, hexDist } = HexMath;
 const DIRS_EVEN = [[1, 0], [-1, 0], [0, -1], [-1, -1], [0, 1], [-1, 1]];
 const DIRS_ODD  = [[1, 0], [-1, 0], [1, -1], [0, -1], [1, 1], [0, 1]];
 
+/* 双语层：i18n.js 仅在浏览器加载；Node 测试环境保持中文原样。
+ * 用 var 声明：与 ui.js 载入同一上下文时重复声明不报错。 */
+var T = (typeof I18N !== 'undefined' && I18N.t) ? I18N.t : (s => s);
+var F = (typeof I18N !== 'undefined' && I18N.f) ? I18N.f : ((tpl, ...a) => tpl.replace(/\{(\d+)\}/g, (m, i) => a[+i] === undefined ? m : String(a[+i])));
+
 class Game {
   constructor(playerFaction, difficulty, options = {}) {
     this.playerFaction = playerFaction || 'axis';
@@ -81,7 +86,7 @@ class Game {
     if(options.initialFleet!==false)this.deployInitialFleets();
     if(options.initialAir!==false)this.deployInitialAirForces();
     if(options.initialGenerals!==false)this.deployInitialGenerals();
-    this.pushLog(`1939年9月，德国入侵波兰，英法对德宣战——第二次世界大战爆发！`, 'war');
+    this.pushLog(T('1939年9月，德国入侵波兰，英法对德宣战——第二次世界大战爆发！'), 'war');
     this.checkVictory();
   }
 
@@ -134,7 +139,7 @@ class Game {
   isNaval(u) { return !!CLASSES[u.eq.cls].naval; }
   isAir(u) { return u.eq.cls==='air'; }
   airRole(u) { return u.eq.airRole||'tactical'; }
-  airRoleName(u) { return AIR.roles[this.airRole(u)]?.name||'空军'; }
+  airRoleName(u) { return AIR.roles[this.airRole(u)]?.name||T('空军'); }
   cargoOf(u) { return this.units.find(p=>p.carrierId===u.id)||null; }
   airBase(u) { const ci=this.cityByKey[u.airbase];return !u.evacuated&&ci&&this.airfields.includes(ci)&&ci.owner===this.unitFaction(u)?ci:null; }
   airRadius(u) { return Math.max(1,this.movOf(u)); }
@@ -153,10 +158,10 @@ class Game {
   }
   airBuildError(cityKey,eqKey,faction=this.playerFaction) {
     const ci=this.cityByKey[cityKey];
-    if(!ci||!this.airfields.includes(ci))return '此城市没有机场';
-    if(!this.activeFactions().includes(faction)||ci.owner!==faction)return '只能在己方机场组建';
-    if(!this.airRoster(ci).some(o=>o.eqKey===eqKey&&!o.locked))return '只能组建此机场当前已解锁的最新机型';
-    if(this.gold[faction]<this.equipOf(eqKey).cost)return '经济不足';
+    if(!ci||!this.airfields.includes(ci))return T('此城市没有机场');
+    if(!this.activeFactions().includes(faction)||ci.owner!==faction)return T('只能在己方机场组建');
+    if(!this.airRoster(ci).some(o=>o.eqKey===eqKey&&!o.locked))return T('只能组建此机场当前已解锁的最新机型');
+    if(this.gold[faction]<this.equipOf(eqKey).cost)return T('经济不足');
     return '';
   }
   recruitAir(cityKey,eqKey,faction=this.playerFaction) {
@@ -165,7 +170,7 @@ class Game {
     const ct=country==='neutral'?this.controllingCountry(ci):country;
     const u=this.spawnUnit(ct,eqKey,ci.x,ci.y,{});
     this.gold[faction]-=u.eq.cost;u.moved=true;u.attacked=true;
-    this.pushLog(`${this.factionName(faction)} 在${ci.n}机场组建${u.eq.n}（-${u.eq.cost}金），下回合可出击。`,'econ');return u;
+    this.pushLog(F('{0} 在{1}机场组建{2}（-{3}金），下回合可出击。', this.factionName(faction), ci.n, u.eq.n, u.eq.cost),'econ');return u;
   }
   rebaseAir(u,cityKey) {
     const base=this.airBase(u),ci=this.cityByKey[cityKey];
@@ -173,14 +178,14 @@ class Game {
     const before=this.unitFaction(u)===this.playerFaction?this.movementState():null;this.lastMove=null;
     u.airbase=ci.k;u.c=ci.x;u.r=ci.y;u.moved=true;u.attacked=true;u.dug=false;
     const cargo=this.cargoOf(u);if(cargo){cargo.c=ci.x;cargo.r=ci.y;}
-    this.pushLog(`${u.eq.n} 转场至${ci.n}机场，本回合行动结束。`,'info');this.finishMovement(u,before);return true;
+    this.pushLog(F("{0} 转场至{1}机场，本回合行动结束。", u.eq.n, ci.n),'info');this.finishMovement(u,before);return true;
   }
   loadParatrooper(plane,para) {
     if(!plane||!para)return false;
     const base=this.airBase(plane);
     if(!plane||!para||!this.units.includes(plane)||!this.units.includes(para)||!this.isAir(plane)||this.airRole(plane)!=='transport'||!base||!para.eq.para||para.carrierId||para.embarked||this.cargoOf(plane)||this.unitFaction(para)!==this.unitFaction(plane)||para.c!==base.x||para.r!==base.y||plane.moved||plane.attacked||para.moved||para.attacked)return false;
     para.carrierId=plane.id;para.moved=true;para.attacked=true;para.dug=false;
-    this.pushLog(`${para.eq.n}在${base.n}登上${plane.eq.n}。`,'info');return true;
+    this.pushLog(F('{0}在{1}登上{2}。', para.eq.n, base.n, plane.eq.n),'info');return true;
   }
   unloadParatrooper(plane) {
     const para=this.cargoOf(plane),base=this.airBase(plane);
@@ -189,11 +194,11 @@ class Game {
   }
   paradropError(plane,c,r) {
     const base=this.airBase(plane);
-    if(!this.units.includes(plane)||!this.isAir(plane)||this.airRole(plane)!=='transport'||!base||!this.cargoOf(plane))return '需要装载伞兵的运输机';
-    if(plane.moved||plane.attacked)return '本回合已行动';
-    if(!Number.isInteger(c)||!Number.isInteger(r)||!this.landPassable(c,r)||this.unitAt(c,r))return '伞降目标必须是空闲陆格';
-    if(hexDist(base.x,base.y,c,r)>this.airRadius(plane)||c===base.x&&r===base.y)return '目标超出航程或位于起飞机场';
-    const city=this.cityAt(c,r);if(city?.demilitarized)return '不能伞降到非军事区';
+    if(!this.units.includes(plane)||!this.isAir(plane)||this.airRole(plane)!=='transport'||!base||!this.cargoOf(plane))return T('需要装载伞兵的运输机');
+    if(plane.moved||plane.attacked)return T('本回合已行动');
+    if(!Number.isInteger(c)||!Number.isInteger(r)||!this.landPassable(c,r)||this.unitAt(c,r))return T('伞降目标必须是空闲陆格');
+    if(hexDist(base.x,base.y,c,r)>this.airRadius(plane)||c===base.x&&r===base.y)return T('目标超出航程或位于起飞机场');
+    const city=this.cityAt(c,r);if(city?.demilitarized)return T('不能伞降到非军事区');
     return '';
   }
   paradrop(plane,c,r) {
@@ -203,16 +208,16 @@ class Game {
     delete para.carrierId;para.c=c;para.r=r;para.moved=true;para.attacked=true;plane.moved=true;plane.attacked=true;
     if(ct&&this.cf[ct]==='neutral'&&f!=='neutral')this.neutralDefect(ct,f);
     const city=this.cityAt(c,r);if(city&&city.owner!==f)this.captureCity(city,f,para);
-    this.pushLog(`${plane.eq.n}完成伞降，${para.eq.n}在(${c},${r})着陆，下回合可行动。`,'battle');return true;
+    this.pushLog(F('{0}完成伞降，{1}在({2},{3})着陆，下回合可行动。', plane.eq.n, para.eq.n, c, r),'battle');return true;
   }
   contamination(c,r) { return this.fallout[key(c,r)]||0; }
   cityIncome(ci) { return this.contamination(ci.x,ci.y)>0?0:ci.inc; }
   nuclearError(u,c,r) {
-    if(!this.units.includes(u)||!this.isAir(u)||this.airRole(u)!=='strategic'||!this.airBase(u))return '只有战略轰炸机可执行核打击';
-    if(this.year()<AIR.nuclear.year)return `${AIR.nuclear.year}年核技术尚未解锁`;
-    if(u.attacked||u.moved)return '本回合已行动';
-    if(this.gold[this.unitFaction(u)]<AIR.nuclear.cost)return '核打击经济不足';
-    if(!Number.isInteger(c)||!Number.isInteger(r)||!this.inMap(c,r)||this.tile(c,r)==='x'||hexDist(u.c,u.r,c,r)>this.airRadius(u))return '目标超出作战范围';
+    if(!this.units.includes(u)||!this.isAir(u)||this.airRole(u)!=='strategic'||!this.airBase(u))return T('只有战略轰炸机可执行核打击');
+    if(this.year()<AIR.nuclear.year)return F('{0}年核技术尚未解锁', AIR.nuclear.year);
+    if(u.attacked||u.moved)return T('本回合已行动');
+    if(this.gold[this.unitFaction(u)]<AIR.nuclear.cost)return T('核打击经济不足');
+    if(!Number.isInteger(c)||!Number.isInteger(r)||!this.inMap(c,r)||this.tile(c,r)==='x'||hexDist(u.c,u.r,c,r)>this.airRadius(u))return T('目标超出作战范围');
     return '';
   }
   nuclearStrike(u,c,r) {
@@ -232,7 +237,7 @@ class Game {
       if(target.hp<=0)this.killUnit(target);
     }
     for(const p of cells)this.fallout[key(...p)]=AIR.nuclear.duration;
-    this.pushLog(`核打击命中(${c},${r})：中心格所有部队消灭，邻格损失${AIR.nuclear.splash}兵力；污染${AIR.nuclear.duration}回合，每回合损失${AIR.nuclear.damage}兵力，污染城市收入归零。（-${AIR.nuclear.cost}金）`,'war');
+    this.pushLog(F('核打击命中({0},{1})：中心格所有部队消灭，邻格损失{2}兵力；污染{3}回合，每回合损失{4}兵力，污染城市收入归零。（-{5}金）', c, r, AIR.nuclear.splash, AIR.nuclear.duration, AIR.nuclear.damage, AIR.nuclear.cost),'war');
     return true;
   }
   applyFalloutDamage() {
@@ -243,16 +248,17 @@ class Game {
   ageFallout() { for(const k of Object.keys(this.fallout)){if(--this.fallout[k]<=0)delete this.fallout[k];} }
   removeLostAirfields() {
     for(const u of [...this.units])if(!u.evacuated&&this.isAir(u)&&!this.airBase(u)){
-      this.pushLog(`${u.eq.n}因驻扎机场失守而损失。`,'war');this.killUnit(u);
+      this.pushLog(F("{0}因驻扎机场失守而损失。", u.eq.n),'war');this.killUnit(u);
     }
   }
 
-  unitName(u) { return this.isNaval(u)?u.shipName:u.eq.n; }
+  unitName(u) { return this.isNaval(u)?this.displayShipName(u.ct,u.shipName):u.eq.n; }
+  displayShipName(ct,name) { return typeof I18N !== 'undefined' && I18N.shipName ? I18N.shipName(ct,name) : name; }
   navalIdentity(u) {
     return `${COUNTRIES[u.ct]?.name||u.ct} · ${CLASSES[u.eq.cls].name} · ${u.eq.className||u.eq.n} · ${this.unitName(u)}`;
   }
   shipNamePool(ct,eqKey) { return eqKey.split(':')[0]===ct ? NAVAL.names[eqKey]||[] : []; }
-  genericShipName(cls) { return {bc:'战列巡洋舰',cve:'护航航母',cv:'航空母舰'}[cls]||CLASSES[cls].name; }
+  genericShipName(cls) { return {bc:'战列巡洋舰',cve:'护航航母',cv:'航空母舰'}[cls]||CLASSES[cls]._zhname||CLASSES[cls].name; }
   shipNameAvailable(ct,entry) {
     return !this.usedShipNames.has(`${ct}:${entry.n}`)&&(!entry.identity||!this.usedShipNames.has(`${ct}:@${entry.identity}`));
   }
@@ -341,7 +347,7 @@ class Game {
       const city=this.cityByKey[d.base],ct=AIR.equipment[d.ct]?d.ct:'neutral';
       const index=EQUIP[ct].air.findIndex(e=>e.airRole===d.role&&e.tier===d.tier);
       const eq=EQUIP[ct].air[index];
-      if(!city||city.ct!==d.ct||city.owner!==this.cf[d.ct]||!this.airfields.includes(city)||!eq||eq.yr>this.year())throw Error('无效的初始空军部署：'+d.ct+' / '+d.base+' / '+d.role);
+      if(!city||city.ct!==d.ct||city.owner!==this.cf[d.ct]||!this.airfields.includes(city)||!eq||eq.yr>this.year())throw Error(T('无效的初始空军部署：')+d.ct+' / '+d.base+' / '+d.role);
       // Explicit bases avoid accidentally assigning neutral aircraft to another country.
       this.spawnUnit(d.ct,`${ct}:air:${index}`,city.x,city.y,{gen:d.gen,silent:true});
     }
@@ -351,14 +357,14 @@ class Game {
     for(const d of NAVAL.initialFleets||[]){
       const harbor=typeof d.base==='string'?this.harbors.find(h=>h.cityKey===d.base):null;
       const origin=Array.isArray(d.base)?d.base:harbor?[harbor.c,harbor.r]:null;
-      if(!origin||!this.ocean(...origin))throw Error('开局舰队基地无效：'+d.base);
+      if(!origin||!this.ocean(...origin))throw Error(T('开局舰队基地无效：')+d.base);
       const queue=[origin],seen=new Set([key(...origin)]);let spot=null;
       for(let i=0;i<queue.length;i++){
         const p=queue[i];
         if(!reserved.has(key(...p))&&!this.unitAt(...p)){spot=p;break;}
         for(const q of this.seaNeighbors(...p))if(!seen.has(key(...q))){seen.add(key(...q));queue.push(q);}
       }
-      if(!spot)throw Error('开局舰队没有可用海格：'+d.ct);
+      if(!spot)throw Error(T('开局舰队没有可用海格：')+d.ct);
       this.spawnUnit(d.ct,d.eq,...spot,{silent:true});
     }
   }
@@ -386,17 +392,17 @@ class Game {
   }
   constructionError(cityKey,kind,site=null,faction=this.playerFaction) {
     const ci=this.cityByKey[cityKey],rule=ECONOMY.construction[kind];
-    if(!ci||!Object.hasOwn(ECONOMY.construction,kind))return '无效的建设项目';
-    if(!this.activeFactions().includes(faction)||ci.owner!==faction)return '只能在己方城市建设';
-    if(ci.demilitarized&&kind!=='factory')return '非军事区不能建设军事设施';
-    if(this.hasFacility(ci,kind))return '此设施已建成';
-    if(this.construction.some(p=>p.cityKey===ci.k&&p.kind===kind))return '此设施正在建设';
+    if(!ci||!Object.hasOwn(ECONOMY.construction,kind))return T('无效的建设项目');
+    if(!this.activeFactions().includes(faction)||ci.owner!==faction)return T('只能在己方城市建设');
+    if(ci.demilitarized&&kind!=='factory')return T('非军事区不能建设军事设施');
+    if(this.hasFacility(ci,kind))return T('此设施已建成');
+    if(this.construction.some(p=>p.cityKey===ci.k&&p.kind===kind))return T('此设施正在建设');
     if(kind==='harbor'){
       const sites=this.harborSites(ci);
-      if(!sites.length)return '没有可用的相邻海域';
-      if(site&&(!Array.isArray(site)||site.length!==2||!sites.some(p=>p[0]===site[0]&&p[1]===site[1])))return '港址必须是空闲且未被预留的相邻海格';
+      if(!sites.length)return T('没有可用的相邻海域');
+      if(site&&(!Array.isArray(site)||site.length!==2||!sites.some(p=>p[0]===site[0]&&p[1]===site[1])))return T('港址必须是空闲且未被预留的相邻海格');
     }
-    if(this.gold[faction]<rule.cost)return '经济不足';
+    if(this.gold[faction]<rule.cost)return T('经济不足');
     return '';
   }
   startConstruction(cityKey,kind,site=null,faction=this.playerFaction) {
@@ -404,20 +410,20 @@ class Game {
     const rule=ECONOMY.construction[kind],ci=this.cityByKey[cityKey];
     this.gold[faction]-=rule.cost;
     this.construction.push({cityKey,kind,remaining:rule.turns,...(kind==='harbor'?{c:site[0],r:site[1]}:{})});
-    this.pushLog(`${ci.n}开始建设${rule.name}（-${rule.cost}金，${rule.turns}回合）。`,'econ');
+    this.pushLog(F('{0}开始建设{1}（-{2}金，{3}回合）。', ci.n, rule.name, rule.cost, rule.turns),'econ');
     return true;
   }
   advanceConstruction() {
     this.construction=this.construction.filter(p=>{
       const ci=this.cityByKey[p.cityKey],occupant=p.kind==='harbor'?this.unitAt(p.c,p.r):null;
       if(occupant&&this.unitFaction(occupant)!==ci.owner){
-        this.pushLog(`${ci.n}港口工地被非己方部队占据，本回合停工。`,'info');return true;
+        this.pushLog(F('{0}港口工地被非己方部队占据，本回合停工。', ci.n),'info');return true;
       }
       if(--p.remaining>0)return true;
       if(p.kind==='factory')ci.factory=true;
       else if(p.kind==='airfield')this.airfields.push(ci);
       else this.harbors.push({cityKey:ci.k,c:p.c,r:p.r});
-      this.pushLog(`${ci.n}${ECONOMY.construction[p.kind].name}建设完成。`,'econ');
+      this.pushLog(F('{0}{1}建设完成。', ci.n, ECONOMY.construction[p.kind].name),'econ');
       return false;
     });
   }
@@ -436,12 +442,12 @@ class Game {
   }
   navalBuildError(cityKey,eqKey,faction) {
     const ci=this.cityByKey[cityKey],h=this.harbors.find(p=>p.cityKey===cityKey);
-    if(!ci||!h||ci.demilitarized)return '此处没有可用军港';
-    if(!this.activeFactions().includes(faction)||ci.owner!==faction)return '只能在己方军港建造';
-    if(this.unitAt(h.c,h.r))return '泊位被占用，请先驶离或清除敌舰';
+    if(!ci||!h||ci.demilitarized)return T('此处没有可用军港');
+    if(!this.activeFactions().includes(faction)||ci.owner!==faction)return T('只能在己方军港建造');
+    if(this.unitAt(h.c,h.r))return T('泊位被占用，请先驶离或清除敌舰');
     const offer=this.navalRoster(ci).find(o=>o.eqKey===eqKey&&!o.locked);
-    if(!offer)return '只能建造当前年份已解锁的最新舰型';
-    if(this.gold[faction]<offer.eq.cost)return '经济不足';
+    if(!offer)return T('只能建造当前年份已解锁的最新舰型');
+    if(this.gold[faction]<offer.eq.cost)return T('经济不足');
     return '';
   }
   recruitNaval(cityKey,eqKey,faction=this.playerFaction) {
@@ -451,7 +457,7 @@ class Game {
     const ct=rosterCt==='neutral'?this.controllingCountry(ci):rosterCt;
     this.gold[faction]-=eq.cost;
     const u=this.spawnUnit(ct,eqKey,h.c,h.r,{});u.moved=true;u.attacked=true;
-    this.pushLog(`${this.factionName(faction)} 在${ci.n}军港建造 ${this.navalIdentity(u)}（-${eq.cost}金），下回合可行动。`,'econ');
+    this.pushLog(F('{0} 在{1}军港建造 {2}（-{3}金），下回合可行动。', this.factionName(faction), ci.n, this.navalIdentity(u), eq.cost),'econ');
     return u;
   }
   ocean(c,r) { return this.tile(c,r) === '~'; }
@@ -483,7 +489,7 @@ class Game {
   equipTransport(u,id) {
     if(!this.canEquipTransport(u,id))return false;
     const price=this.transportPrice(u,id);this.gold[this.unitFaction(u)]-=price;u.transport=id;
-    this.pushLog(`${u.eq.n} 配备${this.transportOf(u).name}（-${price} 金），可选择相邻海格下海。`,'econ');
+    this.pushLog(F('{0} 配备{1}（-{2} 金），可选择相邻海格下海。', u.eq.n, this.transportOf(u).name, price),'econ');
     return true;
   }
   movementEndsTurn(u,c,r) { return this.isAir(u) || !this.isNaval(u) && !CLASSES[u.eq.cls].fly && this.isEmbarked(u)!==this.ocean(c,r); }
@@ -499,8 +505,8 @@ class Game {
   month0() { return (8 + this.turn) % 12; }
   isWinter() { const m = this.month0(); return (m === 11 || m === 0 || m === 1) && this.year() >= 1941; }
   dateLabel() {
-    const M = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-    return `${this.year()}年${M[this.month0()]}`;
+    const M = [T('1月'), T('2月'), T('3月'), T('4月'), T('5月'), T('6月'), T('7月'), T('8月'), T('9月'), T('10月'), T('11月'), T('12月')];
+    return F('{0}年{1}', this.year(), M[this.month0()]);
   }
 
   equipOf(eqKey) { const [ct, cls, idx] = String(eqKey).split(':'); return EQUIP[ct]?.[cls]?.[+idx]; }
@@ -661,7 +667,7 @@ class Game {
         if(Object.hasOwn(saved,k))target[k]=saved[k];else delete target[k];
       }
     }
-    this.lastMove=null;this.pushLog('已撤销普通移动，恢复原位置与行动状态。','info');return true;
+    this.lastMove=null;this.pushLog(T('已撤销普通移动，恢复原位置与行动状态。'),'info');return true;
   }
 
   moveUnit(u, c, r, path) {
@@ -674,7 +680,7 @@ class Game {
     this.lastMove=null;
     const transition=this.movementEndsTurn(u,c,r);
     if(transition){u.embarked=this.ocean(c,r);u.attacked=true;
-      this.pushLog(`${u.eq.n}${u.embarked?'下海':'上岸'}，本回合行动结束。`,'info');}
+      this.pushLog(F('{0}{1}，本回合行动结束。', u.eq.n, u.embarked?T('下海'):T('上岸')),'info');}
     for (const p of path) {
       const ct = this.homeCountryOf(...p);
       if (ct && !COUNTRIES[ct].context && !COUNTRIES[ct].controller && this.cf[ct] === 'neutral' && f !== 'neutral') this.neutralDefect(ct, f);
@@ -837,7 +843,7 @@ class Game {
     if(aaDamage&&this.units.includes(att)){
       att.hp-=aaDamage;rec.counter+=aaDamage;rec.aa={id:aa.id,c:aa.c,r:aa.r,dmg:aaDamage};
       if(this.units.includes(aa)){aa.xp+=15;this.updateVet(aa);}
-      this.pushLog(`${aa.eq.n}防空拦截，空袭伤害减半，并对${att.eq.n}造成${aaDamage}伤害。`,'battle');
+      this.pushLog(F('{0}防空拦截，空袭伤害减半，并对{1}造成{2}伤害。', aa.eq.n, att.eq.n, aaDamage),'battle');
       if(att.hp<=0){rec.attDied=true;this.killUnit(att);this.stats.kills[fD]=(this.stats.kills[fD]||0)+1;if(aa.gen)this.genKills[aa.gen]=(this.genKills[aa.gen]||0)+1;}
     }
     rec.splash=[];
@@ -845,12 +851,12 @@ class Game {
       if(!this.units.includes(u))continue;
       u.hp-=damage;const killed=u.hp<=0;rec.splash.push({c:u.c,r:u.r,dmg:damage,killed});
       if(killed){this.killUnit(u);att.xp+=30;this.stats.kills[fA]=(this.stats.kills[fA]||0)+1;if(att.gen)this.genKills[att.gen]=(this.genKills[att.gen]||0)+1;}
-      this.pushLog(`${att.eq.n}溅射${u.eq.n}，造成${damage}伤害${killed?'，将其歼灭':''}。`,'battle');
+      this.pushLog(F('{0}溅射{1}，造成{2}伤害{3}。', att.eq.n, u.eq.n, damage, killed?T('，将其歼灭'):''),'battle');
     }
     this.updateVet(att);
     const an = this.unitName(att) + (att.gen ? `(${this.genOf(att).name})` : '');
     const dn = this.unitName(def);
-    this.pushLog(`${an} 攻击 ${dn}，造成 ${rec.dmg} 点伤害${rec.killed ? '，将其歼灭！' : ''}${rec.counter ? `，遭反击 ${rec.counter} 点。` : ''}`, 'battle');
+    this.pushLog(F('{0} 攻击 {1}，造成 {2} 点伤害{3}{4}', an, dn, rec.dmg, rec.killed ? T('，将其歼灭！') : '', rec.counter ? F('，遭反击 {0} 点。', rec.counter) : ''), 'battle');
     return rec;
   }
   updateVet(u) {
@@ -863,7 +869,7 @@ class Game {
     if(!u||!this.units.includes(u)||this.unitFaction(u)!==this.playerFaction||u.carrierId||this.cargoOf(u)||this.tutorial)return false;
     const name=this.unitName(u);
     this.killUnit(u); // Releases commander; never refunds gold or recycles ship names.
-    this.pushLog(`${name}已解散，不返还经济。`,'info');
+    this.pushLog(F("{0}已解散，不返还经济。", name),'info');
     return true;
   }
   pendingPlayerUnits() { return this.playerUnits().filter(u=>!u.dug&&(!u.moved||!u.attacked)); }
@@ -883,7 +889,7 @@ class Game {
     if(opponent==='neutral')this.neutralDefect(defender,faction);
     if(!this.atWar(faction,this.cf[this.controllingCountry(city)]))return false;
     city.owner=faction;city.controlCt=conqueror;this.politicalRevision++;this.terrDirty=true;
-    this.pushLog(`${COUNTRIES[conqueror].name}占领${city.n}及满足条件的附属领土。`,'war');
+    this.pushLog(F("{0}占领{1}及满足条件的附属领土。", COUNTRIES[conqueror].name, city.n),'war');
     if(this.winterWar?.status==='active'&&((city.k==='helsinki'&&conqueror==='su')||(city.k==='leningrad'&&conqueror==='fi'))){this.finishWinterWar(conqueror==='su');return true;}
     if(city.cap){
       this.annexCountry(defender,conqueror);
@@ -907,7 +913,7 @@ class Game {
     this.cf[ct] = target;
     for (const ci of this.cities) if (ci.ct === ct) { ci.owner = target; }
     this.terrDirty = true;
-    this.pushLog(`${COUNTRIES[ct].name}遭到进攻，全国倒向${this.factionName(target)}阵营对袭击者作战！`, 'war');
+    this.pushLog(F('{0}遭到进攻，全国倒向{1}阵营对袭击者作战！', COUNTRIES[ct].name, this.factionName(target)), 'war');
   }
   factionIncome(f) {
     let base = this.cities.filter(ci => ci.owner === f).reduce((s, ci) => s + this.cityIncome(ci), 0);
@@ -932,7 +938,7 @@ class Game {
     const country=eqKey.split(':')[0],ct=this.controllingCountry(city);
     this.gold[faction]-=offer.eq.cost;
     const u=this.spawnUnit(country==='us'?'us':ct,eqKey,...site,{});u.moved=true;u.attacked=true;
-    this.pushLog(`${city.n}${factory?'工厂':''}组建${u.eq.n}（-${u.eq.cost}金）。`,'econ');return u;
+    this.pushLog(F('{0}{1}组建{2}（-{3}金）。', city.n, factory?T('工厂'):'', u.eq.n, u.eq.cost),'econ');return u;
   }
   spawnUnit(ct, eqKey, x, y, opt) {
     const eq = this.equipOf(eqKey);
@@ -943,7 +949,7 @@ class Game {
     };
     if(this.isAir(u)){
       const base=this.nearestAirfield(this.unitFaction(u),x,y);
-      if(!base)throw Error('没有己方机场可部署空军');
+      if(!base)throw Error(T('没有己方机场可部署空军'));
       u.airbase=base.k;u.c=base.x;u.r=base.y;
     }
     if(this.isNaval(u)){
@@ -953,7 +959,7 @@ class Game {
     this.units.push(u);
     if (opt && opt.gen && this.genUnit[opt.gen] === null) {
       u.gen = opt.gen; this.genUnit[opt.gen] = u.id;
-      if (!(opt && opt.silent)) this.pushLog(`${this.genOf(u).name} 将军就任 ${eq.n} 指挥官`, 'info');
+      if (!(opt && opt.silent)) this.pushLog(F('{0} 将军就任 {1} 指挥官', this.genOf(u).name, eq.n), 'info');
     }
     return u;
   }
@@ -1014,10 +1020,10 @@ class Game {
         if (this.unitFaction(u) === 'axis' && this.homeCountryOf(u.c, u.r) === 'su'
             && this.territoryOwner(u.c, u.r) === 'axis') {
           u.hp -= 12;
-          if (u.hp <= 0) { this.pushLog(`${u.eq.n} 在俄罗斯严冬中全军覆没……`, 'war'); this.killUnit(u); }
+          if (u.hp <= 0) { this.pushLog(F('{0} 在俄罗斯严冬中全军覆没……', u.eq.n), 'war'); this.killUnit(u); }
         }
       }
-      this.pushLog(`俄罗斯的严冬：轴心国部队在苏联土地上遭受冻伤减员。`, 'event');
+      this.pushLog(T('俄罗斯的严冬：轴心国部队在苏联土地上遭受冻伤减员。'), 'event');
     }
     this.applyFalloutDamage();
     this.turn++;
@@ -1025,7 +1031,7 @@ class Game {
     this.advanceConstruction();
     this.startTurnFor(this.playerFaction);
     this.ageFallout();
-    this.pushLog(`—— ${this.dateLabel()}，${this.factionName(this.playerFaction)}回合开始（收入 +${this.factionIncome(this.playerFaction)} 金）——`, 'info');
+    this.pushLog(F('—— {0}，{1}回合开始（收入 +{2} 金）——', this.dateLabel(), this.factionName(this.playerFaction), this.factionIncome(this.playerFaction)), 'info');
     const v = this.checkVictory();
     return { actions, victory: v };
   }
@@ -1033,7 +1039,7 @@ class Game {
     const k = [a, b].sort().join('|');
     if (this.wars.has(k)) return;
     this.wars.add(k);
-    this.pushLog(`${this.factionName(a)} 对 ${this.factionName(b)} 宣战！`, 'war');
+    this.pushLog(F('{0} 对 {1} 宣战！', this.factionName(a), this.factionName(b)), 'war');
     this.checkVictory();
   }
 
@@ -1049,12 +1055,12 @@ class Game {
         this.cf.al = 'axis';
         for (const ci of this.cities) if ((ci.ct === 'it' || ci.ct === 'al')&&ci.controlCt===ci.ct) ci.owner = 'axis';
         this.declareWar('axis', 'west'); this.terrDirty = true;
-        this.pushLog(`【${ev.title}】${ev.text}`, 'event'); this.pendingEvents.push(ev);
+        this.pushLog(F('【{0}】{1}', ev.title, ev.text), 'event'); this.pendingEvents.push(ev);
       }
       else if (ev.kind === 'axismin') {
         for(const ct of ['hu','ro'])if(!this.annexed[ct]){this.cf[ct]='axis';for(const ci of this.cities)if(ci.ct===ct&&this.controllingCountry(ci)===ct)ci.owner='axis';}
         this.terrDirty = true;
-        this.pushLog(`【${ev.title}】${ev.text}`, 'event'); this.pendingEvents.push(ev);
+        this.pushLog(F('【{0}】{1}', ev.title, ev.text), 'event'); this.pendingEvents.push(ev);
       }
       else if (ev.kind === 'barbarossa') {
         if (this.cf.su !== 'sov'||this.annexed.su) continue;
@@ -1067,13 +1073,13 @@ class Game {
           const [c, r] = spots.shift();
           this.spawnUnit('su', roster[i], c, r, {}); n++;
         }
-        this.pushLog(`苏联全面动员：${n} 个师紧急开赴西部边境！`, 'war');
+        this.pushLog(F('苏联全面动员：{0} 个师紧急开赴西部边境！', n), 'war');
         this.pendingEvents.push(ev);
       }
       else if (ev.kind === 'usa') {
         this.usaIn = true; this.cf.us='west'; this.gold.west += 150;
         for(const ci of this.cities)if(ci.ct==='us')ci.owner='west';
-        this.pushLog(`【${ev.title}】${ev.text}`, 'event'); this.pendingEvents.push(ev);
+        this.pushLog(F('【{0}】{1}', ev.title, ev.text), 'event'); this.pendingEvents.push(ev);
         const london = this.cityByKey.london;
         if (london && london.owner === 'west') {
           const spots = this.spawnSpots(['london'], 4, 2);
@@ -1089,7 +1095,7 @@ class Game {
         if (!foes.length) continue;
         let spots = this.spawnSpots([], 0, 0, MAP_META.landingCells);
         spots = spots.filter(([c, r]) => foes.includes(this.territoryOwner(c, r)));
-        if (!spots.length) { this.pushLog('诺曼底登陆取消：没有可用的敌占海滩。', 'event'); continue; }
+        if (!spots.length) { this.pushLog(T('诺曼底登陆取消：没有可用的敌占海滩。'), 'event'); continue; }
         const roster = ['us:tank:0', 'us:tank:0', 'us:inf:0', 'us:inf:0', 'uk:art:0', 'uk:inf:0'];
         let n = 0;
         for (let i = 0; i < roster.length && spots.length; i++) {
@@ -1097,7 +1103,7 @@ class Game {
           const ct = roster[i].split(':')[0];
           this.spawnUnit(ct, roster[i], c, r, {}); n++;
         }
-        if (n) { this.pushLog(`盟军 ${n} 个师成功登陆欧洲大陆！`, 'war'); this.pendingEvents.push(ev); }
+        if (n) { this.pushLog(F('盟军 {0} 个师成功登陆欧洲大陆！', n), 'war'); this.pendingEvents.push(ev); }
       }
     }
   }
@@ -1389,7 +1395,7 @@ class Game {
 
   /* ------------------------------ 杂项 ------------------------------ */
   pushLog(text, kind) {
-    this.log.push({ t: this.dateLabel(), text, kind: kind || 'info' });
+    this.log.push({ t: this.dateLabel(), text, kind: kind || 'info', ...(typeof I18N !== 'undefined' ? {message:I18N.describe(text),turn:this.turn} : {}) });
     if (this.log.length > 400) this.log.shift();
   }
   playerUnits() { return this.units.filter(u => !u.evacuated && !u.carrierId && this.unitFaction(u) === this.playerFaction); }
@@ -1436,7 +1442,7 @@ class Game {
   }
   static deserialize(str) {
     const d = JSON.parse(str);
-    if (d.mapVersion !== MAP_META.version) throw new Error('旧地图存档无法用于1939地理新版，请开始新战役。');
+    if (d.mapVersion !== MAP_META.version) throw new Error(T('旧地图存档无法用于1939地理新版，请开始新战役。'));
     const g = new Game(d.playerFaction, d.difficulty, {initialFleet:false,initialAir:false,initialFactories:false,initialGround:false,initialGenerals:false});
     g.turn = d.turn; g.nextId = d.nextId;
     g.gold = d.gold; g.westBonus = d.westBonus; g.usaIn = d.usaIn;
@@ -1444,7 +1450,7 @@ class Game {
     g.fallout={};
     for(const [k,n]of Object.entries(d.fallout||{})){
       const p=k.split(',').map(Number);
-      if(p.length!==2||!p.every(Number.isInteger)||!g.inMap(...p)||!Number.isInteger(n)||n<1||n>AIR.nuclear.duration)throw Error('存档中的核污染数据无效');
+      if(p.length!==2||!p.every(Number.isInteger)||!g.inMap(...p)||!Number.isInteger(n)||n<1||n>AIR.nuclear.duration)throw Error(T('存档中的核污染数据无效'));
       g.fallout[k]=n;
     }
     d.cityOwners.forEach((o, i) => { g.cities[i].owner = o; });
@@ -1452,23 +1458,23 @@ class Game {
     g.registerLocalFactions();
     if(d.facilities){
       const f=d.facilities;
-      if(!Array.isArray(f.factories)||!Array.isArray(f.airfields)||!Array.isArray(f.harbors))throw Error('存档中的设施数据无效');
-      for(const k of [...f.factories,...f.airfields])if(!g.cityByKey[k])throw Error('存档中的设施城市无效');
+      if(!Array.isArray(f.factories)||!Array.isArray(f.airfields)||!Array.isArray(f.harbors))throw Error(T('存档中的设施数据无效'));
+      for(const k of [...f.factories,...f.airfields])if(!g.cityByKey[k])throw Error(T('存档中的设施城市无效'));
       for(const k of f.factories)g.cityByKey[k].factory=true;
       g.airfields=[...new Set(f.airfields)].map(k=>g.cityByKey[k]);
-      if(g.airfields.some(ci=>ci.demilitarized))throw Error('非军事区不能设置机场');
+      if(g.airfields.some(ci=>ci.demilitarized))throw Error(T('非军事区不能设置机场'));
       const used=new Set(),cities=new Set();
       g.harbors=f.harbors.map(h=>{
         const ci=g.cityByKey[h.cityKey],k=key(h.c,h.r);
-        if(!ci||ci.demilitarized||!Number.isInteger(h.c)||!Number.isInteger(h.r)||!g.ocean(h.c,h.r)||hexDist(ci.x,ci.y,h.c,h.r)!==1||used.has(k)||cities.has(ci.k))throw Error('存档中的港口数据无效');
+        if(!ci||ci.demilitarized||!Number.isInteger(h.c)||!Number.isInteger(h.r)||!g.ocean(h.c,h.r)||hexDist(ci.x,ci.y,h.c,h.r)!==1||used.has(k)||cities.has(ci.k))throw Error(T('存档中的港口数据无效'));
         used.add(k);cities.add(ci.k);return {cityKey:ci.k,c:h.c,r:h.r};
       });
     }
     g.construction=[];
     for(const p of d.construction||[]){
       const ci=g.cityByKey[p.cityKey],rule=ECONOMY.construction[p.kind];
-      if(!ci||!Object.hasOwn(ECONOMY.construction,p.kind)||!Number.isInteger(p.remaining)||p.remaining<1||p.remaining>rule.turns||g.hasFacility(ci,p.kind)||g.construction.some(q=>q.cityKey===ci.k&&q.kind===p.kind)||ci.demilitarized&&p.kind!=='factory')throw Error('存档中的建设数据无效');
-      if(p.kind==='harbor'&&(!Number.isInteger(p.c)||!Number.isInteger(p.r)||!g.ocean(p.c,p.r)||hexDist(ci.x,ci.y,p.c,p.r)!==1||g.harborAt(p.c,p.r)||g.construction.some(q=>q.kind==='harbor'&&q.c===p.c&&q.r===p.r)))throw Error('存档中的港址数据无效');
+      if(!ci||!Object.hasOwn(ECONOMY.construction,p.kind)||!Number.isInteger(p.remaining)||p.remaining<1||p.remaining>rule.turns||g.hasFacility(ci,p.kind)||g.construction.some(q=>q.cityKey===ci.k&&q.kind===p.kind)||ci.demilitarized&&p.kind!=='factory')throw Error(T('存档中的建设数据无效'));
+      if(p.kind==='harbor'&&(!Number.isInteger(p.c)||!Number.isInteger(p.r)||!g.ocean(p.c,p.r)||hexDist(ci.x,ci.y,p.c,p.r)!==1||g.harborAt(p.c,p.r)||g.construction.some(q=>q.kind==='harbor'&&q.c===p.c&&q.r===p.r)))throw Error(T('存档中的港址数据无效'));
       g.construction.push({cityKey:p.cityKey,kind:p.kind,remaining:p.remaining,...(p.kind==='harbor'?{c:p.c,r:p.r}:{})});
     }
     g.stats = d.stats;
@@ -1478,20 +1484,20 @@ class Game {
     g.units = d.units.map(u => {
       const unit={...u,transport:u.transport||null,embarked:!!u.embarked,eq:g.equipOf(u.eqKey)};
       delete unit.guardCity; // Discard the retired dedicated-garrison assignment from older saves.
-      if(!unit.eq)throw Error('存档中的装备无效');
+      if(!unit.eq)throw Error(T('存档中的装备无效'));
       if(unit.evacuated){unit.c=-1;unit.r=-1;return unit;}
       if(unit.carrierId){
-        if(!unit.eq.para||unit.embarked)throw Error('存档中的空运部队无效');
+        if(!unit.eq.para||unit.embarked)throw Error(T('存档中的空运部队无效'));
         return unit;
       }
       if(g.isAir(unit)){
         if(d.v<7){
           const base=g.nearestAirfield(g.unitFaction(unit),unit.c,unit.r);
-          if(!base)throw Error('旧存档空军没有己方机场，请使用其它存档');
+          if(!base)throw Error(T('旧存档空军没有己方机场，请使用其它存档'));
           unit.airbase=base.k;unit.c=base.x;unit.r=base.y;unit.dug=false;unit.transport=null;unit.embarked=false;
         }
         const base=g.airBase(unit);
-        if(!base||unit.c!==base.x||unit.r!==base.y||unit.embarked||unit.transport)throw Error('存档中的空军机场或位置无效');
+        if(!base||unit.c!==base.x||unit.r!==base.y||unit.embarked||unit.transport)throw Error(T('存档中的空军机场或位置无效'));
         unit.dug=false;return unit;
       }
       // Only legacy units on explicitly corrected coastline cells may relocate.
@@ -1505,42 +1511,42 @@ class Game {
             if(distance<=4&&valid(c,r)&&!reservedCells.has(key(c,r)))spots.push({c,r,distance});
           }
           spots.sort((a,b)=>a.distance-b.distance||a.r-b.r||a.c-b.c);
-          if(!spots.length)throw Error('海岸修正后附近没有可用位置，请使用其它存档');
+          if(!spots.length)throw Error(T('海岸修正后附近没有可用位置，请使用其它存档'));
           const p=spots[0];unit.c=p.c;unit.r=p.r;reservedCells.add(key(p.c,p.r));coastMigrations.push(unit);
         }
       }
       if(d.v<5&&CLASSES[unit.eq.cls].fly&&['50,55','77,37'].includes(key(unit.c,unit.r))){
         const p=g.neighbors(unit.c,unit.r).find(p=>g.landPassable(...p)&&!d.units.some(v=>v.c===p[0]&&v.r===p[1]));
-        if(!p)throw Error('旧河口空军存档需要先腾出相邻陆格后保存');
+        if(!p)throw Error(T('旧河口空军存档需要先腾出相邻陆格后保存'));
         unit.c=p[0];unit.r=p[1];
       }
       // v3/v4 land units on either newly opened estuary receive a basic transport.
       if(d.v<5&&!unit.embarked&&!CLASSES[unit.eq.cls].fly&&['50,55','77,37'].includes(key(unit.c,unit.r))){unit.transport='transport';unit.embarked=true;}
       if(g.isNaval(unit)){
-        if(!g.ocean(unit.c,unit.r)||unit.embarked||unit.transport)throw Error('存档中的海军位置或状态无效');
+        if(!g.ocean(unit.c,unit.r)||unit.embarked||unit.transport)throw Error(T('存档中的海军位置或状态无效'));
         unit.dug=false;return unit;
       }
-      if(unit.transport&&!g.transportOf(unit))throw Error('存档中的运输舰艇类型无效');
-      if(unit.embarked&&(!g.isEmbarked(unit)||!g.ocean(unit.c,unit.r)))throw Error('存档中的运输状态无效');
-      if(!unit.embarked&&!g.landPassable(unit.c,unit.r))throw Error('存档中存在未登船的海上单位');
+      if(unit.transport&&!g.transportOf(unit))throw Error(T('存档中的运输舰艇类型无效'));
+      if(unit.embarked&&(!g.isEmbarked(unit)||!g.ocean(unit.c,unit.r)))throw Error(T('存档中的运输状态无效'));
+      if(!unit.embarked&&!g.landPassable(unit.c,unit.r))throw Error(T('存档中存在未登船的海上单位'));
       return unit;
     });
     const occupiedCarriers=new Set();
     for(const para of g.units.filter(u=>u.carrierId)){
       const plane=g.units.find(u=>u.id===para.carrierId);
-      if(!plane||!g.isAir(plane)||g.airRole(plane)!=='transport'||occupiedCarriers.has(plane.id)||g.unitFaction(plane)!==g.unitFaction(para)||plane.c!==para.c||plane.r!==para.r)throw Error('存档中的伞兵载运关系无效');
+      if(!plane||!g.isAir(plane)||g.airRole(plane)!=='transport'||occupiedCarriers.has(plane.id)||g.unitFaction(plane)!==g.unitFaction(para)||plane.c!==para.c||plane.r!==para.r)throw Error(T('存档中的伞兵载运关系无效'));
       occupiedCarriers.add(plane.id);
     }
     // Reserve all existing names before allocating names to legacy unnamed ships.
     g.usedShipNames=new Set(Array.isArray(d.usedShipNames)?d.usedShipNames.filter(v=>typeof v==='string'):[]);
     const liveNames=new Set();
     for(const u of g.units.filter(u=>g.isNaval(u)&&u.shipName)){
-      if(typeof u.shipName!=='string')throw Error('存档中的舰名无效');
+      if(typeof u.shipName!=='string')throw Error(T('存档中的舰名无效'));
       const record=g.shipNamePool(u.ct,u.eqKey).find(e=>e.n===u.shipName);
       const prefix=g.genericShipName(u.eq.cls),suffix=u.shipName.slice(prefix.length);
-      if(!record&&!(u.shipName.startsWith(prefix)&&/^[1-9]\d*$/.test(suffix)))throw Error('存档中的舰名无效');
+      if(!record&&!(u.shipName.startsWith(prefix)&&/^[1-9]\d*$/.test(suffix)))throw Error(T('存档中的舰名无效'));
       const nameKey=`${u.ct}:${u.shipName}`,hullKey=record?.identity?`${u.ct}:@${record.identity}`:null;
-      if(liveNames.has(nameKey)||(hullKey&&liveNames.has(hullKey)))throw Error('存档中存在重复舰名');
+      if(liveNames.has(nameKey)||(hullKey&&liveNames.has(hullKey)))throw Error(T('存档中存在重复舰名'));
       liveNames.add(nameKey);if(hullKey)liveNames.add(hullKey);
       g.rememberShipName(u.ct,record||{n:u.shipName});
     }
@@ -1548,8 +1554,8 @@ class Game {
       const record=g.nextShipName(u.ct,u.eqKey);u.shipName=record.n;g.rememberShipName(u.ct,record);
     }
     g.log = d.log || [];
-    if(d.v<7&&g.units.some(u=>g.isAir(u)))g.pushLog('空军机制升级：原有飞机已转入最近己方机场，兵力、经验与将领保留。','info');
-    if(coastMigrations.length)g.pushLog(`地图海岸校正：${coastMigrations.length}支部队已移至最近空闲的同类地形格，兵力与装备保留。`,'info');
+    if(d.v<7&&g.units.some(u=>g.isAir(u)))g.pushLog(T('空军机制升级：原有飞机已转入最近己方机场，兵力、经验与将领保留。'),'info');
+    if(coastMigrations.length)g.pushLog(F('地图海岸校正：{0}支部队已移至最近空闲的同类地形格，兵力与装备保留。', coastMigrations.length),'info');
     g.terrDirty = true; g.over = null; g.pendingEvents = [];
     g.checkVictory();
     if(d.lastMove?.before&&d.lastMove?.after){g.lastMove=d.lastMove;const u=g.units.find(u=>u.id===g.lastMove.unitId);if(!g.canUndoMove(u))g.lastMove=null;}

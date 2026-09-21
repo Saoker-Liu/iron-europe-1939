@@ -19,15 +19,25 @@ function harness() {
     return {style:{},dataset:{},classList:{add(){},toggle(){}},addEventListener(){},querySelectorAll(){return [];},getContext(){return context;},
       set width(v){this._width=v;if(canvas)resizes++;}, get width(){return this._width;},height:0};
   }
+  const iconDraws = [];
+  // 真图标表只用来取 SHAPES 键集（unitIconClass 的 hasOwn 判断需要），
+  // 不直接载入沙盒：文件顶层 const UnitIcons 会遮蔽下面的记录型替身。
+  const ictx={Path2D:class{constructor(d){this.d=d;}}};vm.createContext(ictx);
+  vm.runInContext(fs.readFileSync('js/ui/unit-icons.js','utf8'),ictx);
+  const iconShapeStub=Object.fromEntries(Object.keys(vm.runInContext('UnitIcons.SHAPES',ictx)).map(k=>[k,1]));
   const sandbox = {...D, MapLabels:require('./js/ui/map-labels'), Game, hexDist, HexMath:globalThis.HexMath, console,
     innerWidth:1280,innerHeight:900,performance:{now:()=>1005},
     document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element(true)},
     clearTimeout(){},addEventListener(){},requestAnimationFrame(fn){frames.push(fn);},setTimeout(fn){timers.push(fn);},
     Path2D:class {moveTo(){} lineTo(){} closePath(){}},
+    // 单位侧影（js/ui/unit-icons.js）在浏览器由 loader 先载入；这里用记录型替身，
+    // 既能断言"舰艇/部队画了图标"，又不依赖真实光栅化。
+    UnitIcons:{BOX_RATIO:0.85, SHAPES:iconShapeStub,
+      draw(cx,cls,x,y,box){assert([x,y,box].every(Number.isFinite),'valid icon coordinates');iconDraws.push([cls,x,y,box]);},
+      svg:cls=>iconShapeStub[cls]?'<svg class="u-icon"></svg>':''},
   };
   sandbox.window=sandbox;
   vm.createContext(sandbox);
-  vm.runInContext(fs.readFileSync('js/ui/unit-icons.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/music.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/engine/tutorial.js','utf8'),sandbox);
   vm.runInContext(fs.readFileSync('js/ui/tutorial.js','utf8'),sandbox);
@@ -38,7 +48,7 @@ function harness() {
     UI.sel = UI.game.spawnUnit('de','de:inf:0',ci.x,ci.y,{});
     const destination=UI.game.landNeighbors(ci.x,ci.y)[0];
     centerOn(ci.x,ci.y); doMove(...destination);`);
-  return {run,frames,timers,blits,arcs,texts,get resizes(){return resizes;},failNextBlit(){failBlit=true;},
+  return {run,frames,timers,blits,arcs,texts,get resizes(){return resizes;},get iconDraws(){return iconDraws;},failNextBlit(){failBlit=true;},
     frame(now){assert.equal(frames.length,1,'exactly one next frame'); frames.shift()(now);}};
 }
 
@@ -139,7 +149,7 @@ h.run("showHarborPanel(UI.game.harbors.find(h=>h.cityKey==='kiel'))");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('泊位被')"));
 const count=h.run('UI.game.units.length');h.run("document.getElementById('naval-build-0').onclick()");
 assert.equal(h.run('UI.game.units.length'),count,'stale occupied-berth click cannot duplicate ships');
-h.texts.length=0;h.frame(9000);assert(h.texts.includes('⚓'),'harbor marker painted');assert(h.texts.includes('驱'),'naval unit painted');
+h.texts.length=0;h.frame(9000);assert(h.texts.includes('⚓'),'harbor marker painted');assert(h.iconDraws.some(a=>a[0]==='dd'),'naval unit painted as vector silhouette');
 console.log('Naval UI: harbor click, production, blocked berth, unit panel and markers passed.');
 
 // Named ships expose nation, type, class and personal name in production UI.
@@ -312,12 +322,13 @@ assert.equal(h.run("filterGeneralRoster(GENERALS,'毫无匹配').length"),0);
 console.log('Expanded general roster: Chinese/English search and country filtering passed.');
 
 assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'tank'}})"),'tank');
-assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'bb'}})"),null);
-assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'inf'},embarked:true,transport:'transport'})"),null);
-assert.equal(h.run("UnitIcons.svg('bb',18)"),'');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'bb'}})"),'bb','naval classes draw vector silhouettes');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'air',airRole:'cas'}})"),'airCas','air roles pick their own silhouette');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'no-such'}})"),null,'unknown classes keep the glyph fallback');
+assert.equal(h.run("unitIconClass(UI.game,{eq:{cls:'inf'},embarked:true,transport:'transport'})"),'transport','transported armies draw the ship silhouette');
 h.run("UI.game=new Game('axis');UI.game.units=[];UI.cityRecruitCategory='徒步步兵';showCityPanel(UI.game.cityByKey.berlin)");
 assert(h.run("document.getElementById('panel-body').innerHTML.includes('class=\"u-icon\"')"));
-console.log('Artwork UI: vector recruitment, naval text fallback and transported-army distinction passed.');
+console.log('Artwork UI: vector recruitment, per-role air silhouettes, naval vector silhouettes and transported-army ship silhouette passed.');
 
 // Tutorial UI must never overwrite a campaign save or leave its end-turn button disabled.
 h.run("UI.busy=false;startTutorial();updateTutorial()");

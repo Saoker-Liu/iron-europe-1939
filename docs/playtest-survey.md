@@ -1,7 +1,7 @@
 # Iron Europe 1939 · Playtest Feedback Survey 《钢铁欧陆 1939》试玩反馈问卷
 
-> Thank you for playtesting! This survey takes about 3 minutes, is anonymous, and there are no wrong answers — your honest feedback is the best help you can give us.
-> 感谢试玩!问卷约需 3 分钟,匿名填写,选项无对错之分,你的真实感受就是对我们最大的帮助。
+> Thank you for playtesting! This survey takes about 3 minutes, does not ask for your name, and there are no wrong answers — your honest feedback is the best help you can give us.
+> 感谢试玩!问卷约需 3 分钟,无需填写姓名,选项无对错之分,你的真实感受就是对我们最大的帮助。
 
 ---
 
@@ -44,7 +44,7 @@
 - E. Hard to say / 说不清
 
 **7. Which systems engaged you most? (multi-select) / 最吸引你的系统是?(可多选)**
-- A. Hex wargaming & unit counters / 六边形战棋与兵种克制
+- A. Hex tactics & combined arms / 六边形战棋与兵种协同
 - B. General skills & rank promotion / 将领技能与击杀晋升
 - C. Naval transport & landings / 海上运输与登陆
 - D. Airfields & air force (strikes / paratroopers / bombing) / 机场与空军(出击/伞降/轰炸)
@@ -70,3 +70,5 @@ ________________________________________
 ---
 
 *Please return the completed form to the teammate who shared it with you. / 请将问卷交回发给你的同学/开发者。*
+
+[填写网页版问卷 / Open the survey](../survey.html) — 下载答案后交给邀请你试玩的人；网页不自动上传答案。 / Download your answers and return them to the person who invited you. This page does not upload responses.

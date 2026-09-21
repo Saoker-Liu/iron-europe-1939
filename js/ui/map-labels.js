@@ -19,7 +19,7 @@
    const ax=item.grid[0]*s*Math.sqrt(3)+x,ay=item.grid[1]*s*1.5+y;
    if(ax<0||ax>width||ay<0||ay>height)continue;
    const fontSize=item.kind==='country'?14:item.kind==='city'?12:13;
-   const lines=item.kind==='city'&&item.text.length>9?[item.text.slice(0,9),item.text.slice(9)]:[item.text];
+   const lines=item.kind==='city'&&/[\u3400-\u9fff]/.test(item.text)&&item.text.length>9?[item.text.slice(0,9),item.text.slice(9)]:[item.text];
    const w=Math.max(...lines.map(t=>measure(t,fontSize)))+8,h=lines.length*(fontSize+3)+4;
    const gap=item.kind==='city'?s*.88:0;
    const offsets=item.kind==='city'?[[0,gap+h/2],[0,-gap-h/2],[s*.9+w/2,0],[-s*.9-w/2,0]]:

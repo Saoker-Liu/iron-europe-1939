@@ -1,17 +1,20 @@
 /* Guided practice runs in the normal map UI; no campaign save writes. */
 'use strict';
+/* 双语层：i18n.js 仅在浏览器加载；测试沙箱保持中文原样 */
+var T = (typeof I18N !== 'undefined' && I18N.t) ? I18N.t : (s => s);
+var F = (typeof I18N !== 'undefined' && I18N.f) ? I18N.f : ((tpl, ...a) => tpl.replace(/\{(\d+)\}/g, (m, i) => a[+i] === undefined ? m : String(a[+i])));
 const LESSONS=[
- ['认识地图','按住地图空白处拖动；滚轮缩放。右侧查看单位，顶栏查看经济与回合。试一试后点击“开始练习”。'],
- ['选择部队','点击训练营上的己方步兵棋子（黄色圈）。右侧显示攻击、防御、兵力和移动力。'],
- ['移动与自动待命','点击训练营右上方的黄色目标格。移动后没有有效攻击目标，部队自动待命，不必再点击待命。'],
- ['撤销移动','点击右侧部队面板的“撤销移动”，返回训练营并恢复行动力。占领、开战、投降或触发事件的移动不能撤销；攻击后、其它部队有效移动或攻击后也不能撤销；此时只选择其它部队不会影响撤销。'],
- ['重新选择路线','再次点击黄色目标格，向敌方民兵移动。此次移动后有攻击目标，因此仍可攻击。'],
- ['攻击演习对手','点击黄色圈中的敌方民兵。敌军仅剩10兵力，足以一击击败。移动后仍可攻击，但攻击后不能再移动。'],
- ['结束回合','点击顶栏“结束回合”，或按 E / 回车。下一回合恢复行动力、获得城市收入；演习对手不会主动行动。'],
- ['占领城镇','再次选中步兵，点击黄色圈中的演习镇。陆军进入无人驻守的敌城即可占领，城市将为你提供收入。'],
- ['招募援军','点击左侧空闲的训练营，选择“徒步步兵”栏，再点击普通步兵进行招募。必须有足够经济，且城市格没有陆军占用。'],
- ['等待新兵就绪','新招募的部队本回合不能移动或攻击。再次点击“结束回合”，查看它们恢复行动力和经济增长。'],
- ['演习完成','你已掌握选中、移动、攻击、占城、招募和回合结算。主战役还包含工厂、机场、军港与将领，可随时打开玩法说明。']
+ [T('认识地图'),T('按住地图空白处拖动；滚轮缩放。右侧查看单位，顶栏查看经济与回合。试一试后点击“开始练习”。')],
+ [T('选择部队'),T('点击训练营上的己方步兵棋子（黄色圈）。右侧显示攻击、防御、兵力和移动力。')],
+ [T('移动与自动待命'),T('点击训练营右上方的黄色目标格。移动后没有有效攻击目标，部队自动待命，不必再点击待命。')],
+ [T('撤销移动'),T('点击右侧部队面板的“撤销移动”，返回训练营并恢复行动力。占领、开战、投降或触发事件的移动不能撤销；攻击后、其它部队有效移动或攻击后也不能撤销；此时只选择其它部队不会影响撤销。')],
+ [T('重新选择路线'),T('再次点击黄色目标格，向敌方民兵移动。此次移动后有攻击目标，因此仍可攻击。')],
+ [T('攻击演习对手'),T('点击黄色圈中的敌方民兵。敌军仅剩10兵力，足以一击击败。移动后仍可攻击，但攻击后不能再移动。')],
+ [T('结束回合'),T('点击顶栏“结束回合”，或按 E / 回车。下一回合恢复行动力、获得城市收入；演习对手不会主动行动。')],
+ [T('占领城镇'),T('再次选中步兵，点击黄色圈中的演习镇。陆军进入无人驻守的敌城即可占领，城市将为你提供收入。')],
+ [T('招募援军'),T('点击左侧空闲的训练营，选择“徒步步兵”栏，再点击普通步兵进行招募。必须有足够经济，且城市格没有陆军占用。')],
+ [T('等待新兵就绪'),T('新招募的部队本回合不能移动或攻击。再次点击“结束回合”，查看它们恢复行动力和经济增长。')],
+ [T('演习完成'),T('你已掌握选中、移动、攻击、占城、招募和回合结算。主战役还包含工厂、机场、军港与将领，可随时打开玩法说明。')]
 ];
 function tutorialMode(on){
   document.body?.classList.toggle('tutorial-mode',on);
@@ -40,11 +43,11 @@ function updateTutorial(){
   const box=document.getElementById('tutorial-coach'),step=g.lesson;
   if(box.dataset?.step!==String(step)){
     box.dataset.step=String(step);
-    box.innerHTML=`<div class="tutorial-heading">新手演习 · ${Math.min(step+1,10)} / 10 <span>8×5 局部地图</span></div>
+    box.innerHTML=`<div class="tutorial-heading">${F("新手演习 · {0} / 10", Math.min(step+1,10))} <span>${T("8×5 局部地图")}</span></div>
       <h3>${LESSONS[step][0]}</h3><p>${LESSONS[step][1]}</p>
-      <div class="row-btns">${step===0?'<button class="btn gold" id="tutorial-begin">开始练习</button>':''}
-      ${step===10?'<button class="btn gold" id="tutorial-campaign">选择阵营 · 开始战役</button>':''}
-      <button class="btn" id="tutorial-locate">定位目标</button><button class="btn" id="tutorial-retry">重新练习</button><button class="btn" id="tutorial-exit">退出教程</button></div>`;
+      <div class="row-btns">${step===0?T('<button class="btn gold" id="tutorial-begin">开始练习</button>'):''}
+      ${step===10?T('<button class="btn gold" id="tutorial-campaign">选择阵营 · 开始战役</button>'):''}
+      <button class="btn" id="tutorial-locate">${T("定位目标")}</button><button class="btn" id="tutorial-retry">${T("重新练习")}</button><button class="btn" id="tutorial-exit">${T("退出教程")}</button></div>`;
     const begin=document.getElementById('tutorial-begin');if(begin)begin.onclick=()=>{g.lesson=1;updateTutorial();};
     const campaign=document.getElementById('tutorial-campaign');if(campaign)campaign.onclick=exitTutorial;
     document.getElementById('tutorial-locate').onclick=fitTutorial;
