@@ -9,6 +9,9 @@
   // 跳转介绍页期间不启动地图加载。
   if (new URLSearchParams(window.location.search).get('play') !== '1') return;
 
+  // 语言包由 index.html 静态标签先行加载；此处仅取安全别名（测试沙箱无 I18N）。
+  const T = s => (window.I18N ? I18N.t(s) : s);
+
   // Pass the entry script release to every module, including offline file URLs.
   const assetVersion = new URL(document.currentScript.src).searchParams.get('v');
 
@@ -42,7 +45,7 @@
       if (assetVersion) url.searchParams.set('v', assetVersion);
       el.src = url.href;
       el.onload = () => resolve(src);
-      el.onerror = () => reject(new Error('资源加载失败: ' + src));
+      el.onerror = () => reject(new Error(T('资源加载失败: ') + src));
       document.head.appendChild(el);
     });
   }
@@ -51,7 +54,7 @@
     try {
       window.GameData = window.GameData || { modules: {} };   // 数据命名空间，供各模块注册
       for (const stage of STAGES) {
-        setProgress(stage.label);
+        setProgress(T(stage.label));
         for (const f of stage.files) {
           await loadScript(f);
           done += 1;
@@ -59,14 +62,15 @@
         }
         await nextFrame();               // 让进度条渲染出来，节奏可见
       }
-      setProgress('完成');
+      setProgress(T('完成'));
       await new Promise(res => setTimeout(res, 260));
       const overlay = document.getElementById('boot');
       if (overlay) overlay.classList.add('hidden');
+      if (window.I18N) I18N.translateData();   // EN 模式：数据名称就地换成英文
       if (typeof window.BootUI === 'function') window.BootUI();
-      else throw new Error('BootUI 未定义（ui.js 加载异常）');
+      else throw new Error(T('BootUI 未定义（ui.js 加载异常）'));
     } catch (err) {
-      if (label) { label.textContent = '加载失败：' + err.message; label.style.color = '#e05338'; }
+      if (label) { label.textContent = T('加载失败：') + err.message; label.style.color = '#e05338'; }
       console.error(err);
     }
   }
