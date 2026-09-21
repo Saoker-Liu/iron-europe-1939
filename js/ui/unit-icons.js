@@ -142,6 +142,51 @@ const UnitIcons = (() => {
     'M 4 22 L -14 42 L -6 46 L 10 26 Z',                    // 右大架（V 字分开，主特征）
   ].join(' ');
 
+  /* ---- 炮兵角色（artillery.js 的 artRole，侧视朝右上，与通用形同一语法）----
+   * 通用形 art 本身就是"榴弹炮"原型（artRole=gun 直接回退，不另立键）。
+   * 角色主特征：
+   *   aa 防空炮=近乎竖直的长管+八字支腿小轮（88 炮的原型学）
+   *   at 反坦克炮=近乎水平的超长细管+低矮小防盾
+   *   field 野战炮=射程3：比榴弹炮更长的低仰角炮管、更大防盾与车轮
+   *   rocket 火箭炮=卡车货斗上的上扬发射轨（喀秋莎的原型学，主特征） */
+  const ART_AA = [
+    bar(2, -12, 19, -44, 2.2),                              // 长炮管（大仰角，主特征）
+    bar(18, -43, 24, -36, 3.2),                             // 炮口制退器
+    'M -16 -14 L 16 -14 L 14 2 L -14 2 Z',                  // 炮台基座（宽平台）
+    bar(-8, 0, -20, 16, 3),                                 // 左短腿
+    bar(8, 0, 20, 16, 3),                                   // 右短腿
+    circle(-22, 18, 5),                                     // 左轮（贴腿）
+    circle(24, 18, 5),                                      // 右轮
+  ].join(' ');
+
+  const ART_AT = [
+    bar(6, -14, 48, -9, 1.8),                               // 超长炮管（近水平，主特征）
+    bar(46.5, -12, 46.5, -5, 2.2),                          // 炮口制退器
+    'M -14 -12 L 6 -16 L 10 -2 L -12 2 Z',                  // 小防盾（低矮）
+    circle(10, 5, 8),                                       // 车轮（低置小轮）
+    bar(-8, 0, -36, 14, 2.6),                               // 开架长腿（微张）
+    bar(-8, 2, -30, 22, 2.6),                               // 右腿
+  ].join(' ');
+
+  const ART_FIELD = [
+    bar(0, -12, 48, -30, 2.6),                              // 长炮管（低仰角，够得远）
+    'M -20 -26 L 8 -30 L 12 -2 L 14 20 L -16 20 L -18 -2 Z',// 大防盾（下沿落地）
+    ring(4, 20, 15, 5.5),                                   // 大车轮（挖孔作轮毂）
+    'M 0 26 L -40 44 L -40 49 L 2 31 Z',                    // 左大架（更长，向后撑地）
+    'M 4 28 L -18 45 L -11 49 L 8 30 Z',                    // 右大架（V 字分开）
+  ].join(' ');
+
+  const ART_ROCKET = [
+    'M 22 -14 L 38 -12 L 42 -2 L 22 -2 Z',                  // 车头驾驶室（右前）
+    'M -40 -10 L 20 -10 L 20 0 L -40 0 Z',                  // 货斗平板
+    bar(-36, -14, 30, -34, 1.6),                            // 发射轨（上扬，主特征）
+    bar(-36, -20, 30, -40, 1.6),                            // 第二根轨
+    bar(-6, -10, 0, -24, 1.5),                              // 轨架支撑
+    circle(-28, 6, 6.5),                                    // 后双轮
+    circle(-14, 6, 6.5),                                    // 后双轮
+    circle(32, 6, 6.5),                                     // 前轮
+  ].join(' ');
+
   /* 步兵：1939—45 步枪手（侧视，朝右，持枪前进）。
    * 造型要点：钢盔带外扩盔裙（年代特征）+ 盔檐下露出侧脸；长大衣；步枪端平
    * 前指（枪管明显伸出身体前缘、枪托露出后背）；双臂一前一双腿真在迈步。 */
@@ -352,6 +397,8 @@ const UnitIcons = (() => {
     art: normalizeWinding(ART),
     tank: normalizeWinding(TANK),
     tankCar: normalizeWinding(TANK_CAR),
+    artAa: normalizeWinding(ART_AA), artAt: normalizeWinding(ART_AT),
+    artField: normalizeWinding(ART_FIELD), artRocket: normalizeWinding(ART_ROCKET),
     tankLight: normalizeWinding(TANK_LIGHT),
     tankHeavy: normalizeWinding(TANK_HEAVY),
     tankSuperheavy: normalizeWinding(TANK_SUPERHEAVY),
@@ -389,6 +436,21 @@ const UnitIcons = (() => {
   /* 重型坦克：交错负重轮 + 炮口制退器（虎式的年代特征） */
   const TANK_HEAVY_DETAIL = [-32, -16, 0, 16, 32].map(x => circle(x, 16.5, 4.4)).join(' ') + ' ' +
     bar(46.5, -17, 46.5, -9, 2.4);
+  /* 防空炮：测距条 + 支腿驻锄 */
+  const ART_AA_DETAIL = bar(-8, -20, 12, -20, 1.4) + ' ' +
+    circle(-22, 18, 2.2) + ' ' + circle(24, 18, 2.2);
+  /* 反坦克炮：瞄准具 + 大架驻锄 */
+  const ART_AT_DETAIL = bar(0, -18, 8, -17, 1.3) + ' ' + bar(-33, 12, -39, 15, 2.2);
+  /* 野战炮：轮辐 + 炮口制退器 */
+  const ART_FIELD_DETAIL = [20, 140, 260].map(a => {
+    const r = a * Math.PI / 180;
+    return bar(4, 20, 4 + Math.cos(r) * 13.5, 20 + Math.sin(r) * 13.5, 1.8);
+  }).join(' ') + ' ' + bar(46, -31, 47, -23, 2.6);
+  /* 火箭炮：发射轨连接杆 + 驾驶室风挡 + 轮毂 */
+  const ART_ROCKET_DETAIL = bar(-19, -18.5, -19, -26, 1.2) + ' ' +
+    bar(0, -24, 0, -31.5, 1.2) + ' ' + bar(18, -29.5, 18, -37, 1.2) + ' ' +
+    bar(28, -9, 34, -9, 1.4) + ' ' +
+    circle(-28, 6, 2.6) + ' ' + circle(-14, 6, 2.6) + ' ' + circle(32, 6, 2.6);
   /* 超重型：6 轮 + 炮口制退器 + 尾部发动机格栅（鼠式原型学） */
   const TANK_SUPERHEAVY_DETAIL = [-32, -19, -6, 7, 20, 33].map(x => circle(x, 18, 4.4)).join(' ') + ' ' +
     bar(45.5, -26, 45.5, -18, 2.6) + ' ' +
@@ -453,6 +515,7 @@ const UnitIcons = (() => {
     tank: TANK_DETAIL, art: ART_DETAIL, inf: INF_DETAIL, air: AIR_DETAIL,
     tankCar: TANK_CAR_DETAIL, tankLight: TANK_LIGHT_DETAIL,
     tankHeavy: TANK_HEAVY_DETAIL, tankSuperheavy: TANK_SUPERHEAVY_DETAIL,
+    artAa: ART_AA_DETAIL, artAt: ART_AT_DETAIL, artField: ART_FIELD_DETAIL, artRocket: ART_ROCKET_DETAIL,
     airFighter: AIR_FIGHTER_DETAIL, airHeavy: AIR_HEAVY_DETAIL, airCas: AIR_CAS_DETAIL,
     airNaval: AIR_NAVAL_DETAIL, airTactical: AIR_TACTICAL_DETAIL,
     airStrategic: AIR_STRATEGIC_DETAIL, airTransport: AIR_TRANSPORT_DETAIL,
