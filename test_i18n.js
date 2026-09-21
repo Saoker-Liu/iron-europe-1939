@@ -91,7 +91,9 @@ geoCtx.COUNTRIES = { de: { name: '德国', note: '1939年德国附庸国' } };
 geoCtx.FACTION_NAME = { axis: '轴心国' };
 geoCtx.CITIES = [{ k: 'london', n: '伦敦', region: '英格兰南部', note: '大西洋运输港口与西部航道司令部所在地' }];
 geoCtx.RIVERS = [{ name: '莱茵河' }];
-geoCtx.MAP_META = { labels: [{ name: '北海' }] };
+geoCtx.MAP_META = { labels: [{ name: '北海' }], canals: [{ name: '基尔运河', historicName: '威廉皇帝运河' }] };
+geoCtx.COUNTRIES.al = { name: '阿尔巴尼亚公国', short: '阿尔巴尼亚' };
+geoCtx.CITIES[0].mapLabel = '伦讷·博恩霍尔姆';
 vm.createContext(geoCtx);
 for (const f of ['js/ui/i18n.js', 'js/ui/i18n-en-geo.js'])
   vm.runInContext(fs.readFileSync(f, 'utf8'), geoCtx, { filename: f });
@@ -106,6 +108,10 @@ assert.equal(geoCtx.CITIES[0].region, 'southern England');
 assert.equal(geoCtx.CITIES[0].note, 'Atlantic convoy port and home of Western Approaches Command');
 assert.equal(geoCtx.RIVERS[0].name, 'Rhine');
 assert.equal(geoCtx.MAP_META.labels[0].name, 'North Sea');
+assert.equal(geoCtx.MAP_META.canals[0].name, 'Kiel Canal');
+assert.equal(geoCtx.MAP_META.canals[0].historicName, 'Kaiser Wilhelm Canal');
+assert.equal(geoCtx.COUNTRIES.al.short, 'Albania');
+assert.equal(geoCtx.CITIES[0].mapLabel, 'Rønne · Bornholm');
 /* ---- i18n-en-mil.js：军事域就地翻译（含舰名分国映射与编号规则） ---- */
 const milCtx = { localStorage: { getItem: () => 'en', setItem: () => {} } };
 milCtx.window = milCtx;
@@ -122,6 +128,8 @@ milCtx.NAVAL = {
     'uk:cv:1': [{ n: '光辉号' }, { n: '胜利号' }, { n: '可畏号' }],
   },
   passages: [{ name: '直布罗陀海峡' }],
+  models: { de: { sub: [['VII型', 1939, '通用游戏型号，无对应史实舰级']] },
+    neutral: { bb: [['基础型', 1939, '通用游戏型号，无对应史实舰级']] } },
 };
 milCtx.GENERALS = [{ name: '古德里安', title: '装甲兵之父', bio: '二战时期任装甲集群及装甲集团军指挥官。' }];
 milCtx.EVENTS = [{ t: 8, title: '西线闪击战', text: '1940年5月10日，德军发起"黄色方案"，装甲集群穿越阿登森林，法兰西战役爆发。' }];
@@ -141,6 +149,9 @@ assert.equal(milCtx.NAVAL.names['su:sub:0'][0].n, 'Shch-301');   // 西里尔舷
 assert.equal(milCtx.NAVAL.names['fr:sub:0'][0].n, 'Redoutable'); // 同名舰分国映射
 assert.equal(milCtx.NAVAL.names['uk:cv:1'][2].n, 'Formidable');
 assert.equal(milCtx.NAVAL.passages[0].name, 'Strait of Gibraltar');
+assert.equal(milCtx.NAVAL.models.de.sub[0][0], 'Type VII');
+assert.equal(milCtx.NAVAL.models.de.sub[0][2], 'Generic game type, no historical class');
+assert.equal(milCtx.NAVAL.models.neutral.bb[0][0], 'Basic'); // 年份槽（[1]）是数字，不翻译
 assert.equal(milCtx.GENERALS[0].name, 'Heinz Guderian');
 assert.equal(milCtx.GENERALS[0].title, 'Father of the Panzer Troops');
 assert.equal(milCtx.GENERALS[0].bio, 'Served in WWII as panzer group and panzer army commander.');
