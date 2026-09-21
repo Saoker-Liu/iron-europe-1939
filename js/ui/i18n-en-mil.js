@@ -242,6 +242,27 @@ I18N.add({
   '德意志级装甲舰': 'Deutschland-class Panzerschiff', '沙恩霍斯特级': 'Scharnhorst Class',
   '德意志级前无畏舰': 'Deutschland-class Pre-dreadnought', '俾斯麦级': 'Bismarck Class',
   '兴登堡级（H级计划）': 'Hindenburg Class (H-Plan)', '塞德利茨改装型': 'Seydlitz Conversion', '齐柏林伯爵级': 'Graf Zeppelin Class',
+  /* naval build-tree notes (NAVAL.models third slot) shared with no other section */
+  'Z计划轻巡洋舰': 'Z Plan Light Cruisers',
+  '对应H-39；兴登堡为游戏名称，并非正式确定的舰级名': 'Corresponds to H-39; Hindenburg is the in-game name, never an officially confirmed class name',
+  '威悉河改装计划；史实1942年提出，游戏按指定规则开局可用': 'Weser conversion plan; proposed historically in 1942, available from the start under scenario rules',
+  '齐柏林伯爵号未完工': 'Graf Zeppelin was never completed',
+  '1939年设计的狮级建造计划': 'Lion-class build programme drawn up in 1939',
+  '战前远洋潜艇计划': 'Pre-war ocean-going submarine programme',
+  '战前设计；战后以不同防空配置完工': 'Pre-war design; completed postwar with different anti-air fits',
+  '重巡洋舰设计研究': 'Heavy cruiser design study',
+  '战列舰设计计划': 'Battleship design programme',
+  '霞飞、潘勒韦计划': 'Joffre and Painlevé programmes',
+  '战时驱逐舰建造计划': 'Wartime destroyer construction programme',
+  '卡索内个人技术构想；非获批建造舰级，游戏作为战巡方案': 'Ferrati personal technical concept; never an approved class, adopted as the game battlecruiser design',
+  '邮轮奥古斯都号改装护航航母，未完工': 'Liner Augustus conversion into escort carrier, never completed',
+  '邮轮罗马号改装航母，未服役': 'Liner Roma conversion into carrier, never commissioned',
+  '战前开工，战后才服役': 'Laid down pre-war, commissioned only after the war',
+  '大型巡洋舰计划，未完工': 'Large cruiser programme, never completed',
+  '苏维埃联盟等舰，未完工': 'Sovetsky Soyuz and sisters, never completed',
+  '战前设计研究，未建成': 'Pre-war design study, never built',
+  '1943—1944年设计研究，未建成': '1943-1944 design study, never built',
+  '设计方案，未开工': 'Design study, never laid down',
   'S级': 'S Class', 'T级': 'T Class', 'V级': 'V Class',
   '部族级': 'Tribal Class', 'J/K/N级': 'J/K/N Class', '战斗级': 'Battle Class',
   '城级': 'Town Class', '斐济级（殖民地级）': 'Fiji Class (Crown Colony)', '敏捷级': 'Swiftsure Class',
@@ -1433,6 +1454,9 @@ I18N.onData(() => {
     I18N.tr(e, 'note');
   }
   for (const p of NAVAL.passages) I18N.tr(p, 'name');
+  /* shipyard build tree: [class name, year, note] triples per navy/class */
+  for (const ct of Object.keys(NAVAL.models)) for (const cls of Object.keys(NAVAL.models[ct]))
+    for (const e of NAVAL.models[ct][cls]) { I18N.tr(e, 0); I18N.tr(e, 2); }
   GENERALS.forEach((g, i) => {
     const r = GENERAL_EN[i];
     if (!r) return;
