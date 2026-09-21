@@ -706,10 +706,11 @@
   });
   I18N.onData(() => {
     for (const k in TERRAIN) I18N.tr(TERRAIN[k], 'name');
-    for (const k in COUNTRIES) { I18N.tr(COUNTRIES[k], 'name'); I18N.tr(COUNTRIES[k], 'note'); }
+    for (const k in COUNTRIES) { I18N.tr(COUNTRIES[k], 'name'); I18N.tr(COUNTRIES[k], 'short'); I18N.tr(COUNTRIES[k], 'note'); }
     for (const k in FACTION_NAME) I18N.tr(FACTION_NAME, k);
-    for (const ci of CITIES) { I18N.tr(ci, 'n'); I18N.tr(ci, 'region'); I18N.tr(ci, 'note'); }
+    for (const ci of CITIES) { I18N.tr(ci, 'n'); I18N.tr(ci, 'mapLabel'); I18N.tr(ci, 'region'); I18N.tr(ci, 'note'); }
     for (const rv of (RIVERS || [])) I18N.tr(rv, 'name');
     for (const lb of (MAP_META.labels || [])) I18N.tr(lb, 'name');
+    for (const cn of (MAP_META.canals || [])) { I18N.tr(cn, 'name'); I18N.tr(cn, 'historicName'); }
   });
 })();
