@@ -170,4 +170,20 @@ deserialize以initialFleet:false构造，再恢复原单位；两遍处理舰名
 - 本地联调服务器：后台进程可能随会话结束被回收，端口 8631 探活失败就重启（脚本见 §9.1）
 
 
-整合适配：本节性能数字是原分支历史测量，不代表当前所有设备的帧耗时。矢量全集映射 20 键（陆空四类＋七个机种角色＋八舰种＋海运运输船），`unitIconClass` 统一按兵种／角色取键，未知键才回退汉字兵种符。圆形外轮廓与多边形统一环绕方向，内环反向保留镂空。
+整合适配：本节性能数字是原分支历史测量，不代表当前所有设备的帧耗时。矢量全集映射 31 键（陆空四类＋步兵三角色＋炮兵四角色＋装甲四角色＋通用形＋七个机种角色＋八舰种＋海运运输船），`unitIconClass` 统一按兵种／角色取键，未知键才回退汉字兵种符。圆形外轮廓与多边形统一环绕方向，内环反向保留镂空。
+
+## 中英双语层（i18n）
+
+中文是唯一数据源，英文只发生在显示层，渐进翻译、永不白屏。`js/ui/i18n.js` 是零依赖核心：`T(s)` 字典查找（未命中原样返回）、`F(tpl,...)` 槽位模板（英汉语序不同时槽位可重排）、`setLang(l)` 写 localStorage 键 `iron-europe-lang` 后整页刷新、`onData(fn)` 注册数据翻译器、`tr(obj,prop)` 就地翻译并把原值存 `_zh<prop>`（搜索同时匹配中英）。静态 HTML 用 `data-i18n / -html / -title / -aria` 标记，`refresh()` 一次性替换；`#btn-lang` 按钮由核心自动接管。语言包在 index.html 静态标签先行加载：`i18n.js` → `i18n-en.js`（UI 字符串）→ `i18n-en-geo.js`（地形/国家/城市/河流/海域/阵营）→ `i18n-en-mil.js`（装备/机模/舰模/舰名/将领/事件/经济）。loader 在全部阶段装配完成后、BootUI 之前调用一次 `I18N.translateData()`，把数据名称就地换成英文。
+
+### 数据改写的铁律（新增数据字段前必读）
+
+**必须走 `tr()` 改写**（这些字段被模板裸插值，不经 T()）：装备 `.n/.nt/.role/.className/.name`、CLASSES `.name`、AIR.roles `name/role`、NAVAL.names `n/note`、NAVAL.passages `name`、GENERALS `name/title/bio`、EVENTS `title/text`、ECONOMY 建造/运输 `name`。
+
+**禁止改写**：装备 `.group`（逻辑层与 ui.js 中硬编码中文数组做相等比较，显示才走 T()）、`.glyph`（画布汉字徽章）、GENERALS `.career/.design`（从未渲染）、CLASSES `.glyph`。改了轻则按钮分组失效，重则地图图标变豆腐块。
+
+**舰名**用 `SHIP_NAMES[国家][中文名]` 逐国映射——不同海军同名舰译名不同（可畏号：英 Formidable / 法 Redoutable），不能进全局字典；舷号舰名剥「号」后按规则转写（西里尔 Щ→Shch）。经济 `name` 用 mutator 内的局部 ECON_EN 映射，不用全局字典——全局字典里「工厂」是带前导空格的日志片段。
+
+### 覆盖率与测试
+
+覆盖率脚本（加载真实数据＋全部语言包→`translateData()`→遍历统计残留 CJK，跳过 `glyph/group/career/design` 与 `_zh*` 原值）当前报告军事域残留为 0；地理域同法。`test_i18n.js` 用 vm 沙箱覆盖字典查找、未命中原样返回、槽位重排、`tr()` 保 `_zh`、onData、静态 DOM、语言持久化及军事 mutator（含 Shch-301、跨军同名舰、集团军群译名、Factory 不带前导空格）。新增游戏文本：显示处套 T() 并补字典；新增数据字段：按上面铁律决定 tr() 改写还是保持原样，并同步覆盖率脚本与 test_i18n.js。
