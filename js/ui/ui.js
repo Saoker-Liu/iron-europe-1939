@@ -3,6 +3,11 @@
  * ========================================================================= */
 'use strict';
 
+/* 双语层：i18n.js 先行加载；测试沙箱没有 I18N 时退化为原样输出。
+ * 用 var 声明：多个文件载入同一 vm 上下文时重复声明不报错。 */
+var T = (typeof I18N !== 'undefined' && I18N.t) ? I18N.t : (s => s);
+var F = (typeof I18N !== 'undefined' && I18N.f) ? I18N.f : ((tpl, ...a) => tpl.replace(/\{(\d+)\}/g, (m, i) => a[+i] === undefined ? m : String(a[+i])));
+
 /* ============================ 音效（WebAudio 合成） ============================ */
 const SFX = (() => {
   let ctx = null, on = true;
@@ -268,7 +273,7 @@ function drawMapLabels(g) {
   if(g.tutorial){
     cx.save();cx.textAlign='center';cx.font='bold 15px "Microsoft YaHei",sans-serif';cx.fillStyle='#ffe9a8';
     for(const city of g.cities){const [x,y]=hexToPix(city.x,city.y);cx.fillText(city.n,x,y+S()*1.1);}
-    cx.restore();document.getElementById('map-label-level').textContent='新手演习 · 虚构训练场';return;
+    cx.restore();document.getElementById('map-label-level').textContent=T('新手演习 · 虚构训练场');return;
   }
   const cam=UI.cam, level=MapLabels.tier(cam.z,MAP_META);
   const key=[cam.x,cam.y,cam.z,innerWidth,innerHeight].join('|');
@@ -295,7 +300,7 @@ function drawMapLabels(g) {
   }
   cx.restore();
   const status=document.getElementById('map-label-level');
-  const title=['国家与主要地区','次级地区与主要城市','局部地区与主次城市','全部城市名称'][level];
+  const title=[T('国家与主要地区'),T('次级地区与主要城市'),T('局部地区与主次城市'),T('全部城市名称')][level];
   if(status&&status.textContent!==title)status.textContent=title;
 }
 
@@ -427,7 +432,7 @@ function drawFrame(now) {
       if(!iconClass){
         cx.font = `900 ${s * 0.44}px "Microsoft YaHei",sans-serif`;
         cx.fillStyle = '#fff'; cx.strokeStyle = 'rgba(0,0,0,.6)'; cx.lineWidth = 3;
-        const glyph=g.isEmbarked(u)?'船':CLASSES[u.eq.cls].glyph;
+        const glyph=g.isEmbarked(u)?T('船'):CLASSES[u.eq.cls].glyph;
         cx.strokeText(glyph,x,y+s*.16);cx.fillText(glyph,x,y+s*.16);
       }
       // 将领星
@@ -443,7 +448,7 @@ function drawFrame(now) {
       // 驻防标记
       if (u.dug) {
         cx.font = `700 ${s * 0.26}px "Microsoft YaHei",sans-serif`;
-        cx.fillStyle = '#7ec8ff'; cx.fillText('守', x + s * 0.52, y - s * 0.4);
+        cx.fillStyle = '#7ec8ff'; cx.fillText(T('守'), x + s * 0.52, y - s * 0.4);
       }
     }
     // 血条
@@ -590,7 +595,7 @@ function drawFallout(g) {
 }
 function beginAirMission(kind) {
   const g=UI.game,u=UI.sel;if(UI.busy||!u||!g.isAir(u)||g.unitFaction(u)!==g.playerFaction)return;
-  UI.airMission=kind;banner(kind==='nuclear'?'选择核打击目标格：将显示范围与损失确认':'选择空闲陆格执行伞降',3500);
+  UI.airMission=kind;banner(kind==='nuclear'?T('选择核打击目标格：将显示范围与损失确认'):T('选择空闲陆格执行伞降'),3500);
 }
 function airMissionTarget(c,r) {
   const g=UI.game,u=UI.sel,kind=UI.airMission;
@@ -600,7 +605,7 @@ function airMissionTarget(c,r) {
     g.paradrop(u,c,r);UI.airMission=null;select(u);updateTopbar();renderLog();return;
   }
   const victims=g.units.filter(v=>hexDist(c,r,v.c,v.r)<=1),city=g.cityAt(c,r);
-  openModal(`<div class="modal"><h1>☢ 确认核打击</h1><p>目标：${city?city.n:'('+c+','+r+')'}。消耗${AIR.nuclear.cost}金。</p><p>中心格所有单位消灭，周围一格损失${AIR.nuclear.splash}兵力，友军同样受影响。范围内共${victims.length}支部队，其中己方${victims.filter(v=>g.unitFaction(v)===g.playerFaction).length}支。</p><p>污染持续${AIR.nuclear.duration}回合，每回合损失${AIR.nuclear.damage}兵力；污染城市收入为0。波及中立／非交战国家将引发参战。</p><button class="btn danger" id="nuclear-confirm">执行核打击</button><button class="btn" id="nuclear-cancel">取消</button></div>`);
+  openModal(`<div class="modal"><h1>${T('☢ 确认核打击')}</h1><p>${F('目标：{0}。消耗{1}金。', city?city.n:'('+c+','+r+')', AIR.nuclear.cost)}</p><p>${F('中心格所有单位消灭，周围一格损失{0}兵力，友军同样受影响。范围内共{1}支部队，其中己方{2}支。', AIR.nuclear.splash, victims.length, victims.filter(v=>g.unitFaction(v)===g.playerFaction).length)}</p><p>${F('污染持续{0}回合，每回合损失{1}兵力；污染城市收入为0。波及中立／非交战国家将引发参战。', AIR.nuclear.duration, AIR.nuclear.damage)}</p><button class="btn danger" id="nuclear-confirm">${T('执行核打击')}</button><button class="btn" id="nuclear-cancel">${T('取消')}</button></div>`);
   document.getElementById('nuclear-cancel').onclick=()=>{closeModal();UI.airMission=null;};
   document.getElementById('nuclear-confirm').onclick=()=>{
     if(UI.busy)return;
@@ -637,14 +642,14 @@ function showAirfieldPanel(ci) {
   if(!ci||!g.airfields.includes(ci))return;
   const offers=g.airRoster(ci),units=g.airUnitsAt(ci.k),selected=UI.sel;
   const transfer=selected&&g.isAir(selected)&&g.unitFaction(selected)===g.playerFaction&&g.moveRange(selected).cost.has(ci.x+','+ci.y);
-  body.innerHTML=`<div class="p-title"><span>✈ ${ci.n}机场</span><span class="tag">${FACTION_NAME[ci.owner]}</span></div>
-    <div class="p-sub">经济 ${g.gold[g.playerFaction]}金 · 驻扎 ${units.length}支空军<br>飞机在机场驻扎，不占陆军格位。每回合从基地半径内选择目标出击一次，出击后留在原机场；转场消耗整回合。新编部队下回合可行动。</div>
-    <button class="btn" id="airfield-city">查看所属城市</button>
-    ${transfer?`<button class="btn gold" id="airfield-transfer">将选中空军转场至${ci.n}</button>`:''}
-    <div class="p-sub">驻扎空军（机场失守时，未撤离的飞机损失）</div>
-    ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${g.airRoleName(u)} · ${u.eq.n} · 兵力${u.hp} · ${u.attacked?'已行动':'可行动'}${selected&&UI.targets.has(u.id)?' · 点击攻击':''}</button>`).join('')||'<div class="p-sub">暂无驻扎空军</div>'}
-    <div class="p-sub">组建空军</div>
-    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${UnitIcons.svg(iconKeyFor(o.eq),18)}</span>${AIR.roles[o.eq.airRole].name} · ${o.eq.n} · ${o.eq.yr}年</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 作战半径${o.eq.mov}格（约${o.eq.mov*45}公里）</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||'组建'} · ${o.eq.cost}金</button><details class="p-sub"><summary>机型发展与解锁年份</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>`${e.yr}：${e.n} · 攻${e.atk} 防${e.def} 半径${e.mov} · ${e.cost}金${e.nt?' · '+e.nt:''}`).join('<br>')}</details></div>`;}).join('')}`;
+  body.innerHTML=`<div class="p-title"><span>${F('✈ {0}机场', ci.n)}</span><span class="tag">${FACTION_NAME[ci.owner]}</span></div>
+    <div class="p-sub">${F('经济 {0}金 · 驻扎 {1}支空军', g.gold[g.playerFaction], units.length)}<br>${T('飞机在机场驻扎，不占陆军格位。每回合从基地半径内选择目标出击一次，出击后留在原机场；转场消耗整回合。新编部队下回合可行动。')}</div>
+    <button class="btn" id="airfield-city">${T('查看所属城市')}</button>
+    ${transfer?`<button class="btn gold" id="airfield-transfer">${F('将选中空军转场至{0}', ci.n)}</button>`:''}
+    <div class="p-sub">${T('驻扎空军（机场失守时，未撤离的飞机损失）')}</div>
+    ${units.map((u,i)=>`<button class="btn" id="airfield-unit-${i}">${F('{0} · {1} · 兵力{2} · {3}', g.airRoleName(u), u.eq.n, u.hp, u.attacked?T('已行动'):T('可行动'))}${selected&&UI.targets.has(u.id)?T(' · 点击攻击'):''}</button>`).join('')||'<div class="p-sub">'+T('暂无驻扎空军')+'</div>'}
+    <div class="p-sub">${T('组建空军')}</div>
+    ${offers.map((o,i)=>{const error=g.airBuildError(ci.k,o.eqKey);return `<div class="shop-item" style="display:block"><div class="s-name"><span class="ico">${UnitIcons.svg(iconKeyFor(o.eq),18)}</span>${F('{0} · {1} · {2}年', AIR.roles[o.eq.airRole].name, o.eq.n, o.eq.yr)}</div><div class="p-sub">${o.eq.role}<br>${o.eq.nt||''}</div><div class="s-info">${F('攻击{0} · 防御{1} · 作战半径{2}格（约{3}公里）', o.eq.atk, o.eq.def, o.eq.mov, o.eq.mov*45)}</div><button class="btn gold" id="air-build-${i}" ${error||UI.busy?'disabled':''}>${error||T('组建')} · ${o.eq.cost}${T('金')}</button><details class="p-sub"><summary>${T('机型发展与解锁年份')}</summary>${EQUIP[o.country].air.filter(e=>e.airRole===o.eq.airRole).sort((a,b)=>a.yr-b.yr||a.tier-b.tier).map(e=>F('{0}：{1} · 攻{2} 防{3} 半径{4} · {5}金{6}', e.yr, e.n, e.atk, e.def, e.mov, e.cost, e.nt?' · '+e.nt:'')).join('<br>')}</details></div>`;}).join('')}`;
   document.getElementById('airfield-city').onclick=()=>showCityPanel(ci);
   const transferButton=document.getElementById('airfield-transfer');if(transferButton)transferButton.onclick=()=>{if(!UI.busy&&g.rebaseAir(selected,ci.k)){select(selected);updateTopbar();renderLog();}};
   units.forEach((u,i)=>{document.getElementById('airfield-unit-'+i).onclick=()=>{if(UI.busy||!g.units.includes(u))return;if(UI.sel&&UI.targets.has(u.id)){doAttack(u);return;}if(g.unitFaction(u)===g.playerFaction)select(u);else showUnitInfo(u);};});
@@ -676,55 +681,55 @@ function drawConstruction(g) {
   for(const ci of g.cities)if(ci.factory){const [x,y]=hexToPix(ci.x,ci.y);cx.fillText('⚒',x-Math.max(14,S()*.7),y+Math.max(14,S()*.7));}
   for(const p of g.construction){
     const ci=g.cityByKey[p.cityKey],[x,y]=hexToPix(p.kind==='harbor'?p.c:ci.x,p.kind==='harbor'?p.r:ci.y);
-    if(p.kind==='harbor'){hexPath(x,y,S()*.85);cx.strokeStyle='#ffe285';cx.lineWidth=2;cx.stroke();cx.fillText('⚓施工 '+p.remaining,x,y);}
+    if(p.kind==='harbor'){hexPath(x,y,S()*.85);cx.strokeStyle='#ffe285';cx.lineWidth=2;cx.stroke();cx.fillText(F('⚓施工 {0}', p.remaining),x,y);}
   }
   cx.restore();
 }
 function constructionHTML(city) {
   if(UI.game?.tutorial)return '';
   const g=UI.game;
-  return `<div class="p-sub">城市设施 · 每种一座；不同设施可同时施工。费用开工时支付，城市易手后设施及工程由新控制方接管。</div>`+
+  return `<div class="p-sub">${T('城市设施 · 每种一座；不同设施可同时施工。费用开工时支付，城市易手后设施及工程由新控制方接管。')}</div>`+
     Object.entries(ECONOMY.construction).map(([kind,rule])=>{
       const job=g.construction.find(p=>p.cityKey===city.k&&p.kind===kind),done=g.hasFacility(city,kind),error=g.constructionError(city.k,kind);
-      const state=done?'已建成':job?'建设中 · 剩余'+job.remaining+'回合':error||'可建设';
-      return `<div class="p-sub">${rule.name}：${state}${kind==='factory'?' · 可组建炮兵与装甲部队':''}</div>`+
-        (!done&&!job&&city.owner===g.playerFaction?`<button class="btn" id="city-build-${kind}" ${error||UI.busy?'disabled':''}>${kind==='harbor'?'选择海格建设港口':'建设'+rule.name} · ${rule.cost}金 · ${rule.turns}回合</button>`:'');
+      const state=done?T('已建成'):job?F('建设中 · 剩余{0}回合', job.remaining):error||T('可建设');
+      return `<div class="p-sub">${F('{0}：{1}', rule.name, state)}${kind==='factory'?T(' · 可组建炮兵与装甲部队'):''}</div>`+
+        (!done&&!job&&city.owner===g.playerFaction?`<button class="btn" id="city-build-${kind}" ${error||UI.busy?'disabled':''}>${kind==='harbor'?T('选择海格建设港口'):F('建设{0}', rule.name)} · ${rule.cost}${T('金')} · ${rule.turns}${T('回合')}</button>`:'');
     }).join('');
 }
 function beginConstruction(city,kind,site=null) {
   const g=UI.game;if(UI.busy)return;
   if(g.startConstruction(city.k,kind,site)){closeModal();SFX.click();updateTopbar();renderLog();showCityPanel(city);autoSave();}
-  else {banner(g.constructionError(city.k,kind,site)||'请选择港址',2200);showCityPanel(city);}
+  else {banner(g.constructionError(city.k,kind,site)||T('请选择港址'),2200);showCityPanel(city);}
 }
 function chooseHarborSite(city) {
   const g=UI.game,sites=g.harborSites(city),rule=ECONOMY.construction.harbor;
   const [x,y]=hexToPix(city.x,city.y);
-  openModal(`<div class="modal"><h1>${city.n} · 选择港址</h1><p>费用${rule.cost}金，工期${rule.turns}回合。选择城市相邻的空闲海格开工；非己方部队占据工地时暂停施工。</p>${sites.map((p,i)=>{
-    const [sx,sy]=hexToPix(...p),direction=(sx>x?'东':'西')+(sy<y?'北':sy>y?'南':'');
-    return `<button class="btn" id="harbor-site-${i}">在${direction}侧海域建设（${p.join(',')}）</button>`;
-  }).join('')||'<p>没有可用的相邻海域。</p>'}<button class="btn" id="harbor-site-cancel">取消</button></div>`);
+  openModal(`<div class="modal"><h1>${F('{0} · 选择港址', city.n)}</h1><p>${F('费用{0}金，工期{1}回合。选择城市相邻的空闲海格开工；非己方部队占据工地时暂停施工。', rule.cost, rule.turns)}</p>${sites.map((p,i)=>{
+    const [sx,sy]=hexToPix(...p),direction=T((sx>x?'东':'西')+(sy<y?'北':sy>y?'南':''));
+    return `<button class="btn" id="harbor-site-${i}">${F('在{0}侧海域建设（{1}）', direction, p.join(','))}</button>`;
+  }).join('')||'<p>'+T('没有可用的相邻海域。')+'</p>'}<button class="btn" id="harbor-site-cancel">取消</button></div>`);
   sites.forEach((p,i)=>document.getElementById('harbor-site-'+i).onclick=()=>beginConstruction(city,'harbor',p));
   document.getElementById('harbor-site-cancel').onclick=closeModal;
 }
-function shipNameKind(entry) { return {historical:'史实舰名',planned:'计划舰名／代号',proposed:'游戏拟名',generic:'通用编号'}[entry.kind]||'通用编号'; }
+function shipNameKind(entry) { return {historical:T('史实舰名'),planned:T('计划舰名／代号'),proposed:T('游戏拟名'),generic:T('通用编号')}[entry.kind]||T('通用编号'); }
 function showHarborPanel(h) {
   if(!h)return;
   const g=UI.game,city=g.cityByKey[h.cityKey],body=document.getElementById('panel-body');
   const offers=g.navalRoster(city),occupant=g.unitAt(h.c,h.r);
-  body.innerHTML=`<div class="p-title"><span>⚓ ${city.n}军港</span><span class="tag">${FACTION_NAME[city.owner]}</span></div>
-    <div class="p-sub">当前经济：${g.gold[g.playerFaction]}金。点击舰种建造当前最先进型号，舰艇在港口海格下水，下回合可行动。旧舰不会自动升级。</div>
-    <div class="p-sub">${occupant?'泊位被'+g.unitName(occupant)+'占用，请先驶离。':'泊位空闲。'} 控制相邻城市即可控制军港；舰艇无法夺取城市。</div>
-    <button class="btn" id="harbor-city">查看所属城市</button>
-    ${occupant?'<button class="btn" id="harbor-unit">查看泊位舰队／部队</button>':''}
+  body.innerHTML=`<div class="p-title"><span>${F('⚓ {0}军港', city.n)}</span><span class="tag">${FACTION_NAME[city.owner]}</span></div>
+    <div class="p-sub">${F('当前经济：{0}金。点击舰种建造当前最先进型号，舰艇在港口海格下水，下回合可行动。旧舰不会自动升级。', g.gold[g.playerFaction])}</div>
+    <div class="p-sub">${occupant?F('泊位被{0}占用，请先驶离。', g.unitName(occupant)):T('泊位空闲。')} ${T('控制相邻城市即可控制军港；舰艇无法夺取城市。')}</div>
+    <button class="btn" id="harbor-city">${T('查看所属城市')}</button>
+    ${occupant?'<button class="btn" id="harbor-unit">'+T('查看泊位舰队／部队')+'</button>':''}
     ${offers.map((o,i)=>{const error=g.navalBuildError(city.k,o.eqKey,g.playerFaction);
       const country=o.country==='neutral'?COUNTRIES[city.ct].name:COUNTRIES[o.country]?.name;
       const list=EQUIP[o.country][o.eq.cls];
       const nextName=g.nextShipName(o.country==='neutral'?city.ct:o.country,o.eqKey);
       return `<div class="shop-item" style="display:block"><div class="s-name">${CLASSES[o.eq.cls].glyph} ${CLASSES[o.eq.cls].name} · ${country}</div>
-      <div>${o.eq.n}${o.locked?' · '+o.eq.yr+'年解锁':''}</div><div class="s-info">下艘舰名：${nextName.n} · ${shipNameKind(nextName)}</div>
-      <div class="s-info">攻击${o.eq.atk} · 防御${o.eq.def} · 移动${o.eq.mov} · 射程${o.eq.rng}<br>${o.eq.role}<br>${o.eq.nt}</div>
-      <button class="btn gold" id="naval-build-${i}" ${error||UI.busy?'disabled':''}>${o.locked?'尚未解锁':error||'建造'} · ${o.eq.cost}金</button>
-      <details class="p-sub"><summary>舰型发展（游戏解锁年份）</summary>${list.map(e=>`${e.yr}：${e.n}${e.planned?'【计划／未建成】':''}`).join('<br>')}</details></div>`;
+      <div>${o.eq.n}${o.locked?' · '+F('{0}年解锁', o.eq.yr):''}</div><div class="s-info">${F('下艘舰名：{0} · {1}', nextName.n, shipNameKind(nextName))}</div>
+      <div class="s-info">${F('攻击{0} · 防御{1} · 移动{2} · 射程{3}', o.eq.atk, o.eq.def, o.eq.mov, o.eq.rng)}<br>${o.eq.role}<br>${o.eq.nt}</div>
+      <button class="btn gold" id="naval-build-${i}" ${error||UI.busy?'disabled':''}>${o.locked?T('尚未解锁'):error||T('建造')} · ${o.eq.cost}${T('金')}</button>
+      <details class="p-sub"><summary>${T('舰型发展（游戏解锁年份）')}</summary>${list.map(e=>F('{0}：{1}{2}', e.yr, e.n, e.planned?T('【计划／未建成】'):'')).join('<br>')}</details></div>`;
     }).join('')}`;
   document.getElementById('harbor-city').onclick=()=>showCityPanel(city);
   const unitButton=document.getElementById('harbor-unit');
@@ -875,7 +880,7 @@ function execAttack(enemy) {
 function nextUnit() {
   const g = UI.game;
   const list = g.playerUnits().filter(u => !u.moved || !u.attacked);
-  if (!list.length) { banner('本回合行动完毕'); return; }
+  if (!list.length) { banner(T('本回合行动完毕')); return; }
   UI.nextIdx = (UI.nextIdx + 1) % list.length;
   const u = list[UI.nextIdx];
   select(u);
@@ -896,7 +901,7 @@ async function endTurnFlow() {
   UI.busy = true;
   deselect(); updatePanel();
   document.getElementById('btn-end').disabled = true;
-  banner('敌方行动中…', 900);
+  banner(T('敌方行动中…'), 900);
   await sleep(350);
   const { actions, victory } = g.endTurn();
   renderLog(); updateTopbar();
@@ -925,7 +930,7 @@ async function endTurnFlow() {
 function nextUnitHint() {
   const g = UI.game;
   const n = g.playerUnits().filter(u => !u.moved || !u.attacked).length;
-  if (n) banner(`${n} 支部队待命（N 键切换）`, 1200);
+  if (n) banner(F('{0} 支部队待命（N 键切换）', n), 1200);
 }
 function checkEnd() {
   const g = UI.game;
@@ -936,7 +941,7 @@ function checkEnd() {
 
 /* ============================ Tooltip ============================ */
 function cityDefenseText(city) {
-  return `${city.cap ? '首都' : '城市'}地形：防御+${Math.round(UI.game.terrainDefBonus(city.x,city.y)*100)}%（炮兵、空军攻击忽略）`;
+  return F('{0}地形：防御+{1}%（炮兵、空军攻击忽略）', city.cap ? T('首都') : T('城市'), Math.round(UI.game.terrainDefBonus(city.x,city.y)*100));
 }
 let tipKey = '';
 function updateTooltip(sx, sy, target) {
@@ -952,25 +957,25 @@ function updateTooltip(sx, sy, target) {
     html = `<b style="color:${COUNTRIES[u.ct].color === '#b39b45' ? '#ffd75e' : '#fff'}">${g.unitName(u)}</b><br>
       ${g.isNaval(u)?g.navalIdentity(u):COUNTRIES[u.ct].name+' · '+FACTION_NAME[g.unitFaction(u)]+' · '+CLASSES[u.eq.cls].name}<br>
       ⚔${u.eq.atk} 🛡${u.eq.def} 👣${g.movOf(u)}${u.eq.cls === 'art'||g.isNaval(u) ? ' 🎯' + g.rangeOf(u) : ''} ❤${u.hp}/100<br>
-      ${city ? cityDefenseText(city)+'<br>' : ''}${u.dug ? '🔒 已驻防(+30%防御) ' : ''}${u.vet ? `老练度+${u.vet * 8}% ` : ''}${gen ? `<br>🎖 ${gen.name}（${gen.title}）` : ''}`;
+      ${city ? cityDefenseText(city)+'<br>' : ''}${u.dug ? T('🔒 已驻防(+30%防御) ') : ''}${u.vet ? F('老练度+{0}% ', u.vet * 8) : ''}${gen ? F('<br>🎖 {0}（{1}）', gen.name, gen.title) : ''}`;
   } else if (city) {
-    html = `<b>${city.n}</b>${city.cap ? ' ★首都' : ''}<br>${COUNTRIES[city.ct].name} · ${FACTION_NAME[city.owner]}控制<br>${cityDefenseText(city)}<br>收入 ${g.cityIncome(city)} 金/回合${city.note ? '<br>' + city.note : ''}<br><span style="color:#9aa4b0">占领该国首都可令其全境易手</span>`;
+    html = `<b>${city.n}</b>${city.cap ? T(' ★首都') : ''}<br>${COUNTRIES[city.ct].name} · ${F('{0}控制', FACTION_NAME[city.owner])}<br>${cityDefenseText(city)}<br>${F('收入 {0} 金/回合', g.cityIncome(city))}${city.note ? '<br>' + city.note : ''}<br><span style="color:#9aa4b0">${T('占领该国首都可令其全境易手')}</span>`;
   } else if (g.inMap(c, r)) {
     const t = g.tile(c, r);
-    const T = TERRAIN[t];
-    if (T) {
+    const terr = TERRAIN[t];
+    if (terr) {
       let ex = '';
-      if (t === 'c') { const ci = g.cityAt(c, r); ex = ci && ci.cap ? '（首都 防御+60%）' : ''; }
+      if (t === 'c') { const ci = g.cityAt(c, r); ex = ci && ci.cap ? T('（首都 防御+60%）') : ''; }
       const ct = g.homeCountryOf(c, r);
       const ll = Geography.hexToGeo(c, r);
-      html = `${T.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${T.def ? `<br>防御加成 +${Math.round(T.def * 100)}%` : ''}${g.tutorial?'<br>虚构演习地图':`<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`}`;
+      html = `${terr.name} ${ex}${ct ? '<br>' + COUNTRIES[ct].name : ''}${ct && COUNTRIES[ct].note ? '<br>' + COUNTRIES[ct].note : ''}${terr.def ? F('<br>防御加成 +{0}%', Math.round(terr.def * 100)) : ''}${g.tutorial?T('<br>虚构演习地图'):`<br>${Math.abs(ll[0]).toFixed(1)}°${ll[0] >= 0 ? 'E' : 'W'} · ${ll[1].toFixed(1)}°N`}`;
     }
   }
   const airport=showFacilityIcons()&&g.airfields.find(ci=>{const [x,y]=airfieldScreen(ci);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
-  if(airport)html=`<b>✈ ${airport.n}机场</b><br>${FACTION_NAME[airport.owner]}控制 · 驻扎${g.airUnitsAt(airport.k).length}支空军<br>点击打开机场 · 组建／选择空军`;
+  if(airport)html=`<b>${F('✈ {0}机场', airport.n)}</b><br>${F('{0}控制 · 驻扎{1}支空军', FACTION_NAME[airport.owner], g.airUnitsAt(airport.k).length)}<br>${T('点击打开机场 · 组建／选择空军')}`;
   const harbor=showFacilityIcons()&&g.harbors.find(h=>{const [x,y]=harborScreen(h);return Math.abs(sx-x)<=10&&Math.abs(sy-y)<=10;});
-  if(harbor){const ci=g.cityByKey[harbor.cityKey];html=`<b>⚓ ${ci.n}军港</b><br>${FACTION_NAME[ci.owner]}控制 · 点击建造海军<br>泊位需空闲；新舰下回合行动`;}
-  if(g.contamination(c,r))html+=`<br>☢ 核污染：剩余${g.contamination(c,r)}回合，每回合-${AIR.nuclear.damage}兵力；城市收入为0，暂停补员。`;
+  if(harbor){const ci=g.cityByKey[harbor.cityKey];html=`<b>${F('⚓ {0}军港', ci.n)}</b><br>${F('{0}控制 · 点击建造海军', FACTION_NAME[ci.owner])}<br>${T('泊位需空闲；新舰下回合行动')}`;}
+  if(g.contamination(c,r))html+=F('<br>☢ 核污染：剩余{0}回合，每回合-{1}兵力；城市收入为0，暂停补员。', g.contamination(c,r), AIR.nuclear.damage);
   if (html) {
     const tk = c + ',' + r + '|' + (u ? u.id : 0)+'|'+html;
     if (tk !== tipKey) { tt.innerHTML = html; tipKey = tk; }
@@ -984,18 +989,18 @@ function updateTooltip(sx, sy, target) {
 function updateTopbar() {
   const g = UI.game; if (!g) return;
   document.getElementById('fac-dot').style.background = FACTION_COLOR[g.playerFaction];
-  document.getElementById('fac-name').textContent = g.tutorial?'新手演习':FACTION_NAME[g.playerFaction];
-  document.getElementById('gold').innerHTML = `💰 ${g.gold[g.playerFaction]} <small>(+${g.factionIncome(g.playerFaction)}/回合)</small>`;
-  document.getElementById('date').textContent = `${g.dateLabel()} · 第 ${g.turn + 1} 回合${g.isWinter() ? ' ❄' : ''}`;
+  document.getElementById('fac-name').textContent = g.tutorial?T('新手演习'):FACTION_NAME[g.playerFaction];
+  document.getElementById('gold').innerHTML = F('💰 {0} <small>(+{1}/回合)</small>', g.gold[g.playerFaction], g.factionIncome(g.playerFaction));
+  document.getElementById('date').textContent = F('{0} · 第 {1} 回合{2}', g.dateLabel(), g.turn + 1, g.isWinter() ? ' ❄' : '');
 }
 
 function updatePanel() {
   const g = UI.game;
   const body = document.getElementById('panel-body');
   if (!g) { body.innerHTML = ''; return; }
-  if(g.tutorial&&!UI.sel){body.innerHTML='<div class="p-sub">按左下角提示完成练习；黄色圈标记当前目标。点击部队查看属性，点击空闲训练营招募援军。</div>';return;}
+  if(g.tutorial&&!UI.sel){body.innerHTML='<div class="p-sub">'+T('按左下角提示完成练习；黄色圈标记当前目标。点击部队查看属性，点击空闲训练营招募援军。')+'</div>';return;}
   if (UI.sel) { showUnitPanel(UI.sel); return; }
-  body.innerHTML = `<div class="p-sub">点击部队下达命令 · 点击空城招募 · 点击 ⚓ 军港建造海军 · N 下一部队 · E 结束回合</div>`;
+  body.innerHTML = `<div class="p-sub">${T('点击部队下达命令 · 点击空城招募 · 点击 ⚓ 军港建造海军 · N 下一部队 · E 结束回合')}</div>`;
 }
 
 function showUnitPanel(u) {
@@ -1008,42 +1013,42 @@ function showUnitPanel(u) {
   const rank = gen ? Math.min(5, 1 + Math.floor((g.genKills[gen.id] || 0) / 3)) : 0;
   const ship=g.transportOf(u),atSea=g.isEmbarked(u);
   const airborneCargo=g.cargoOf(u),base=g.airBase(u),waitingPara=base?g.unitAt(base.x,base.y):null;
-  const transportPanel=my&&!g.tutorial&&!g.isNaval(u)&&u.eq.cls!=='air'?`<div class="p-sub">运输装备：${ship?ship.name:'未配备'} · ${atSea?'航行中':'陆上'}<br>沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="价格${t.cost}金；海上移动${t.move}，防御${t.defense}，攻击保留${Math.round(t.attackMultiplier*100)}%" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?t.year+'年解锁':ship&&ship.cost>=t.cost?(ship.id===t.id?'已配备':'已有更高级'):g.transportPrice(u,t.id)+'金'}</button>`).join('')}</div>`:'';
+  const transportPanel=my&&!g.tutorial&&!g.isNaval(u)&&u.eq.cls!=='air'?`<div class="p-sub">${F('运输装备：{0} · {1}', ship?ship.name:T('未配备'), atSea?T('航行中'):T('陆上'))}<br>${T('沿海且尚未行动时购买／升级；下海、上岸各耗尽整回合行动。装备保留，升级只补差价。')}</div><div class="row-btns">${ECONOMY.transports.map((t,i)=>`<button class="btn" id="pb-ship-${i}" title="${F('价格{0}金；海上移动{1}，防御{2}，攻击保留{3}%', t.cost, t.move, t.defense, Math.round(t.attackMultiplier*100))}" ${UI.busy||!g.canEquipTransport(u,t.id)?'disabled':''}>${t.name} · ${t.year>g.year()?F('{0}年解锁', t.year):ship&&ship.cost>=t.cost?(ship.id===t.id?T('已配备'):T('已有更高级')):F('{0}金', g.transportPrice(u,t.id))}</button>`).join('')}</div>`:'';
   body.innerHTML = `
     <div class="p-title"><span>${g.unitName(u)}</span><span class="tag" style="border-color:${FACTION_COLOR[g.unitFaction(u)]}">${FACTION_NAME[g.unitFaction(u)]}</span></div>
     <div class="p-sub">${g.isNaval(u)?g.navalIdentity(u):COUNTRIES[u.ct].name+' · '+CLASSES[u.eq.cls].name} · ${u.eq.nt || ''}</div>
     <div class="hpbar"><div style="width:${Math.max(0, u.hp)}%;background:${u.hp > 60 ? '#67d13d' : u.hp > 30 ? '#e8c33a' : '#e05338'}"></div></div>
     <div class="grid2">
       <span>攻击 <b>${atSea?Math.round(u.eq.atk*ship.attackMultiplier):u.eq.atk}</b></span><span>防御 <b>${atSea?ship.defense:u.eq.def}</b></span>
-      <span>${g.isAir(u)?'作战半径':'移动力'} <b>${g.movOf(u)}</b></span><span>${(u.eq.cls === 'art'||g.isNaval(u)) ? '射程 <b>' + g.rangeOf(u) + '</b>' : '经验 <b>' + u.xp + '</b>'}</span>
+      <span>${g.isAir(u)?T('作战半径'):T('移动力')} <b>${g.movOf(u)}</b></span><span>${(u.eq.cls === 'art'||g.isNaval(u)) ? '射程 <b>' + g.rangeOf(u) + '</b>' : '经验 <b>' + u.xp + '</b>'}</span>
       <span>兵力 <b>${u.hp}/100</b></span><span>老练 <b>+${u.vet * 8}%</b></span>
     </div>
-    ${atSea?`<div class="p-sub">🚢 ${ship.name} · 海上攻击保留${Math.round(ship.attackMultiplier*100)}% · 射程1<br>航行移动力固定${ship.move}；海上无法驻防或自动补员。</div>`:''}
-    ${g.isNaval(u)?`<div class="p-sub">舰名来源：${shipNameKind(g.shipNameInfo(u))}${g.shipNameInfo(u).note?' · '+g.shipNameInfo(u).note:''}<br>⚓ ${u.eq.role}<br>仅在海上航行；己方军港每回合修复25兵力。射程内可反击，无法占领城市。</div>`:''}
-    ${g.cityAt(u.c,u.r)?`<div class="p-sub">🛡 ${cityDefenseText(g.cityAt(u.c,u.r))}<br>与驻防、老练及将领加成共同计入战斗防御。</div>`:''}
-    ${g.cityAt(u.c,u.r)?'<button class="btn" id="garrison-city">查看城市 · 建设设施</button>':''}
-    ${!g.isAir(u)&&g.airfields.some(ci=>ci.x===u.c&&ci.y===u.r)?'<button class="btn gold" id="garrison-airfield">✈ 打开机场 · 组建空军</button>':''}
-    ${g.isAir(u)?`<div class="p-sub">✈ 驻扎机场：${g.airBase(u)?.n||'无'}<br>作战半径 ${g.airRadius(u)}格（约${g.airRadius(u)*45}公里） · 每回合出击一次<br>地图青色格为出击范围，蓝格为可转场的己方机场；转场后本回合不能攻击。空军无法占领城市或驻防。</div><button class="btn" id="unit-airfield">打开驻扎机场</button>`:''}
-    ${g.isAir(u)?`<div class="p-sub">机种：${g.airRoleName(u)}<br>${u.eq.role}<br>${u.eq.nt||''}</div>`:''}
-    ${my&&g.isAir(u)&&g.airRole(u)==='transport'?`<div class="p-sub">载员：${airborneCargo?airborneCargo.eq.n+' · 兵力'+airborneCargo.hp:'空载'}<br>在同一机场城市组建伞兵，待双方可行动时装载。装载后可立即伞降；卸载、转场和伞降均耗尽本回合行动。</div><button class="btn" id="air-load" ${UI.busy||u.moved||u.attacked||airborneCargo||!waitingPara?.eq.para||waitingPara?.moved||waitingPara?.attacked?'disabled':''}>装载机场伞兵</button><button class="btn" id="air-unload" ${UI.busy||u.moved||u.attacked||!airborneCargo||waitingPara?'disabled':''}>在机场卸载</button><button class="btn gold" id="air-drop" ${UI.busy||u.moved||u.attacked||!airborneCargo?'disabled':''}>执行伞降 · 选择目标</button>`:''}
-    ${my&&g.isAir(u)&&g.airRole(u)==='strategic'?`<div class="p-sub">☢ 核打击：${AIR.nuclear.year}年解锁 · 每次${AIR.nuclear.cost}金</div><button class="btn danger" id="air-nuclear" ${UI.busy||g.nuclearError(u,u.c,u.r)?'disabled':''}>核打击 · 选择目标</button>`:''}
+    ${atSea?`<div class="p-sub">${F('🚢 {0} · 海上攻击保留{1}% · 射程1', ship.name, Math.round(ship.attackMultiplier*100))}<br>${F('航行移动力固定{0}；海上无法驻防或自动补员。', ship.move)}</div>`:''}
+    ${g.isNaval(u)?`<div class="p-sub">${F('舰名来源：{0}{1}', shipNameKind(g.shipNameInfo(u)), g.shipNameInfo(u).note?' · '+g.shipNameInfo(u).note:'')}<br>${F('⚓ {0}<br>{1}', u.eq.role, T('仅在海上航行；己方军港每回合修复25兵力。射程内可反击，无法占领城市。'))}</div>`:''}
+    ${g.cityAt(u.c,u.r)?`<div class="p-sub">🛡 ${cityDefenseText(g.cityAt(u.c,u.r))}<br>${T('与驻防、老练及将领加成共同计入战斗防御。')}</div>`:''}
+    ${g.cityAt(u.c,u.r)?'<button class="btn" id="garrison-city">'+T('查看城市 · 建设设施')+'</button>':''}
+    ${!g.isAir(u)&&g.airfields.some(ci=>ci.x===u.c&&ci.y===u.r)?'<button class="btn gold" id="garrison-airfield">'+T('✈ 打开机场 · 组建空军')+'</button>':''}
+    ${g.isAir(u)?`<div class="p-sub">${F('✈ 驻扎机场：{0}', g.airBase(u)?.n||T('无'))}<br>${F('作战半径 {0}格（约{1}公里） · 每回合出击一次', g.airRadius(u), g.airRadius(u)*45)}<br>${T('地图青色格为出击范围，蓝格为可转场的己方机场；转场后本回合不能攻击。空军无法占领城市或驻防。')}</div><button class="btn" id="unit-airfield">${T('打开驻扎机场')}</button>`:''}
+    ${g.isAir(u)?`<div class="p-sub">${F('机种：{0}', g.airRoleName(u))}<br>${u.eq.role}<br>${u.eq.nt||''}</div>`:''}
+    ${my&&g.isAir(u)&&g.airRole(u)==='transport'?`<div class="p-sub">${F('载员：{0}', airborneCargo?F('{0} · 兵力{1}', airborneCargo.eq.n, airborneCargo.hp):T('空载'))}<br>${T('在同一机场城市组建伞兵，待双方可行动时装载。装载后可立即伞降；卸载、转场和伞降均耗尽本回合行动。')}</div><button class="btn" id="air-load" ${UI.busy||u.moved||u.attacked||airborneCargo||!waitingPara?.eq.para||waitingPara?.moved||waitingPara?.attacked?'disabled':''}>${T('装载机场伞兵')}</button><button class="btn" id="air-unload" ${UI.busy||u.moved||u.attacked||!airborneCargo||waitingPara?'disabled':''}>${T('在机场卸载')}</button><button class="btn gold" id="air-drop" ${UI.busy||u.moved||u.attacked||!airborneCargo?'disabled':''}>${T('执行伞降 · 选择目标')}</button>`:''}
+    ${my&&g.isAir(u)&&g.airRole(u)==='strategic'?`<div class="p-sub">${F('☢ 核打击：{0}年解锁 · 每次{1}金', AIR.nuclear.year, AIR.nuclear.cost)}</div><button class="btn danger" id="air-nuclear" ${UI.busy||g.nuclearError(u,u.c,u.r)?'disabled':''}>${T('核打击 · 选择目标')}</button>`:''}
     ${transportPanel}
-    ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">已驻防：防御+30%，移动/攻击后解除</div>' : ''}
+    ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">'+T('已驻防：防御+30%，移动/攻击后解除')+'</div>' : ''}
     ${gen ? `<div class="gen-chip" style="display:flex;gap:8px;align-items:flex-start">
       <div class="gen-portrait" style="background:${COUNTRIES[gen.ct].color};width:40px;height:40px;flex-shrink:0">${genPortrait(gen)}</div>
       <div style="flex:1;min-width:0">
-        <span class="gname">🎖 ${gen.name}</span> <span style="color:#9aa4b0">${gen.title} · ${'★'.repeat(rank)}级 · 击杀${g.genKills[gen.id] || 0}</span>
+        <span class="gname">🎖 ${gen.name}</span> <span style="color:#9aa4b0">${F('{0} · {1}级 · 击杀{2}', gen.title, '★'.repeat(rank), g.genKills[gen.id] || 0)}</span>
         <div class="skill-list">${skills}</div>
         <div class="gbio">${gen.bio}</div>
       </div>
     </div>` : ''}
     ${my ? `<div class="row-btns">
-      ${idle && !u.attacked && !atSea && !g.isNaval(u) && !g.isAir(u) ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
-      ${idle ? '<button class="btn" id="pb-skip">⏭ 待命</button>' : ''}
-      ${idle&&!g.isNaval(u) ? '<button class="btn gold" id="pb-gen">🎖 将领</button>' : ''}
-      <button class="btn" id="pb-next">⏩ 下一部队</button>
+      ${idle && !u.attacked && !atSea && !g.isNaval(u) && !g.isAir(u) ? '<button class="btn" id="pb-dug">'+T('🔒 驻防')+'</button>' : ''}
+      ${idle ? '<button class="btn" id="pb-skip">'+T('⏭ 待命')+'</button>' : ''}
+      ${idle&&!g.isNaval(u) ? '<button class="btn gold" id="pb-gen">'+T('🎖 将领')+'</button>' : ''}
+      <button class="btn" id="pb-next">${T('⏩ 下一部队')}</button>
     </div>
-    <div class="p-sub" style="margin-top:8px">${u.moved && u.attacked ? '⛔ 本回合已行动完毕' : !u.moved ? g.isAir(u)?'青色格：航程 · 蓝格：机场转场 · 红框：可出击目标':'蓝格：可移动 · 红框敌军：可攻击' : '已移动，仍可攻击红框敌军'}</div>` : `<div class="p-sub">${g.unitFaction(u)==='neutral'?'中立部队（尚未参战）':'敌方部队'}</div>`}`;
+    <div class="p-sub" style="margin-top:8px">${u.moved && u.attacked ? T('⛔ 本回合已行动完毕') : !u.moved ? g.isAir(u)?T('青色格：航程 · 蓝格：机场转场 · 红框：可出击目标'):T('蓝格：可移动 · 红框敌军：可攻击') : T('已移动，仍可攻击红框敌军')}</div>` : `<div class="p-sub">${g.unitFaction(u)==='neutral'?T('中立部队（尚未参战）'):T('敌方部队')}</div>`}`;
   const load=document.getElementById('air-load');if(load)load.onclick=()=>{if(!UI.busy&&g.loadParatrooper(u,waitingPara)){select(u);renderLog();}};
   const unload=document.getElementById('air-unload');if(unload)unload.onclick=()=>{if(!UI.busy&&g.unloadParatrooper(u))select(u);};
   const drop=document.getElementById('air-drop');if(drop)drop.onclick=()=>beginAirMission('drop');
@@ -1065,17 +1070,17 @@ function showUnitPanel(u) {
 function showUnitInfo(u) { showUnitPanel(u); }
 
 function recruitmentTabsHTML(prefix, labels, selected) {
-  return `<div class="recruit-tabs" role="group" aria-label="招募类别">${labels.map((label,i)=>`<button class="btn" id="${prefix}-tab-${i}" aria-pressed="${label===selected}">${label}</button>`).join('')}</div>`;
+  return `<div class="recruit-tabs" role="group" aria-label="${T('招募类别')}">${labels.map((label,i)=>`<button class="btn" id="${prefix}-tab-${i}" aria-pressed="${label===selected}">${T(label)}</button>`).join('')}</div>`;
 }
 function showFactoryPanel(city) {
   const g=UI.game,body=document.getElementById('panel-body');if(!city.factory)return;
   const groups=['炮兵','装甲部队'];
   const category=groups.includes(UI.factoryCategory)?UI.factoryCategory:groups[0];
   const offers=g.factoryRoster(city).map((o,i)=>({...o,index:i})).filter(o=>o.eq.cls===(category==='炮兵'?'art':'tank')),blocked=city.owner!==g.playerFaction||city.demilitarized||!g.recruitmentSite(city)||UI.busy;
-  body.innerHTML=`<div class="p-title">⚒ ${city.n}工厂</div><div class="p-sub">当前经济 ${g.gold[g.playerFaction]}金。炮兵与装甲在工厂组建，仅部署到空闲城市格，新部队当回合不能行动，需在城内停留至下回合。</div>
-    <button class="btn" id="factory-city">返回城市</button>
+  body.innerHTML=`<div class="p-title">${F('⚒ {0}工厂', city.n)}</div><div class="p-sub">${F('当前经济 {0}金。炮兵与装甲在工厂组建，仅部署到空闲城市格，新部队当回合不能行动，需在城内停留至下回合。', g.gold[g.playerFaction])}</div>
+    <button class="btn" id="factory-city">${T('返回城市')}</button>
     ${recruitmentTabsHTML('factory',groups,category)}
-    ${offers.map(o=>`<div class="shop-item"><div><span class="ico">${UnitIcons.svg(iconKeyFor(o.eq),18)}</span>${o.eq.n}<div class="s-info">⚔${o.eq.atk} 🛡${o.eq.def} 👣${o.eq.mov} · 射程${o.eq.rng||1}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${o.index}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>组建 · ${o.eq.cost}金</button></div></div>`).join('')}`;
+    ${offers.map(o=>`<div class="shop-item"><div><span class="ico">${UnitIcons.svg(iconKeyFor(o.eq),18)}</span>${o.eq.n}<div class="s-info">${F('⚔{0} 🛡{1} 👣{2} · 射程{3}', o.eq.atk, o.eq.def, o.eq.mov, o.eq.rng||1)}<br>${o.eq.nt||''}</div><button class="btn gold" id="factory-build-${o.index}" ${blocked||o.eq.cost>g.gold[g.playerFaction]?'disabled':''}>${T('组建')} · ${o.eq.cost}${T('金')}</button></div></div>`).join('')}`;
   document.getElementById('factory-city').onclick=()=>showCityPanel(city);
   groups.forEach((label,i)=>document.getElementById('factory-tab-'+i).onclick=()=>{UI.factoryCategory=label;showFactoryPanel(city);});
   offers.forEach(o=>document.getElementById('factory-build-'+o.index).onclick=()=>{if(UI.busy)return;const u=g.recruitFactory(city.k,o.eqKey);if(u){updateTopbar();renderLog();select(u);}else showFactoryPanel(city);});
@@ -1089,20 +1094,20 @@ function showCityPanel(city) {
   const roster = canRecruit ? g.rosterFor(city).filter(it=>it.eq.group===category) : [];
   body.innerHTML = `
     <div class="p-title"><span>${city.n}${city.cap ? ' ★' : ''}</span><span class="tag" style="border-color:${FACTION_COLOR[city.owner]}">${FACTION_NAME[city.owner]}</span></div>
-    <div class="p-sub">🛡 ${cityDefenseText(city)}<br>守军自动获得，无需点击驻防；驻防另加30%防御。</div>
-    <div class="p-sub">${COUNTRIES[city.ct].name} · 收入 ${g.cityIncome(city)} 金/回合 · 💰当前 ${g.gold[g.playerFaction]}</div>
-    ${g.airfields.includes(city)?'<button class="btn gold" id="city-airfield">✈ 打开机场 · 组建空军</button>':''}
-    ${g.harbors.some(h=>h.cityKey===city.k)?'<button class="btn gold" id="city-harbor">⚓ 打开军港 · 建造舰艇</button>':''}
-    ${city.factory?'<button class="btn gold" id="city-factory">⚒ 打开工厂 · 组建炮兵与装甲</button>':''}
+    <div class="p-sub">🛡 ${cityDefenseText(city)}<br>${T('守军自动获得，无需点击驻防；驻防另加30%防御。')}</div>
+    <div class="p-sub">${F('{0} · 收入 {1} 金/回合 · 💰当前 {2}', COUNTRIES[city.ct].name, g.cityIncome(city), g.gold[g.playerFaction])}</div>
+    ${g.airfields.includes(city)?'<button class="btn gold" id="city-airfield">'+T('✈ 打开机场 · 组建空军')+'</button>':''}
+    ${g.harbors.some(h=>h.cityKey===city.k)?'<button class="btn gold" id="city-harbor">'+T('⚓ 打开军港 · 建造舰艇')+'</button>':''}
+    ${city.factory?'<button class="btn gold" id="city-factory">'+T('⚒ 打开工厂 · 组建炮兵与装甲')+'</button>':''}
     ${constructionHTML(city)}
     ${city.note ? `<div class="p-sub">${city.note}</div>` : ''}
-    <div class="p-sub">${city.demilitarized ? '非军事区港口：禁止本地招募' : canRecruit ? '新部队组建后下回合方可行动' : '仅己方城市且有可用部署格可招募'}</div>
+    <div class="p-sub">${city.demilitarized ? T('非军事区港口：禁止本地招募') : canRecruit ? T('新部队组建后下回合方可行动') : T('仅己方城市且有可用部署格可招募')}</div>
     ${recruitmentTabsHTML('city-recruit',groups,category)}
     ${roster.map(it => `
       <div class="shop-item ${it.locked || it.eq.cost > g.gold[g.playerFaction] ? 'locked' : ''}" data-eq="${it.eqKey}">
-        <div><div class="s-name"><span class="ico">${UnitIcons.svg(iconKeyFor(it.eq),15)}</span>${it.eq.n} · ${it.eq.group||''}${it.locked ? ` 🔒${it.eq.yr}年解锁` : ''}</div>
-        <div class="s-info">⚔${it.eq.atk} 🛡${it.eq.def} 👣${it.eq.mov}${it.eq.rng ? ' 🎯' + it.eq.rng : ''} ${it.eq.nt || ''}</div></div>
-        <div class="s-cost">${it.eq.cost}金</div>
+        <div><div class="s-name"><span class="ico">${UnitIcons.svg(iconKeyFor(it.eq),15)}</span>${it.eq.n} · ${it.eq.group?T(it.eq.group):''}${it.locked ? ' 🔒'+F('{0}年解锁', it.eq.yr) : ''}</div>
+        <div class="s-info">${F('⚔{0} 🛡{1} 👣{2}{3} {4}', it.eq.atk, it.eq.def, it.eq.mov, it.eq.rng ? ' 🎯' + it.eq.rng : '', it.eq.nt || '')}</div></div>
+        <div class="s-cost">${F('{0}金', it.eq.cost)}</div>
       </div>`).join('')}`;
   for(const kind of Object.keys(ECONOMY.construction)){const button=document.getElementById('city-build-'+kind);if(button)button.onclick=()=>{if(UI.busy)return;kind==='harbor'?chooseHarborSite(city):beginConstruction(city,kind);};}
   groups.forEach((label,i)=>document.getElementById('city-recruit-tab-'+i).onclick=()=>{UI.cityRecruitCategory=label;showCityPanel(city);});
@@ -1129,16 +1134,16 @@ function closeModal() { modalRoot.onkeydown = null; modalRoot.innerHTML = ''; mo
 function showCitySearch() {
   const g = UI.game; if (!g || UI.busy) return;
   openModal(`<div class="modal" style="width:680px;max-width:100%">
-    <h1>查找城市 <small style="font-size:14px;color:#9aa4b0">${g.cities.length} 座</small></h1>
-    <p class="sub">输入城市、国家或地区；点击结果定位。诺曼底可查到卡昂、瑟堡等城市。</p>
-    <input id="city-query" aria-label="搜索城市、国家或地区" placeholder="例如：热那亚、扎拉、利物浦、诺曼底" style="width:100%;padding:12px;background:#101820;color:#eee;border:1px solid #637386;border-radius:4px;font:inherit">
+    <h1>${T('查找城市')} <small style="font-size:14px;color:#9aa4b0">${F('{0} 座', g.cities.length)}</small></h1>
+    <p class="sub">${T('输入城市、国家或地区；点击结果定位。诺曼底可查到卡昂、瑟堡等城市。')}</p>
+    <input id="city-query" aria-label="${T('搜索城市、国家或地区')}" placeholder="${T('例如：热那亚、扎拉、利物浦、诺曼底')}" style="width:100%;padding:12px;background:#101820;color:#eee;border:1px solid #637386;border-radius:4px;font:inherit">
     <div id="city-results" style="max-height:48vh;overflow:auto;margin:12px 0"></div>
     <button class="btn" id="city-close">关闭</button></div>`);
   const input = document.getElementById('city-query'), results = document.getElementById('city-results');
   function update() {
     const q = input.value.trim().toLowerCase();
-    const list = g.cities.filter(ci => [ci.n,ci.k,ci.region || '',ci.note || '',COUNTRIES[ci.ct].name].join(' ').toLowerCase().includes(q));
-    results.innerHTML = list.map(ci => `<button class="shop-item" style="width:100%;color:inherit;font:inherit;text-align:left" data-city="${ci.k}"><span><b>${ci.n}${ci.cap ? ' ★' : ''}</b><br><small>${COUNTRIES[ci.ct].name}${ci.region ? ' · ' + ci.region : ''}</small></span><span>定位 →</span></button>`).join('') || '<p class="p-sub">没有匹配的城市</p>';
+    const list = g.cities.filter(ci => [ci.n,ci._zhn||'',ci.k,ci.region || '',ci._zhregion || '',ci.note || '',ci._zhnote || '',COUNTRIES[ci.ct].name,COUNTRIES[ci.ct]._zhname || ''].join(' ').toLowerCase().includes(q));
+    results.innerHTML = list.map(ci => `<button class="shop-item" style="width:100%;color:inherit;font:inherit;text-align:left" data-city="${ci.k}"><span><b>${ci.n}${ci.cap ? ' ★' : ''}</b><br><small>${COUNTRIES[ci.ct].name}${ci.region ? ' · ' + ci.region : ''}</small></span><span>${T('定位 →')}</span></button>`).join('') || '<p class="p-sub">'+T('没有匹配的城市')+'</p>';
     results.querySelectorAll('[data-city]').forEach(el => el.onclick = () => {
       const ci = g.cityByKey[el.dataset.city];
       closeModal(); deselect(); UI.cam.z = MAP_META.labelZooms[2]; centerOn(ci.x, ci.y);
@@ -1160,7 +1165,7 @@ function showModalAsync(html) {
 function eventModalHTML(title, text) {
   return `<div class="modal" style="max-width:560px">
     <h1><span class="zh">📜 ${title}</span></h1>
-    <div class="sub">历史事件 · 命运的齿轮开始转动</div>
+    <div class="sub">${T('历史事件 · 命运的齿轮开始转动')}</div>
     <p style="font-size:14px;line-height:1.9;color:#c9d1da">${text}</p>
   </div>`;
 }
@@ -1170,21 +1175,21 @@ function showStart(fac = 'axis', diff = 'normal') {
   Music.play('lobby');
   const hasSave = (() => { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } })();
   const FINFO = {
-    axis: { name: '轴心国 · 德国', color: '#43484a',
-      desc: '拥有最精良的装备与将领，开局即与英法波全面开战。闪击波兰、击溃法国，但 1941 年巴巴罗萨行动将把你拖入双线消耗的深渊。适合喜欢进攻的指挥官。',
-      gens: '古德里安 · 隆美尔 · 曼施坦因 · 莫德尔 · 凯塞林 · 龙德施泰特' },
-    west: { name: '同盟国 · 英法', color: '#2f5f9e',
-      desc: '开局在大陆处于劣势，马奇诺防线能否挡住装甲洪流？守住伦敦与巴黎，等待美国参战与诺曼底登陆的翻盘时刻。适合喜欢防守反击的指挥官。',
-      gens: '蒙哥马利 · 巴顿 · 戴高乐 · 艾森豪威尔 · 亚历山大 · 布莱德雷 · 勒克莱尔 · 特德' },
-    sov: { name: '苏联', color: '#8f1f16',
-      desc: '1941 年 6 月前保持和平，抓紧时间备战。战争爆发后以空间换时间，用钢铁洪流淹没侵略者，最终攻克柏林。适合喜欢大兵团作战的指挥官。',
-      gens: '朱可夫 · 罗科索夫斯基 · 科涅夫 · 崔可夫 · 卡图科夫 · 戈沃罗夫' },
+    axis: { name: T('轴心国 · 德国'), color: '#43484a',
+      desc: T('拥有最精良的装备与将领，开局即与英法波全面开战。闪击波兰、击溃法国，但 1941 年巴巴罗萨行动将把你拖入双线消耗的深渊。适合喜欢进攻的指挥官。'),
+      gens: T('古德里安 · 隆美尔 · 曼施坦因 · 莫德尔 · 凯塞林 · 龙德施泰特') },
+    west: { name: T('同盟国 · 英法'), color: '#2f5f9e',
+      desc: T('开局在大陆处于劣势，马奇诺防线能否挡住装甲洪流？守住伦敦与巴黎，等待美国参战与诺曼底登陆的翻盘时刻。适合喜欢防守反击的指挥官。'),
+      gens: T('蒙哥马利 · 巴顿 · 戴高乐 · 艾森豪威尔 · 亚历山大 · 布莱德雷 · 勒克莱尔 · 特德') },
+    sov: { name: T('苏联'), color: '#8f1f16',
+      desc: T('1941 年 6 月前保持和平，抓紧时间备战。战争爆发后以空间换时间，用钢铁洪流淹没侵略者，最终攻克柏林。适合喜欢大兵团作战的指挥官。'),
+      gens: T('朱可夫 · 罗科索夫斯基 · 科涅夫 · 崔可夫 · 卡图科夫 · 戈沃罗夫') },
   };
   openModal(`
     <div class="modal" style="max-width:860px">
-      <h1><span class="zh">钢铁欧陆 1939</span> <span style="font-size:14px;color:#9aa4b0">IRON EUROPE 1939-1945</span></h1>
-      <div class="sub">六边形回合制二战战棋 · 仿《欧陆战争》《将军的荣耀》《世界征服者》<br>
-      选择你的阵营，改写 1939-1945 年的欧洲命运。占领敌方首都即可令其全国崩溃！</div>
+      <h1><span class="zh">${T('钢铁欧陆 1939')}</span> <span style="font-size:14px;color:#9aa4b0">IRON EUROPE 1939-1945</span></h1>
+      <div class="sub">${T('六边形回合制二战战棋 · 仿《欧陆战争》《将军的荣耀》《世界征服者》')}<br>
+      ${T('选择你的阵营，改写 1939-1945 年的欧洲命运。占领敌方首都即可令其全国崩溃！')}</div>
       <div class="fac-cards">${['axis', 'west', 'sov'].map(f => `
         <div class="fac-card ${f === fac ? 'sel' : ''}" data-f="${f}">
           <h3><span class="fac-dot" style="background:${FINFO[f].color}"></span> ${FINFO[f].name}</h3>
@@ -1192,12 +1197,12 @@ function showStart(fac = 'axis', diff = 'normal') {
           <div class="gens">🎖 ${FINFO[f].gens}</div>
         </div>`).join('')}</div>
       <div class="diff-row">${[['easy', '军校实习（AI -12%）'], ['normal', '前线指挥（标准）'], ['hard', '总参谋部（AI +12%，收入+20%）']].map(([d, t]) =>
-        `<div class="diff-opt ${d === diff ? 'sel' : ''}" data-d="${d}">${t}</div>`).join('')}</div>
+        `<div class="diff-opt ${d === diff ? 'sel' : ''}" data-d="${d}">${T(t)}</div>`).join('')}</div>
       <div class="actions">
-        <button class="btn primary" id="m-start" style="font-size:16px;padding:10px 34px">开 始 战 役</button>
-        ${hasSave ? '<button class="btn gold" id="m-continue">继续上次战役</button>' : ''}
-        <button class="btn gold" id="m-tutorial">新手教程 · 约5分钟</button>
-        <button class="btn" id="m-help2">玩法说明</button>
+        <button class="btn primary" id="m-start" style="font-size:16px;padding:10px 34px">${T('开 始 战 役')}</button>
+        ${hasSave ? '<button class="btn gold" id="m-continue">'+T('继续上次战役')+'</button>' : ''}
+        <button class="btn gold" id="m-tutorial">${T('新手教程 · 约5分钟')}</button>
+        <button class="btn" id="m-help2">${T('玩法说明')}</button>
       </div>
     </div>`);
   modalRoot.querySelectorAll('.fac-card').forEach(el => el.onclick = () => {
@@ -1217,7 +1222,7 @@ function showStart(fac = 'axis', diff = 'normal') {
     try {
       const g = Game.deserialize(localStorage.getItem(SAVE_KEY));
       closeModal(); startGame(null, null, g);
-    } catch (e) { alert('存档损坏：' + e.message); }
+    } catch (e) { alert(T('存档损坏：') + e.message); }
   };
   const h2 = document.getElementById('m-help2');
   if (h2) h2.onclick = () => showHelp(() => showStart(fac, diff));
@@ -1226,7 +1231,7 @@ function showStart(fac = 'axis', diff = 'normal') {
 function startGame(fac, diff, loaded) {
   tutorialMode(!!loaded?.tutorial);
   Music.play(loaded?.over==='victory'?'victory':loaded?.over==='defeat'?'defeat':'battle',!loaded?.over);
-  UI.showUnits = true; document.getElementById('btn-units').textContent = '隐藏部队';
+  UI.showUnits = true; document.getElementById('btn-units').textContent = T('隐藏部队');
   UI.game = loaded || new Game(fac, diff);
   UI.sel = null; UI.range = null; UI.targets.clear(); UI.anims = []; UI.nextIdx = -1;
   const cap = { axis: 'berlin', west: 'london', sov: 'moscow' }[UI.game.playerFaction];
@@ -1234,24 +1239,24 @@ function startGame(fac, diff, loaded) {
   UI.cam.z = 0.9;
   if (ci) centerOn(ci.x, ci.y);
   updateTopbar(); updatePanel(); renderLog();
-  banner(`${FACTION_NAME[UI.game.playerFaction]} · 战役开始`, 1600);
+  banner(F('{0} · 战役开始', FACTION_NAME[UI.game.playerFaction]), 1600);
   if (!loaded) {
     autoSave();
-    showModalAsync(eventModalHTML('第二次世界大战爆发',
-      '1939年9月1日，德国入侵波兰；9月3日，英法对德宣战。<br><br>指挥官，你的每一个决定都将改写历史。' +
-      '<br><br>本剧本已部署各国开局舰队；美国大西洋预备舰队将在参战后加入同盟。点击舰艇可查看舰名，点击 ⚓ 可继续造舰。' +
-      '<br><br>目标：占领所有敌对阵营的首都（柏林 / 伦敦·巴黎 / 莫斯科）。')).then(() => nextUnitHint());
+    showModalAsync(eventModalHTML(T('第二次世界大战爆发'),
+      T('1939年9月1日，德国入侵波兰；9月3日，英法对德宣战。<br><br>指挥官，你的每一个决定都将改写历史。') +
+      T('<br><br>本剧本已部署各国开局舰队；美国大西洋预备舰队将在参战后加入同盟。点击舰艇可查看舰名，点击 ⚓ 可继续造舰。') +
+      T('<br><br>目标：占领所有敌对阵营的首都（柏林 / 伦敦·巴黎 / 莫斯科）。'))).then(() => nextUnitHint());
   }
 }
 
 /* ---- 将领面板 ---- */
 function skillText(s) {
   const M = {
-    atk: m => `攻击力 +${Math.round(m * 100)}%`, def: m => `防御力 +${Math.round(m * 100)}%`,
-    mov: (n,s2) => `${s2.cls==='air'?'作战半径／转场距离':'移动力'} +${n}`, nozoc: () => '无视敌方控制区', rng: n => `炮兵射程 +${n}`,
-    counter: m => `反击伤害 +${Math.round(m * 100)}%`, citydef: m => `驻守城市防御 +${Math.round(m * 100)}%`,
-    vs: (m, s2) => `对${CLASSES[s2.tgt] ? CLASSES[s2.tgt].name : s2.tgt}伤害 +${Math.round(m * 100)}%`,
-    aura: m => `相邻友军攻击 +${Math.round(m * 100)}%（光环）`, rage: m => `兵力低于50%时攻击 +${Math.round((m??.15)*100)}%`,
+    atk: m => F('攻击力 +{0}%', Math.round(m * 100)), def: m => F('防御力 +{0}%', Math.round(m * 100)),
+    mov: (n,s2) => F('{0} +{1}', s2.cls==='air'?T('作战半径／转场距离'):T('移动力'), n), nozoc: () => T('无视敌方控制区'), rng: n => F('炮兵射程 +{0}', n),
+    counter: m => F('反击伤害 +{0}%', Math.round(m * 100)), citydef: m => F('驻守城市防御 +{0}%', Math.round(m * 100)),
+    vs: (m, s2) => F('对{0}伤害 +{1}%', CLASSES[s2.tgt] ? CLASSES[s2.tgt].name : s2.tgt, Math.round(m * 100)),
+    aura: m => F('相邻友军攻击 +{0}%（光环）', Math.round(m * 100)), rage: m => F('兵力低于50%时攻击 +{0}%', Math.round((m??.15)*100)),
   };
   let cls = s.cls ? CLASSES[s.cls].name : '';
   return `${cls ? cls + '·' : ''}${(M[s.k] || (() => s.k))(s.m !== undefined ? s.m : s.n, s)}`;
@@ -1291,7 +1296,7 @@ function genPortrait(gn) {
     fill="${gn.ct === 'su' ? '#ff6a52' : '#ffd24a'}" stroke="rgba(0,0,0,.4)" stroke-width=".4"/>`;
   let badge = '★';
   for (const s of gn.skills) if (s.cls) { badge = CLASSES[s.cls].glyph; break; }
-  if (badge === '★' && gn.skills.some(s => s.k === 'def' || s.k === 'counter' || s.k === 'citydef')) badge = '盾';
+  if (badge === '★' && gn.skills.some(s => s.k === 'def' || s.k === 'counter' || s.k === 'citydef')) badge = T('盾');
   return `<svg viewBox="0 0 54 54" width="100%" height="100%" style="display:block">
     <path d="M9 54 Q11 39 27 35.5 Q43 39 45 54 Z" fill="rgba(8,12,18,.55)"/>
     <circle cx="27" cy="20.5" r="8.6" fill="rgba(8,12,18,.55)"/>
@@ -1305,7 +1310,7 @@ function genPortrait(gn) {
 }
 function filterGeneralRoster(pool,query='',country='') {
   const q=query.trim().toLocaleLowerCase();
-  return pool.filter(gn=>(!country||gn.ct===country)&&[gn.name,gn.en||'',gn.title,COUNTRIES[gn.ct].name,gn.skills.map(skillText).join(' ')].join(' ').toLocaleLowerCase().includes(q));
+  return pool.filter(gn=>(!country||gn.ct===country)&&[gn.name,gn._zhname||'',gn.en||'',gn.title,gn._zhtitle||'',COUNTRIES[gn.ct].name,COUNTRIES[gn.ct]._zhname||'',gn.skills.map(skillText).join(' ')].join(' ').toLocaleLowerCase().includes(q));
 }
 function showGenerals(targetUnit) {
   const g = UI.game;
@@ -1313,12 +1318,12 @@ function showGenerals(targetUnit) {
   const pool = GENERALS.filter(x => g.cf[x.ct] === g.playerFaction);
   openModal(`
     <div class="modal" style="max-width:720px">
-      <h1><span class="zh">🎖 将领名册</span></h1>
-      <div class="sub">${FACTION_NAME[g.playerFaction]}阵营 · ${targetUnit ? `指派至：${targetUnit.eq.n}（${targetUnit.c},${targetUnit.r}）` : '在部队面板中点击"将领"可指派'} · 击杀3次晋升一阶（每阶攻防+4%） · 头像右下徽记＝兵种亲和（步/炮/坦/轰 · 盾＝防御系 · ★＝指挥系）</div>
+      <h1><span class="zh">${T('🎖 将领名册')}</span></h1>
+      <div class="sub">${F('{0}阵营 · {1}', FACTION_NAME[g.playerFaction], targetUnit ? F('指派至：{0}（{1},{2}）', targetUnit.eq.n, targetUnit.c, targetUnit.r) : T('在部队面板中点击"将领"可指派'))}${T(' · 击杀3次晋升一阶（每阶攻防+4%） · 头像右下徽记＝兵种亲和（步/炮/坦/轰 · 盾＝防御系 · ★＝指挥系）')}</div>
       <div class="row-btns">
-        <input id="general-query" aria-label="搜索将领" placeholder="姓名、外文名或技能" style="flex:1;min-width:120px;background:#101820;color:#eee;border:1px solid #637386;padding:8px">
-        <select id="general-country" aria-label="将领所属国家" style="background:#101820;color:#eee;padding:8px"><option value="">全部国家</option>${[...new Set(pool.map(gn=>gn.ct))].map(ct=>`<option value="${ct}">${COUNTRIES[ct].name}</option>`).join('')}</select>
-      </div><div class="p-sub" id="general-count">显示 ${pool.length} / ${pool.length} 位本阵营将领</div>
+        <input id="general-query" aria-label="${T('搜索将领')}" placeholder="${T('姓名、外文名或技能')}" style="flex:1;min-width:120px;background:#101820;color:#eee;border:1px solid #637386;padding:8px">
+        <select id="general-country" aria-label="${T('将领所属国家')}" style="background:#101820;color:#eee;padding:8px"><option value="">${T('全部国家')}</option>${[...new Set(pool.map(gn=>gn.ct))].map(ct=>`<option value="${ct}">${COUNTRIES[ct].name}</option>`).join('')}</select>
+      </div><div class="p-sub" id="general-count">${F('显示 {0} / {1} 位本阵营将领', pool.length, pool.length)}</div>
       ${pool.map(gn => {
         const uid = g.genUnit[gn.id];
         const unit = uid ? g.units.find(u => u.id === uid) : null;
@@ -1331,9 +1336,9 @@ function showGenerals(targetUnit) {
             <div class="gstat">${gn.skills.map(skillText).join(' ｜ ')}</div>
             <div class="gbio2">${gn.bio}</div>
             <div style="margin-top:4px;color:${unit ? '#9fc06a' : '#d8b24a'};font-size:12px">
-              ${unit ? `▸ 指挥：${unit.eq.n}（${unit.hp}兵力）` : '▸ 空闲，可指派'}</div>
+              ${unit ? F('▸ 指挥：{0}（{1}兵力）', unit.eq.n, unit.hp) : T('▸ 空闲，可指派')}</div>
           </div>
-          ${targetUnit && !uid ? `<div><button class="btn gold" data-g="${gn.id}">指派</button></div>` : ''}
+          ${targetUnit && !uid ? `<div><button class="btn gold" data-g="${gn.id}">${T('指派')}</button></div>` : ''}
         </div>`;
       }).join('')}
       <div class="actions"><button class="btn" id="m-close">关 闭</button></div>
@@ -1343,7 +1348,7 @@ function showGenerals(targetUnit) {
   const filter=()=>{
     const ids=new Set(filterGeneralRoster(pool,query.value||'',country.value||'').map(gn=>gn.id));
     modalRoot.querySelectorAll('[data-general-row]').forEach(row=>{row.style.display=ids.has(row.dataset.generalRow)?'':'none';});
-    document.getElementById('general-count').textContent=`显示 ${ids.size} / ${pool.length} 位本阵营将领`;
+    document.getElementById('general-count').textContent=F('显示 {0} / {1} 位本阵营将领', ids.size, pool.length);
   };
   query.oninput=filter;country.onchange=filter;
   modalRoot.querySelectorAll('[data-g]').forEach(b => b.onclick = () => {
@@ -1359,41 +1364,41 @@ function showHelp(onReturn) {
   openModal(`
     <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
       <div class="help-header">
-        <h1 id="help-title"><span class="zh">❓ 玩法手册</span></h1>
-        <button class="btn help-close" id="help-close" aria-label="关闭玩法说明" title="关闭（Esc）">×</button>
+        <h1 id="help-title"><span class="zh">${T('❓ 玩法手册')}</span></h1>
+        <button class="btn help-close" id="help-close" aria-label="${T('关闭玩法说明')}" title="${T('关闭（Esc）')}">×</button>
       </div>
       <div class="help-body">
-        <h4>■ 基本操作</h4>
-        左键选择部队/城市 · 蓝色格子=可移动，红色闪烁敌军=可攻击（点击自动接敌）· 拖拽平移地图，滚轮缩放<br>陆军在沿海购买运输装备，点击相邻海格下海；下海／上岸结束整回合行动，海上按运输船移动力航行。1942、1944年解锁更高级舰艇。<br>
-        快捷键：<b>N</b> 下一部队 · <b>E/回车</b> 结束回合 · <b>G</b> 将领 · <b>H</b> 帮助 · <b>M</b> 静音 · <b>Esc/右键</b> 取消
-        <h4>■ 回合与经济</h4>
-        每回合=1个月。城市每回合产出金币，在己方空城可组建新部队（下回合可行动）。部队在己方城市+25兵力/回合，己方领土+12。
-        <h4>■ 战斗规则</h4>
-        伤害 ≈ 42 × 攻/(攻+防)。防御方获得地形加成；兵力越低输出越低。<br>
-        炮兵/空军无视地形防御加成；步兵/装甲在相邻格反击，海军可在自身射程和目标限制内反击，包括对来袭空军的防空还击。<br>
-        进入敌军相邻格会被<b>控制区(ZOC)</b>截停（具有忽略控制区技能的将领与空军除外）。<br>
-        <b>驻防</b>+30%防御，移动或攻击后解除。老练度（击杀获取经验）最多+24%攻防。
-        <h4>■ 兵种用途与目标选择</h4>
-        步兵对装甲攻击效果较弱；装甲适合攻击步兵与炮兵，具体效果还受装备和特色能力影响。<br>
-        普通炮兵对装甲效果较弱，反坦克炮擅长打击装甲；防空炮保护本格与邻格友军并拦截来袭飞机。野战炮射程更远，火箭炮可对目标后方敌军造成溅射伤害。<br>
-        战斗机擅长攻击机场内的敌机；近地支援机、战术轰炸机与战略轰炸机主要用于对地攻击；海军轰炸机擅长反舰，运输机不能攻击。<br>
-        攻击效果按具体兵种与目标类型计算，并受兵力、装备、将领和地形等因素影响；请结合部队属性与特色说明选择目标。
-        <h4>■ 地形防御加成</h4>
-        森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60%。陆军购买运输装备后可进入海洋，湖泊仍不可通行；跨河多消耗1点移动力。<br>运输船25金／1939年、两栖运输舰55金／1942年、两栖突击舰90金／1944年；升级补差价。下海与上岸分别耗尽行动，海上移动力固定5，攻击分别保留20%／45%／70%，防御为6／12／18。空军仅在机场组建与驻扎，以机场为中心在作战半径内出击；可攻击海上目标。转场仅限航程内己方机场，并耗尽本回合行动。机场与陆军可以同格。
-        <h4>■ 军港与海军</h4>
-        点击海格 ⚓ 或城市面板的“打开军港”，建造当前年份最先进舰型；泊位必须空闲。新舰下回合行动，已造旧舰不自动升级。计划舰和游戏解锁年份会在面板中说明。<br>
-        八类舰艇仅在海上移动，不能登陆占城。潜艇只能攻击海上目标；驱逐舰、潜艇、航母和空军可以反潜。水面舰可岸轰，航母直接用舰载机远程打击，无需另造机队。己方军港每回合修复25兵力。<br>
-        军港随城市控制权转移。青色短线为真实狭窄海峡的通航连接，按格距消耗移动力；基尔运河暂仅为地理标记。<br>
-        <h4>■ 胜负</h4>
-        <b>占领敌方首都 → 该国全境沦陷</b>（所有城市易手）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。<br>
-        中立国（西班牙/瑞典/瑞士/土耳其等）可进攻，但会倒向你的敌人！
-        <h4>■ 音乐与署名</h4>
-        音乐与音效可用顶部🔊按钮或 M 键统一开关。首次点击或按键后开始播放，切到后台时暂停。<br>
+        <h4>${T('■ 基本操作')}</h4>
+        ${T('左键选择部队/城市 · 蓝色格子=可移动，红色闪烁敌军=可攻击（点击自动接敌）· 拖拽平移地图，滚轮缩放<br>陆军在沿海购买运输装备，点击相邻海格下海；下海／上岸结束整回合行动，海上按运输船移动力航行。1942、1944年解锁更高级舰艇。<br>')}
+        ${T('快捷键：<b>N</b> 下一部队 · <b>E/回车</b> 结束回合 · <b>G</b> 将领 · <b>H</b> 帮助 · <b>M</b> 静音 · <b>Esc/右键</b> 取消')}
+        <h4>${T('■ 回合与经济')}</h4>
+        ${T('每回合=1个月。城市每回合产出金币，在己方空城可组建新部队（下回合可行动）。部队在己方城市+25兵力/回合，己方领土+12。')}
+        <h4>${T('■ 战斗规则')}</h4>
+        ${T('伤害 ≈ 42 × 攻/(攻+防)。防御方获得地形加成；兵力越低输出越低。<br>')}
+        ${T('炮兵/空军无视地形防御加成；步兵/装甲在相邻格反击，海军可在自身射程和目标限制内反击，包括对来袭空军的防空还击。<br>')}
+        ${T('进入敌军相邻格会被<b>控制区(ZOC)</b>截停（具有忽略控制区技能的将领与空军除外）。<br>')}
+        ${T('<b>驻防</b>+30%防御，移动或攻击后解除。老练度（击杀获取经验）最多+24%攻防。')}
+        <h4>${T('■ 兵种用途与目标选择')}</h4>
+        ${T('步兵对装甲攻击效果较弱；装甲适合攻击步兵与炮兵，具体效果还受装备和特色能力影响。<br>')}
+        ${T('普通炮兵对装甲效果较弱，反坦克炮擅长打击装甲；防空炮保护本格与邻格友军并拦截来袭飞机。野战炮射程更远，火箭炮可对目标后方敌军造成溅射伤害。<br>')}
+        ${T('战斗机擅长攻击机场内的敌机；近地支援机、战术轰炸机与战略轰炸机主要用于对地攻击；海军轰炸机擅长反舰，运输机不能攻击。<br>')}
+        ${T('攻击效果按具体兵种与目标类型计算，并受兵力、装备、将领和地形等因素影响；请结合部队属性与特色说明选择目标。')}
+        <h4>${T('■ 地形防御加成')}</h4>
+        ${T('森林+30% · 丘陵+40% · 山地+60% · 城市+40% · 首都+60%。陆军购买运输装备后可进入海洋，湖泊仍不可通行；跨河多消耗1点移动力。<br>运输船25金／1939年、两栖运输舰55金／1942年、两栖突击舰90金／1944年；升级补差价。下海与上岸分别耗尽行动，海上移动力固定5，攻击分别保留20%／45%／70%，防御为6／12／18。空军仅在机场组建与驻扎，以机场为中心在作战半径内出击；可攻击海上目标。转场仅限航程内己方机场，并耗尽本回合行动。机场与陆军可以同格。')}
+        <h4>${T('■ 军港与海军')}</h4>
+        ${T('点击海格 ⚓ 或城市面板的“打开军港”，建造当前年份最先进舰型；泊位必须空闲。新舰下回合行动，已造旧舰不自动升级。计划舰和游戏解锁年份会在面板中说明。<br>')}
+        ${T('八类舰艇仅在海上移动，不能登陆占城。潜艇只能攻击海上目标；驱逐舰、潜艇、航母和空军可以反潜。水面舰可岸轰，航母直接用舰载机远程打击，无需另造机队。己方军港每回合修复25兵力。<br>')}
+        ${T('军港随城市控制权转移。青色短线为真实狭窄海峡的通航连接，按格距消耗移动力；基尔运河暂仅为地理标记。<br>')}
+        <h4>${T('■ 胜负')}</h4>
+        ${T('<b>占领敌方首都 → 该国全境沦陷</b>（所有城市易手）。击败所有交战敌国首都即获胜利；己方首都全部丢失则战败。<br>')}
+        ${T('中立国（西班牙/瑞典/瑞士/土耳其等）可进攻，但会倒向你的敌人！')}
+        <h4>${T('■ 音乐与署名')}</h4>
+        ${T('音乐与音效可用顶部🔊按钮或 M 键统一开关。首次点击或按键后开始播放，切到后台时暂停。<br>')}
         Music: Five Armies, Air Prelude, Impact Moderato, Fanfare for Space, Wounded<br>
         by Kevin MacLeod (<a href="https://incompetech.com/" target="_blank" rel="noopener noreferrer">incompetech.com</a>) — Licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC-BY 4.0</a>.<br>
-        <a href="music/credits.txt" target="_blank" rel="noopener">完整音乐署名</a>
-        <h4>■ 历史事件</h4>
-        意大利参战(1940.6) → 匈牙利罗马尼亚入轴(1940.11) → <b>巴巴罗萨</b>(1941.6) → 美国参战(1941.12) → <b>俄罗斯严冬</b>(每年12-2月，轴心国在苏境-12兵力/回合) → <b>诺曼底登陆</b>(1944.6)
+        <a href="music/credits.txt" target="_blank" rel="noopener">${T('完整音乐署名')}</a>
+        <h4>${T('■ 历史事件')}</h4>
+        ${T('意大利参战(1940.6) → 匈牙利罗马尼亚入轴(1940.11) → <b>巴巴罗萨</b>(1941.6) → 美国参战(1941.12) → <b>俄罗斯严冬</b>(每年12-2月，轴心国在苏境-12兵力/回合) → <b>诺曼底登陆</b>(1944.6)')}
       </div>
     </div>`);
   const close = document.getElementById('help-close');
@@ -1412,15 +1417,15 @@ function showEndModal(win) {
   const cities = g.factionCityCount(g.playerFaction);
   openModal(`
     <div class="modal" style="max-width:560px;text-align:center">
-      <h1 class="zh" style="font-size:38px;${win ? 'color:#ffd75e' : 'color:#e06a55'}">${win ? '🏆 胜 利' : '⚔ 战 败'}</h1>
-      <div class="sub">${win ? '欧洲的版图已被你重新描绘，历史将铭记你的名字。' : '旗帜陨落，但战争从未真正结束……'}</div>
+      <h1 class="zh" style="font-size:38px;${win ? 'color:#ffd75e' : 'color:#e06a55'}">${win ? T('🏆 胜 利') : T('⚔ 战 败')}</h1>
+      <div class="sub">${win ? T('欧洲的版图已被你重新描绘，历史将铭记你的名字。') : T('旗帜陨落，但战争从未真正结束……')}</div>
       <div class="help-body" style="display:inline-block;text-align:left">
-        终战日期：<b>${g.dateLabel()}</b>（第 ${g.turn + 1} 回合）<br>
-        控制城市：<b>${cities}</b> 座 · 首都 <b>${myCaps}</b> 座<br>
-        全阵营击杀：${Object.entries(g.stats.kills).map(([f, k]) => `${FACTION_NAME[f]} ${k}`).join(' / ')}
+        ${F('终战日期：<b>{0}</b>（第 {1} 回合）', g.dateLabel(), g.turn + 1)}<br>
+        ${F('控制城市：<b>{0}</b> 座 · 首都 <b>{1}</b> 座', cities, myCaps)}<br>
+        ${F('全阵营击杀：{0}', Object.entries(g.stats.kills).map(([f, k]) => `${FACTION_NAME[f]} ${k}`).join(' / '))}
       </div>
       <div class="actions">
-        <button class="btn primary" id="m-restart">新的战役</button>
+        <button class="btn primary" id="m-restart">${T('新的战役')}</button>
       </div>
     </div>`);
   document.getElementById('m-restart').onclick = () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} showStart(); };
@@ -1456,15 +1461,15 @@ function fitMap() {
 document.getElementById('btn-atlas').onclick = () => UI.game && fitMap();
 document.getElementById('btn-cities').onclick = showCitySearch;
 document.getElementById('btn-mapmode').onclick = () => { UI.political = !UI.political; terrainCache.key = ''; };
-document.getElementById('btn-units').onclick = () => { UI.showUnits = !UI.showUnits; document.getElementById('btn-units').textContent = UI.showUnits ? '隐藏部队' : '显示部队'; };
+document.getElementById('btn-units').onclick = () => { UI.showUnits = !UI.showUnits; document.getElementById('btn-units').textContent = UI.showUnits ? T('隐藏部队') : T('显示部队'); };
 document.getElementById('btn-end').onclick = endTurnFlow;
 document.getElementById('btn-gen').onclick = () => UI.game && showGenerals();
 document.getElementById('btn-help').onclick = showHelp;
 function returnToMainMenu() {
   // Never leave midway through movement, combat, AI playback or a pending event dialog.
-  if(UI.busy||modalOpen()) { if(UI.busy)banner('请等待当前行动结束后返回主菜单'); return false; }
+  if(UI.busy||modalOpen()) { if(UI.busy)banner(T('请等待当前行动结束后返回主菜单')); return false; }
   if(UI.game&&!UI.game.tutorial&&!autoSave()) {
-    openModal(`<div class="modal"><h1>暂时无法保存</h1><div class="help-body">存档写入失败，已保留当前战役。请检查浏览器存储空间或隐私设置后重试。</div><div class="actions"><button class="btn" id="menu-save-back">返回游戏</button></div></div>`);
+    openModal(`<div class="modal"><h1>${T('暂时无法保存')}</h1><div class="help-body">${T('存档写入失败，已保留当前战役。请检查浏览器存储空间或隐私设置后重试。')}</div><div class="actions"><button class="btn" id="menu-save-back">${T('返回游戏')}</button></div></div>`);
     document.getElementById('menu-save-back').onclick=closeModal;return false;
   }
   tutorialMode(false);deselect();UI.game=null;UI.anims=[];UI.moveAnim=null;UI.pendingAttack=null;
@@ -1476,7 +1481,7 @@ function returnToMainMenu() {
 }
 document.getElementById('btn-menu').onclick=returnToMainMenu;
 
-document.getElementById('btn-save').onclick = () => { if (autoSave()) banner('已保存'); };
+document.getElementById('btn-save').onclick = () => { if (autoSave()) banner(T('已保存')); };
 function toggleSound() { const on = SFX.toggle(); Music.setEnabled(on); document.getElementById('btn-sound').textContent = on ? '🔊' : '🔇'; }
 document.getElementById('btn-sound').onclick = toggleSound;
 function autoSave() {
