@@ -243,7 +243,7 @@ for(let i=0;i<restored.units.length;i++){
  assert(hexDist(a.c,a.r,b.c,b.r)<=4);
  for(const field of ['id','ct','eqKey','hp','mp','shipName','transport','embarked','attacked','moved'])assert.equal(b[field],a[field],field);
 }
-assert.equal(JSON.parse(restored.serialize()).terrainRevision,1);
+assert.equal(JSON.parse(restored.serialize()).terrainRevision,2);
 assert.deepEqual(Game.deserialize(restored.serialize()).units.map(u=>[u.c,u.r]),restored.units.map(u=>[u.c,u.r]));
 oldCoast.terrainRevision=1;assert.throws(()=>Game.deserialize(JSON.stringify(oldCoast)),/位置或状态无效/);
 
@@ -310,3 +310,13 @@ for(const cls of ['art','air']){
 }
 console.log('City combat: ordinary/capital protection, entrenchment and bombardment rules passed.');
 }
+
+assert.equal(home(29.1253,68.9534),'fi');
+assert(new Game('sov').landNeighbors(71,5).length>0,'Nordkinn is connected, not a one-cell island');
+
+const northLegacy=new Game('sov');northLegacy.units=[];
+northLegacy.spawnUnit('no','neutral:dd:0',72,6,{});
+const northSave=JSON.parse(northLegacy.serialize());northSave.terrainRevision=1;
+const northRestored=Game.deserialize(JSON.stringify(northSave));
+assert(northRestored.ocean(northRestored.units[0].c,northRestored.units[0].r));
+assert(hexDist(72,6,northRestored.units[0].c,northRestored.units[0].r)<=4);

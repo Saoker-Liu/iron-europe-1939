@@ -45,6 +45,18 @@ function install(Game){Object.assign(Game.prototype,{
     if(f==='sov'&&this.turn<turnOf(1941,6))return !owner||owner==='sov'||owner==='neutral'||this.atWar(f,owner);
     return true;
   },
+  neutralEntryCountry(u,c,r){
+    if(this.isAir(u)||!this.landPassable(c,r))return null;
+    const ct=this.homeCountryOf(c,r);
+    return ct&&!COUNTRIES[ct].context&&!COUNTRIES[ct].controller&&this.cf[ct]==='neutral'&&this.unitFaction(u)!=='neutral'?ct:null;
+  },
+  neutralMoveCountries(u,path){return [...new Set((path||[]).map(p=>this.neutralEntryCountry(u,...p)).filter(Boolean))];},
+  neutralityConsequence(ct,f){
+    if(f==='sov'&&this.turn<turnOf(1941,6)&&!this.atWar('axis','sov'))return `${COUNTRIES[ct].name}将与苏联爆发局部战争，其他国家不参战。`;
+    const foes=['axis','west','sov'].filter(x=>x!==f&&this.atWar(f,x));
+    const target=(foes.length?foes:['axis','west','sov'].filter(x=>x!==f)).sort((a,b)=>this.factionIncome(b)-this.factionIncome(a))[0];
+    return `${COUNTRIES[ct].name}将加入${this.factionName(target)}并与你交战。${this.atWar(f,target)?'':'这也会使你与该阵营开战。'}`;
+  },
   activeFactions(){return ['axis','west','sov',...new Set(Object.values(this.cf).filter(f=>f?.startsWith('local:')))];},
   registerLocalFactions(){for(const ct of Object.keys(COUNTRIES)){
     const f='local:'+ct;FACTION_NAME[f]=COUNTRIES[ct].name+'（局部战争）';FACTION_COLOR[f]=COUNTRIES[ct].color;

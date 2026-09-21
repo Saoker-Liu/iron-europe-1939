@@ -553,11 +553,11 @@ class Game {
     const at=(c,r)=>occupancy.get(key(c,r));
     const start = key(u.c, u.r);
     const cost = new Map([[start, 0]]), prev = new Map(), zocStop = new Set();
-    const visited = new Set();
+    const visited = new Set(), neutrality=new Map([[start,0]]);
     const mov = this.movOf(u);
     while (true) {
-      let bk = null, bc = Infinity;
-      for (const [k, v] of cost) { if (!visited.has(k) && v < bc) { bc = v; bk = k; } }
+      let bk = null, bc = Infinity, bn=Infinity;
+      for (const [k, v] of cost) { if (!visited.has(k) && (v < bc || v===bc && neutrality.get(k)<bn)) { bc = v; bk = k; bn=neutrality.get(k); } }
       if (bk === null || bc > mov) break;
       visited.add(bk);
       const [c, r] = bk.split(',').map(Number);
@@ -573,7 +573,8 @@ class Game {
           (!CLASSES[u.eq.cls].fly && !this.isSeagoing(u) && u.eq.infRole!=='marine' && this.riverEdges.has(this.edgeKey([c, r], [nc, nr])) ? 1 : 0);
         const ncost = bc + step;
         if (ncost > mov) continue;
-        if (!cost.has(nk) || ncost < cost.get(nk)) { cost.set(nk, ncost); prev.set(nk, bk); }
+        const nrisk=bn+(this.neutralEntryCountry(u,nc,nr)?1:0);
+        if (!cost.has(nk) || ncost < cost.get(nk) || ncost===cost.get(nk)&&nrisk<neutrality.get(nk)) { cost.set(nk, ncost); neutrality.set(nk,nrisk); prev.set(nk, bk); }
         // 进入敌方控制区 → 移动终止于该格
         if (!this.hasNoZOC(u)) {
           const nearEnemy = (this.isSeagoing(u) ? this.neighbors(nc,nr) : this.landNeighbors(nc, nr)).some(([ec, er]) => {
@@ -628,31 +629,39 @@ class Game {
       gold:this.gold,construction:this.construction,fallout:this.fallout,over:this.over,pendingEvents:this.pendingEvents,
       airfields:this.airfields.map(c=>c.k),harbors:this.harbors}));
   }
+  pureMovement(before,after,id) {
+    if(!before||!after)return false;
+    const normal=JSON.parse(JSON.stringify(after)),unitsById=new Map(normal.units.map(u=>[u.id,u]));
+    const fields=['c','r','moved','attacked','dug','airbase','embarked'];
+    for(const saved of before.units){
+      const actual=unitsById.get(saved.id);
+      if(!actual)return false;
+      const allowed=saved.id===id?fields:saved.carrierId===id?['c','r']:[];
+      for(const k of allowed){if(Object.hasOwn(saved,k))actual[k]=saved[k];else delete actual[k];}
+    }
+    return JSON.stringify(before)===JSON.stringify(normal);
+  }
   finishMovement(u,before) {
     if(!u.attacked&&!this.targetsOf(u,true).length)u.attacked=true;
-    this.lastMove=this.unitFaction(u)===this.playerFaction?
-      {unitId:u.id,before,after:this.movementState()}:null;
+    const after=before?this.movementState():null;
+    this.lastMove=this.unitFaction(u)===this.playerFaction&&this.pureMovement(before,after,u.id)?
+      {unitId:u.id,before,after,simple:true}:null;
   }
   canUndoMove(u) {
     const m=this.lastMove;
-    return !!(u&&m&&m.unitId===u.id&&this.units.includes(u)&&
-      JSON.stringify(m.after)===JSON.stringify(this.movementState()));
+    return !!(u&&m?.simple&&m.unitId===u.id&&this.units.includes(u)&&
+      this.pureMovement(m.before,m.after,u.id)&&JSON.stringify(m.after)===JSON.stringify(this.movementState()));
   }
   undoMove(u) {
     if(!this.canUndoMove(u))return false;
-    const before=this.lastMove.before;
-    const existing=new Map(this.units.map(x=>[x.id,x]));
-    this.units=before.units.map(saved=>{
-      const unit=existing.get(saved.id)||{};
-      for(const k of Object.keys(unit))if(k!=='eq')delete unit[k];
-      Object.assign(unit,saved);unit.eq=this.equipOf(unit.eqKey);return unit;
-    });
-    this.cities.forEach((c,i)=>c.owner=before.owners[i]);
-    if(before.politics)this.restorePoliticalState(before.politics);
-    this.cf=before.cf;this.wars=new Set(before.wars);this.genUnit=before.genUnit;
-    this.over=before.over;this.pendingEvents=before.pendingEvents||[];this.airfields=before.airfields.map(k=>this.cityByKey[k]);
-    this.lastMove=null;this.terrDirty=true;
-    this.pushLog('已撤销移动，恢复原位置、行动状态和此次移动造成的控制权变化。','info');return true;
+    // Never reconstruct armies or restore diplomatic state: only a harmless move qualifies.
+    for(const target of [u,this.cargoOf(u)].filter(Boolean)){
+      const saved=this.lastMove.before.units.find(x=>x.id===target.id);
+      for(const k of target===u?['c','r','moved','attacked','dug','airbase','embarked']:['c','r']){
+        if(Object.hasOwn(saved,k))target[k]=saved[k];else delete target[k];
+      }
+    }
+    this.lastMove=null;this.pushLog('已撤销普通移动，恢复原位置与行动状态。','info');return true;
   }
 
   moveUnit(u, c, r, path) {
@@ -1487,7 +1496,7 @@ class Game {
       }
       // Only legacy units on explicitly corrected coastline cells may relocate.
       // Reserve all old and newly assigned cells to prevent migration stacking.
-      if((d.terrainRevision||0)<1&&coastCorrections.has(key(unit.c,unit.r))){
+      if((d.terrainRevision||0)<1&&coastCorrections.has(key(unit.c,unit.r)) || (d.terrainRevision||0)<2&&key(unit.c,unit.r)==='72,6'){
         const valid=(c,r)=>g.isSeagoing(unit)?g.ocean(c,r):g.landPassable(c,r);
         if(!valid(unit.c,unit.r)){
           const spots=[];

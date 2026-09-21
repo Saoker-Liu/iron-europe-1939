@@ -31,14 +31,14 @@ for(const sovietWins of [true,false]){
 console.log('Diplomacy: bilateral war, tied dependencies, occupation, surrender/partition, cession evacuation, Baltic annexation, event idempotence, saves and both winter-war armistices passed.');
 
 
-// Capital movement is fully reversible, including partition and disbanded armies.
+// Capital movement and partition cannot be undone.
 g=new Game('axis');const warsaw=g.cityByKey.warsaw;
 for(const x of [...g.units])if(x.c===warsaw.x&&x.r===warsaw.y)g.killUnit(x);
 const origin=g.landNeighbors(warsaw.x,warsaw.y)[0];
 const blocker=g.unitAt(...origin);if(blocker)g.killUnit(blocker);
 const mover=g.spawnUnit('de','de:infantry:0',...origin,{}),before=g.movementState();
-assert(g.moveUnit(mover,warsaw.x,warsaw.y));assert.equal(g.cityByKey.lwow.ct,'su');assert(g.canUndoMove(mover));
-assert(g.undoMove(mover));assert.deepEqual(g.movementState(),before);
+assert(g.moveUnit(mover,warsaw.x,warsaw.y));assert.equal(g.cityByKey.lwow.ct,'su');assert(!g.canUndoMove(mover));
+assert(!g.undoMove(mover));assert.equal(g.cityByKey.lwow.ct,'su');
 // A capitulated occupier cannot leave phantom control over third-country cities.
 g=new Game('sov');g.cityByKey.lille.controlCt='de';g.cityByKey.lille.owner='axis';
 const french=g.units.filter(u=>u.ct==='fr').length;g.annexCountry('de','su');

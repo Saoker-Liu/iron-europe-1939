@@ -389,7 +389,7 @@ function drawFrame(now) {
       const [x2, y2] = hexToPix(...p.path[seg]);
       x = x1 + (x2 - x1) * t; y = y1 + (y2 - y1) * t;
     }
-    const done = u.moved && u.attacked;
+    const done = u.dug || u.moved && u.attacked;
     const f = g.unitFaction(u);
     const cc = COUNTRIES[u.ct].color;
     cx.globalAlpha = done && !isSel ? 0.55 : 1;
@@ -572,15 +572,18 @@ function beginAirMission(kind) {
   const g=UI.game,u=UI.sel;if(UI.busy||!u||!g.isAir(u)||g.unitFaction(u)!==g.playerFaction)return;
   UI.airMission=kind;banner(kind==='nuclear'?'选择核打击目标格：将显示范围与损失确认':'选择空闲陆格执行伞降',3500);
 }
-function airMissionTarget(c,r) {
+function airMissionTarget(c,r,approved=[]) {
   const g=UI.game,u=UI.sel,kind=UI.airMission;
   const error=kind==='nuclear'?g.nuclearError(u,c,r):g.paradropError(u,c,r);
   if(error){banner(error,2200);return;}
   if(kind==='drop'){
+    const ct=g.homeCountryOf(c,r);
+    if(confirmNeutralWar(ct&&g.cf[ct]==='neutral'?[ct]:[],a=>airMissionTarget(c,r,a),approved))return;
     g.paradrop(u,c,r);UI.airMission=null;select(u);updateTopbar();renderLog();return;
   }
   const victims=g.units.filter(v=>hexDist(c,r,v.c,v.r)<=1),city=g.cityAt(c,r);
-  openModal(`<div class="modal"><h1>☢ 确认核打击</h1><p>目标：${city?city.n:'('+c+','+r+')'}。消耗${AIR.nuclear.cost}金。</p><p>中心格所有单位消灭，周围一格损失${AIR.nuclear.splash}兵力，友军同样受影响。范围内共${victims.length}支部队，其中己方${victims.filter(v=>g.unitFaction(v)===g.playerFaction).length}支。</p><p>污染持续${AIR.nuclear.duration}回合，每回合损失${AIR.nuclear.damage}兵力；污染城市收入为0。波及中立／非交战国家将引发参战。</p><button class="btn danger" id="nuclear-confirm">执行核打击</button><button class="btn" id="nuclear-cancel">取消</button></div>`);
+  const neutralVictims=[...new Set([...victims.map(v=>v.ct),...g.cities.filter(ci=>hexDist(c,r,ci.x,ci.y)<=1).map(ci=>ci.ct)])].filter(ct=>g.cf[ct]==='neutral');
+  openModal(`<div class="modal"><h1>☢ 确认核打击</h1><p>目标：${city?city.n:'('+c+','+r+')'}。消耗${AIR.nuclear.cost}金。</p><p>中心格所有单位消灭，周围一格损失${AIR.nuclear.splash}兵力，友军同样受影响。范围内共${victims.length}支部队，其中己方${victims.filter(v=>g.unitFaction(v)===g.playerFaction).length}支。</p><p>污染持续${AIR.nuclear.duration}回合，每回合损失${AIR.nuclear.damage}兵力；污染城市收入为0。波及中立／非交战国家将引发参战。</p>${neutralVictims.map(ct=>`<p>${g.neutralityConsequence(ct,g.unitFaction(u))}</p>`).join('')}<button class="btn danger" id="nuclear-confirm">执行核打击</button><button class="btn" id="nuclear-cancel">取消</button></div>`);
   document.getElementById('nuclear-cancel').onclick=()=>{closeModal();UI.airMission=null;};
   document.getElementById('nuclear-confirm').onclick=()=>{
     if(UI.busy)return;
@@ -787,10 +790,23 @@ function computeTargets() {
 }
 
 /* 移动（带路径动画） */
-function doMove(c, r) {
+function confirmNeutralWar(countries,proceed,approved=[]) {
+  const g=UI.game,u=UI.sel,turn=g.turn;
+  const pending=[...new Set(countries)].filter(ct=>ct&&g.cf[ct]==='neutral'&&!approved.includes(ct));
+  if(!pending.length)return false;
+  openModal(`<div class="modal war-confirmation"><h1>确认与中立国开战</h1><p>此行动将进入中立国领土或攻击中立国部队。</p>${pending.map(ct=>`<p>${g.neutralityConsequence(ct,g.unitFaction(u))}</p>`).join('')}<p>开战及其造成的占领、投降等变化不能撤销。</p><div class="actions"><button class="btn primary" id="war-confirm">确认开战并执行</button><button class="btn" id="war-cancel">取消行动</button></div></div>`);
+  document.getElementById('war-cancel').onclick=()=>{closeModal();UI.pendingAttack=null;};
+  document.getElementById('war-confirm').onclick=()=>{
+    closeModal();
+    if(UI.game===g&&UI.sel===u&&g.turn===turn&&!UI.busy&&g.units.includes(u))proceed([...approved,...pending]);
+  };
+  return true;
+}
+function doMove(c, r, approved=[]) {
   const g = UI.game, u = UI.sel;
   const path = g.pathTo(u, c + ',' + r);
   if (!path || !path.length) return;
+  if(confirmNeutralWar(g.neutralMoveCountries(u,path),a=>doMove(c,r,a),approved))return;
   UI.busy = true; SFX.move();
   UI.moveAnim = { unit: u, path, t0: performance.now(), start: [u.c, u.r] };
   const total = path.length * 95 + 60;
@@ -807,7 +823,7 @@ function doMove(c, r) {
     }
     if (UI.pendingAttack) {
       const e = UI.pendingAttack; UI.pendingAttack = null;
-      if (g.units.includes(e) && !u.attacked) { computeTargets(); if (UI.targets.has(e.id)) { doAttack(e); return; } }
+      if (g.units.includes(e) && !u.attacked) { computeTargets(); if (UI.targets.has(e.id)) { doAttack(e,approved); return; } }
     }
     if (!u.moved) UI.range = g.moveRange(u);        // 不会发生（moveUnit 已置 moved）
     computeTargets();
@@ -816,21 +832,26 @@ function doMove(c, r) {
 }
 
 /* 攻击（必要时先自动移动接敌） */
-function doAttack(enemy) {
+function doAttack(enemy,approved=[]) {
   const g = UI.game, u = UI.sel;
   if(g.tutorial&&g.lesson!==5)return;
+  if(!UI.targets.has(enemy.id)&&!g.targetsOf(u,true).includes(enemy))return;
   const plan = UI.targets.get(enemy.id);
+  const countries=plan?g.neutralMoveCountries(u,g.pathTo(u,plan.join(','))):[];
+  if(g.unitFaction(enemy)==='neutral')countries.push(enemy.ct);
+  if(confirmNeutralWar(countries,a=>doAttack(enemy,a),approved))return;
   if (plan) {  // 先移动到接敌格
-    if (plan[0] === u.c && plan[1] === u.r) { execAttack(enemy); return; }
+    if (plan[0] === u.c && plan[1] === u.r) { execAttack(enemy,approved); return; }
     UI.pendingAttack = enemy;
-    doMove(plan[0], plan[1]);
+    doMove(plan[0], plan[1],approved);
     return;
   }
-  execAttack(enemy);
+  execAttack(enemy,approved);
 }
-function execAttack(enemy) {
+function execAttack(enemy,approved=[]) {
   const g = UI.game, u = UI.sel;
   if (!g.targetsOf(u,true).includes(enemy)) return;
+  if(confirmNeutralWar(g.unitFaction(enemy)==='neutral'?[enemy.ct]:[],a=>execAttack(enemy,a),approved))return;
   UI.busy = true;
   const rec = g.attack(u, enemy);
   SFX.shot();

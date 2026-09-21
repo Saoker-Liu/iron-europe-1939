@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),{Game,key}=require('./js/engine/game'),D=require('./js/data/load-node');
 const g=new Game('axis'),ground=g.units.filter(u=>!g.isAir(u)&&!g.isNaval(u));
-assert.equal(ground.length,774);assert.equal(g.units.length,1010);assert.deepEqual(g.gold,D.START_GOLD);
+assert.equal(ground.length,773);assert.equal(g.units.length,1009);assert.deepEqual(g.gold,D.START_GOLD);
 assert.equal(new Set(ground.map(u=>key(u.c,u.r))).size,ground.length);
 for(const u of ground){assert(g.landPassable(u.c,u.r));assert.equal(g.homeCountryOf(u.c,u.r),u.ct);if(u.eq.infRole||u.eq.artRole||u.eq.armorRole)assert(u.eq.yr<=1939);}
 const majors=g.cities.filter(ci=>!ci.demilitarized&&(ci.cap||D.MAP_META.cityLabelLevels[ci.k]<=1));assert.equal(majors.length,93);
@@ -39,7 +39,7 @@ for(const factory of [false,true]){
  assert(fresh);assert.deepEqual([fresh.c,fresh.r],[berlin.x,berlin.y]);assert(fresh.moved&&fresh.attacked);
  assert.equal(production.moveRange(fresh).cost.size,0);assert(!production.canAttackNow(fresh));production.killUnit(fresh);
 }
-console.log('Ground scenario: 774 troops, 93 defended cities, border coverage, city-only recruitment, new-unit turn restrictions and retired guard save migration passed');
+console.log('Ground scenario: 773 troops, 93 defended cities, border coverage, city-only recruitment, new-unit turn restrictions and retired guard save migration passed');
 
 // Neutral guards remain attackable explicitly by the player, without AI declaring wars automatically.
 const diplomacy=new Game('axis');

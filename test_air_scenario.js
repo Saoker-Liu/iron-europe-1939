@@ -15,7 +15,7 @@ for(const faction of ['axis','west','sov']){
   assert.equal(u.eq.tier,0);assert(!u.moved&&!u.attacked);assert.equal(u.hp,100);
   assert.equal(u.eqKey.split(':')[0],D.AIR.equipment[u.ct]?u.ct:'neutral');
  }
- assert.equal(g.units.filter(u=>!g.isAir(u)&&!g.isNaval(u)).length,774,'reinforced ground scenario');
+ assert.equal(g.units.filter(u=>!g.isAir(u)&&!g.isNaval(u)).length,773,'reinforced ground scenario');
  assert.equal(g.units.filter(u=>g.isNaval(u)).length,91,'fleets preserved');
  const commander=air.filter(u=>u.gen==='kesselring');assert.equal(commander.length,1);assert.equal(commander[0].eq.airRole,'cas');assert.equal(g.genUnit.kesselring,commander[0].id);
  const sov=g.units.find(u=>u.ct==='su'&&g.isAir(u));assert.equal(g.targetsOf(sov).length,0,'Soviet neutrality is preserved at start');

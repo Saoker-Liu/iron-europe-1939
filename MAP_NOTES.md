@@ -215,3 +215,8 @@ node test_logic.js
 乌拉尔河直接采用已存档的Natural Earth河流几何（包括湖泊中心线），加入河流绘制和跨河边生成；补充乌拉尔河、艾瑟尔湖的局部缩放文字标注。没有将河流扩成可供舰队航行的海格。
 
 依据：[荷兰水利署：艾瑟尔湖](https://www.rijkswaterstaat.nl/water/vaarwegenoverzicht/ijsselmeer)、[阿夫鲁戴克大堤](https://www.rijkswaterstaat.nl/water/waterbeheer/bescherming-tegen-het-water/waterkeringen/dijken/afsluitdijk)、[贝特斯塔峡湾地理资料](https://www.steinkjerleksikonet.no/beitstadfjorden)、[奥克拉峡湾当地资料](https://akrafjorden.no/experiences/camp-akrafjorden)。河流基础来源见本文件Natural Earth数据说明。
+
+
+## 芬兰北部边界与北挪威海岸补丁
+
+45公里格网的中心采样把北挪威半岛尖端切成了单格岛屿；补齐其南侧一格海岸连接，使其与大陆连成一体。伊纳里湖东侧被芬兰包围的一格挪威边界碎片改归芬兰。保留真实的扬马延岛及其它地区的岛屿。旧存档若有舰艇停在新增陆格上，会移至附近空闲海格。

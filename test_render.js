@@ -369,3 +369,25 @@ assert(h.run('terrainKey(UI.game)!==politicalBefore'));
 assert(h.run("UI.game.territoryCountry(UI.game.cityByKey.lille.x,UI.game.cityByKey.lille.y)==='uk'"));
 assert.doesNotThrow(()=>h.run('rebuildTerrain(UI.game,UI.cam.z);drawMapLabels(UI.game)'));
 console.log('Political rendering: national cession within a coalition invalidates colors and borders.');
+
+// War confirmation must precede movement animations and damage; cancellation is inert.
+h.timers.length=0;
+h.run("closeModal();UI.busy=false;UI.game=new Game('axis');UI.game.units=[];UI.game.blockedEdges.clear();UI.game.riverEdges.clear();for(let r=18;r<24;r++)for(let c=18;c<25;c++)UI.game.terr[c+','+r]='.';UI.game.homeCountryOf=(c,r)=>c===21&&r===20?'ch':'de';const diplomat=UI.game.spawnUnit('de','de:infantry:0',20,20,{});select(diplomat);doMove(21,20)");
+assert(h.run("modalRoot.innerHTML.includes('war-confirm')&&UI.game.cf.ch==='neutral'&&diplomat.c===20&&!UI.busy"));
+h.run("document.getElementById('war-cancel').onclick()");assert(h.run("diplomat.c===20&&!diplomat.moved&&UI.game.cf.ch==='neutral'"));
+h.run("doMove(21,20);document.getElementById('war-confirm').onclick()");assert(h.run('UI.busy'));h.timers.shift()();
+assert(h.run("diplomat.c===21&&UI.game.cf.ch!=='neutral'&&!UI.game.canUndoMove(diplomat)"));
+h.timers.length=0;
+h.run("UI.game.cf.ch='neutral';diplomat.c=20;diplomat.r=20;diplomat.moved=false;diplomat.attacked=false;const neutralTarget=UI.game.spawnUnit('ch','neutral:infantry:0',21,20,{});select(diplomat);doAttack(neutralTarget)");
+assert(h.run("neutralTarget.hp===100&&UI.game.cf.ch==='neutral'&&modalRoot.innerHTML.includes('war-confirm')"));
+h.run("document.getElementById('war-cancel').onclick()");assert(h.run('neutralTarget.hp===100&&!diplomat.attacked'));
+h.run("doAttack(neutralTarget);document.getElementById('war-confirm').onclick()");assert(h.run("neutralTarget.hp<100&&UI.game.cf.ch!=='neutral'&&diplomat.attacked"));
+console.log('War confirmation UI: movement and attack cancel without side effects, consent executes once.');
+
+// Automatic approach + attack combines transit-country and target-country consent.
+h.timers.length=0;
+h.run("closeModal();UI.busy=false;UI.game.units=[];UI.game.cf.fi='neutral';UI.game.cf.ch='neutral';UI.game.homeCountryOf=(c,r)=>c===20&&r===20?'de':'fi';const approach=UI.game.spawnUnit('de','de:infantry:0',20,20,{});const farNeutral=UI.game.spawnUnit('ch','neutral:infantry:0',23,20,{});select(approach);doAttack(farNeutral)");
+assert(h.run("modalRoot.innerHTML.includes('芬兰')&&modalRoot.innerHTML.includes('瑞士')&&approach.c===20&&farNeutral.hp===100"));
+h.run("document.getElementById('war-confirm').onclick()");assert(h.run('UI.busy'));h.timers.shift()();
+assert(h.run("UI.game.cf.fi!=='neutral'&&UI.game.cf.ch!=='neutral'&&farNeutral.hp<100&&!modalOpen()"));
+console.log('Combined approach/attack: one consent covers transit and target countries before either action.');

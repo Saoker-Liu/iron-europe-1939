@@ -20,6 +20,6 @@ const recruit=g.recruit('training-base','de:infantry:0');assert(recruit);assert(
 g.endTurn();assert.equal(g.lesson,10);assert.equal(g.gold.axis,185);assert(!recruit.moved&&!recruit.attacked);
 assert.equal(g.pendingEvents.length,0);assert.equal(g.units.length,2);
 assert.equal(new TutorialGame().lesson,0);
-const campaign=new Game('axis');assert.equal(campaign.cities.length,436);assert.equal(campaign.units.length,1010);
-assert(Game.deserialize(campaign.serialize()).units.length===1010);
+const campaign=new Game('axis');assert.equal(campaign.cities.length,436);assert.equal(campaign.units.length,1009);
+assert(Game.deserialize(campaign.serialize()).units.length===1009);
 console.log('Tutorial: bounded map, guided actions, normal combat, capture, recruitment, income, turn reset, no save writes/events and unaffected campaign passed.');
