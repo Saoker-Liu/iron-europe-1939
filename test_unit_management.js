@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict'),{Game}=require('./js/engine/game');
+const g=new Game('axis');
+const u=g.units.find(u=>u.gen==='guderian'),gold=g.gold.axis;
+assert(g.disbandUnit(u));assert.equal(g.gold.axis,gold);assert.equal(g.genUnit.guderian,null);assert(!g.disbandUnit(u));
+assert(!g.disbandUnit(g.units.find(u=>g.unitFaction(u)==='west')));
+const guard=g.playerUnits().find(u=>u.dug);g.startTurnFor('axis');g.startTurnFor('axis');
+assert(guard.dug&&!guard.moved&&!guard.attacked);assert(!g.pendingPlayerUnits().includes(guard));
+const loaded=Game.deserialize(g.serialize());assert(loaded.units.find(u=>u.id===guard.id).dug);assert(!loaded.units.some(x=>x.id===u.id));
+g.units=[guard];g.blockedEdges.clear();g.riverEdges.clear();
+const dest=g.landNeighbors(guard.c,guard.r)[0];assert(g.moveUnit(guard,...dest));assert(!guard.dug);
+guard.moved=false;guard.attacked=false;guard.dug=true;
+const enemyPos=g.landNeighbors(guard.c,guard.r)[0];const enemy=g.spawnUnit('pl','neutral:infantry:0',...enemyPos,{});
+assert(g.attack(guard,enemy));assert(!guard.dug);
+const plane=g.spawnUnit('de','de:air:0',guard.c,guard.r,{});const para=g.spawnUnit('de','de:airborne:0',guard.c,guard.r,{});para.carrierId=plane.id;
+assert(!g.disbandUnit(plane));assert(!g.disbandUnit(para));para.carrierId=null;assert(g.disbandUnit(plane));assert(g.units.includes(para));
+console.log('Unit management: no refund, ownership, commander release, save, continued defense, manual move/attack and cargo safety passed.');

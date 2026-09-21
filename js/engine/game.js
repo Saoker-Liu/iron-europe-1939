@@ -827,6 +827,15 @@ class Game {
     let v = 0; for (const t of TH) if (u.xp >= t) v++;
     u.vet = v;
   }
+  disbandUnit(u) {
+    if(!u||!this.units.includes(u)||this.unitFaction(u)!==this.playerFaction||u.carrierId||this.cargoOf(u)||this.tutorial)return false;
+    const name=this.unitName(u);
+    this.killUnit(u); // Releases commander; never refunds gold or recycles ship names.
+    this.pushLog(`${name}已解散，不返还经济。`,'info');
+    return true;
+  }
+  pendingPlayerUnits() { return this.playerUnits().filter(u=>!u.dug&&(!u.moved||!u.attacked)); }
+
   killUnit(u) {
     const cargo=this.cargoOf(u);if(cargo)this.killUnit(cargo);
     this.units = this.units.filter(x => x !== u);
@@ -936,6 +945,7 @@ class Game {
     for (const u of this.units) {
       if (this.unitFaction(u) !== f) continue;
       if(u.carrierId)continue;
+      // Entrenchment persists; restore actions for optional manual movement/attack.
       u.moved = false; u.attacked = false;
       if(this.contamination(u.c,u.r))continue;
       const city = this.cityAt(u.c, u.r);

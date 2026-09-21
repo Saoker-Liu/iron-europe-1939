@@ -345,3 +345,12 @@ assert(h.run("UI.game!==null&&modalRoot.innerHTML.includes('暂时无法保存')
 h.run("document.getElementById('menu-save-back').onclick();startTutorial()");
 assert(h.run('returnToMainMenu()'));assert.equal(h.run('JSON.parse(menuSave).gold.axis'),987);
 console.log('Main menu: waits for actions, saves and resumes campaign, preserves play on storage failure, tutorial does not overwrite save.');
+
+h.run("closeModal();UI.busy=false;UI.game=new Game('axis');const dismissUnit=UI.game.units.find(u=>u.gen==='guderian');select(dismissUnit);const dismissGold=UI.game.gold.axis;confirmDisband(dismissUnit);document.getElementById('disband-cancel').onclick()");
+assert(h.run('UI.game.units.includes(dismissUnit)'));
+h.run("confirmDisband(dismissUnit);document.getElementById('disband-confirm').onclick()");
+assert(h.run("!UI.game.units.includes(dismissUnit)&&UI.game.gold.axis===dismissGold&&UI.game.genUnit.guderian===null"));
+h.run("const guardUnit=UI.game.playerUnits().find(u=>u.dug);UI.game.startTurnFor('axis');select(guardUnit)");
+assert(h.run("guardUnit.dug&&!UI.game.pendingPlayerUnits().includes(guardUnit)&&!modalRoot.innerHTML.includes('disband-confirm')"));
+assert(!h.run("document.getElementById('panel-body').innerHTML.includes('id=\"pb-dug\"')"));
+console.log('Disband UI: cancel/confirm, no refund, released general; persistent guards omitted from pending units.');

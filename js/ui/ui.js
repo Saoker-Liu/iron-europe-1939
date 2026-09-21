@@ -853,8 +853,8 @@ function execAttack(enemy) {
 /* 下一支可行动部队 */
 function nextUnit() {
   const g = UI.game;
-  const list = g.playerUnits().filter(u => !u.moved || !u.attacked);
-  if (!list.length) { banner('本回合行动完毕'); return; }
+  const list = g.pendingPlayerUnits();
+  if (!list.length) { banner('没有需要操作的部队（驻防部队继续驻防）'); return; }
   UI.nextIdx = (UI.nextIdx + 1) % list.length;
   const u = list[UI.nextIdx];
   select(u);
@@ -903,7 +903,7 @@ async function endTurnFlow() {
 }
 function nextUnitHint() {
   const g = UI.game;
-  const n = g.playerUnits().filter(u => !u.moved || !u.attacked).length;
+  const n = g.pendingPlayerUnits().length;
   if (n) banner(`${n} 支部队待命（N 键切换）`, 1200);
 }
 function checkEnd() {
@@ -1007,7 +1007,7 @@ function showUnitPanel(u) {
     ${my&&g.isAir(u)&&g.airRole(u)==='transport'?`<div class="p-sub">载员：${airborneCargo?airborneCargo.eq.n+' · 兵力'+airborneCargo.hp:'空载'}<br>在同一机场城市组建伞兵，待双方可行动时装载。装载后可立即伞降；卸载、转场和伞降均耗尽本回合行动。</div><button class="btn" id="air-load" ${UI.busy||u.moved||u.attacked||airborneCargo||!waitingPara?.eq.para||waitingPara?.moved||waitingPara?.attacked?'disabled':''}>装载机场伞兵</button><button class="btn" id="air-unload" ${UI.busy||u.moved||u.attacked||!airborneCargo||waitingPara?'disabled':''}>在机场卸载</button><button class="btn gold" id="air-drop" ${UI.busy||u.moved||u.attacked||!airborneCargo?'disabled':''}>执行伞降 · 选择目标</button>`:''}
     ${my&&g.isAir(u)&&g.airRole(u)==='strategic'?`<div class="p-sub">☢ 核打击：${AIR.nuclear.year}年解锁 · 每次${AIR.nuclear.cost}金</div><button class="btn danger" id="air-nuclear" ${UI.busy||g.nuclearError(u,u.c,u.r)?'disabled':''}>核打击 · 选择目标</button>`:''}
     ${transportPanel}
-    ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">已驻防：防御+30%，移动/攻击后解除</div>' : ''}
+    ${u.dug ? '<div class="tag" style="border-color:#7ec8ff;color:#7ec8ff">持续驻防：防御+30%；自动跳过待命提示，手动移动/攻击后解除</div>' : ''}
     ${gen ? `<div class="gen-chip" style="display:flex;gap:8px;align-items:flex-start">
       <div class="gen-portrait" style="background:${COUNTRIES[gen.ct].color};width:40px;height:40px;flex-shrink:0">${genPortrait(gen)}</div>
       <div style="flex:1;min-width:0">
@@ -1017,10 +1017,11 @@ function showUnitPanel(u) {
       </div>
     </div>` : ''}
     ${my ? `<div class="row-btns">
-      ${idle && !u.attacked && !atSea && !g.isNaval(u) && !g.isAir(u) ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
-      ${idle ? '<button class="btn" id="pb-skip">⏭ 待命</button>' : ''}
+      ${idle && !u.dug && !u.attacked && !atSea && !g.isNaval(u) && !g.isAir(u) ? '<button class="btn" id="pb-dug">🔒 驻防</button>' : ''}
+      ${idle && !u.dug ? '<button class="btn" id="pb-skip">⏭ 待命</button>' : ''}
       ${idle&&!g.isNaval(u) ? '<button class="btn gold" id="pb-gen">🎖 将领</button>' : ''}
       <button class="btn" id="pb-next">⏩ 下一部队</button>
+      ${!g.tutorial?`<button class="btn danger" id="pb-disband" ${UI.busy||u.carrierId||g.cargoOf(u)?'disabled':''} title="不返还经济；运输机须先卸载伞兵">解散部队</button>`:''}
     </div>
     <div class="p-sub" style="margin-top:8px">${u.moved && u.attacked ? '⛔ 本回合已行动完毕' : !u.moved ? g.isAir(u)?'青色格：航程 · 蓝格：机场转场 · 红框：可出击目标':'蓝格：可移动 · 红框敌军：可攻击' : '已移动，仍可攻击红框敌军'}</div>` : `<div class="p-sub">${g.unitFaction(u)==='neutral'?'中立部队（尚未参战）':'敌方部队'}</div>`}`;
   const load=document.getElementById('air-load');if(load)load.onclick=()=>{if(!UI.busy&&g.loadParatrooper(u,waitingPara)){select(u);renderLog();}};
@@ -1037,8 +1038,21 @@ function showUnitPanel(u) {
   if (b2) b2.onclick = () => { u.moved = true; u.attacked = true; UI.range = null; UI.targets.clear(); updatePanel(); nextUnit(); };
   const b3 = document.getElementById('pb-gen');
   if (b3) b3.onclick = () => {if(!g.isNaval(u))showGenerals(u);};
+  const disband=document.getElementById('pb-disband');
+  if(disband)disband.onclick=()=>confirmDisband(u);
   const b4 = document.getElementById('pb-next');
   if (b4) b4.onclick = () => nextUnit();
+}
+
+function confirmDisband(u) {
+  const g=UI.game;
+  if(UI.busy||!g||!g.units.includes(u)||g.unitFaction(u)!==g.playerFaction||g.cargoOf(u)||u.carrierId)return;
+  openModal(`<div class="modal"><h1>解散部队？</h1><div class="help-body">${g.unitName(u)}将被移除，<b>不返还任何经济</b>。${u.gen?'所属将领将回到待指派名单。':''}</div><div class="actions"><button class="btn" id="disband-cancel">取消</button><button class="btn danger" id="disband-confirm">确认解散</button></div></div>`);
+  document.getElementById('disband-cancel').onclick=closeModal;
+  document.getElementById('disband-confirm').onclick=()=>{
+    if(UI.busy||UI.game!==g)return;
+    if(g.disbandUnit(u)){closeModal();deselect();updatePanel();updateTopbar();renderLog();autoSave();}
+  };
 }
 
 function showUnitInfo(u) { showUnitPanel(u); }
@@ -1352,7 +1366,7 @@ function showHelp(onReturn) {
         炮兵/空军无视地形防御加成；步兵/装甲在相邻格反击，海军可在自身射程和目标限制内反击，包括对来袭空军的防空还击。<br>
         尚未行动的陆海军即使移动力不足，也可移动到一个合法且空闲的相邻格，耗尽本回合移动；不可越过陆海限制、禁行边或单位阻挡。<br>
         进入敌军相邻格会被<b>控制区(ZOC)</b>截停（具有忽略控制区技能的将领与空军除外）。<br>
-        <b>驻防</b>+30%防御，移动或攻击后解除。老练度（击杀获取经验）最多+24%攻防。
+        <b>驻防</b>+30%防御，跨回合自动保持，不列入“下一部队”与待命提示；手动移动或攻击后解除。己方部队面板可解散部队，不返还经济，将领回到待指派名单；载有伞兵的运输机需先卸载。老练度（击杀获取经验）最多+24%攻防。
         <h4>■ 兵种用途与目标选择</h4>
         步兵对装甲攻击效果较弱；装甲适合攻击步兵与炮兵，具体效果还受装备和特色能力影响。<br>
         普通炮兵对装甲效果较弱，反坦克炮擅长打击装甲；防空炮保护本格与邻格友军并拦截来袭飞机。野战炮射程更远，火箭炮可对目标后方敌军造成溅射伤害。<br>
