@@ -23,6 +23,6 @@ assert.equal(icons.shape('no-such-class'),null);assert.equal(icons.svg('no-such-
 ops.length=0;icons.draw(canvas,'inf',0,0,24);
 assert.deepEqual(ops.map(x=>x[0]),['save','translate','scale','stroke','fill','restore'],'outline and fill share one transform');
 ops.length=0;icons.draw(canvas,'inf',0,0,5);assert(!ops.some(x=>x[0]==='stroke'),'tiny icons omit outline');
-const page=fs.readFileSync('landing/index.html','utf8');assert(page.includes('data-count="116"'));assert(page.includes('href="../index.html?play=1"'));
+const page=fs.readFileSync('landing/index.html','utf8');assert(page.includes('data-count="116"'));assert(page.includes('href="../index.html?play=1&amp;tutorial=1"'));
 for(const match of page.matchAll(/src="(img\/[^"]+)"/g))assert(fs.existsSync('landing/'+match[1]));
 console.log('Artwork: shared SVG/Canvas geometry, cached paths, stable outline transform, tiny icons, full class/air-role/naval coverage and landing assets passed');
